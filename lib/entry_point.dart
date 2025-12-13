@@ -12,15 +12,18 @@ class EntryPoint extends StatefulWidget {
 }
 
 class _EntryPointState extends State<EntryPoint> {
-  final List _pages = const [
+  double walletBalance = 0.0;
+  int shoppingTokens = 0;
+  int _currentIndex = 0;
+
+  List<Widget> get _pages => [
     HomeScreen(),
     DiscoverScreen(),
-    BookmarkScreen(),
+    WishlistScreen(),
     // EmptyCartScreen(), // if Cart is empty
     CartScreen(),
     ProfileScreen(),
   ];
-  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -66,15 +69,57 @@ class _EntryPointState extends State<EntryPoint> {
             ),
           ),
           IconButton(
-            onPressed: () {
-              Navigator.pushNamed(context, notificationsScreenRoute);
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, walletScreenRoute, arguments: {
+                'walletBalance': walletBalance,
+                'shoppingTokens': shoppingTokens,
+              });
+              if (result is Map) {
+                setState(() {
+                  walletBalance = result['walletBalance'] ?? walletBalance;
+                  shoppingTokens = result['shoppingTokens'] ?? shoppingTokens;
+                });
+              }
             },
             icon: SvgPicture.asset(
-              "assets/icons/Notification.svg",
+              "assets/icons/Wallet.svg",
               height: 24,
               colorFilter: ColorFilter.mode(
                   Theme.of(context).textTheme.bodyLarge!.color!,
                   BlendMode.srcIn),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Row(
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFFFB800), Color(0xFFFF8A00)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.circle,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  shoppingTokens.toString(),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Color(0xFFFFC107),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -82,10 +127,10 @@ class _EntryPointState extends State<EntryPoint> {
       // body: _pages[_currentIndex],
       body: PageTransitionSwitcher(
         duration: defaultDuration,
-        transitionBuilder: (child, animation, secondAnimation) {
+        transitionBuilder: (child, animation, secondaryAnimation) {
           return FadeThroughTransition(
             animation: animation,
-            secondaryAnimation: secondAnimation,
+            secondaryAnimation: secondaryAnimation,
             child: child,
           );
         },
@@ -109,7 +154,6 @@ class _EntryPointState extends State<EntryPoint> {
               ? Colors.white
               : const Color(0xFF101015),
           type: BottomNavigationBarType.fixed,
-          // selectedLabelStyle: TextStyle(color: primaryColor),
           selectedFontSize: 12,
           selectedItemColor: primaryColor,
           unselectedItemColor: Colors.transparent,
@@ -126,10 +170,10 @@ class _EntryPointState extends State<EntryPoint> {
               label: "Discover",
             ),
             BottomNavigationBarItem(
-              icon: svgIcon("assets/icons/Bookmark.svg"),
+              icon: svgIcon("assets/icons/Wishlist.svg"),
               activeIcon:
-                  svgIcon("assets/icons/Bookmark.svg", color: primaryColor),
-              label: "Bookmark",
+                  svgIcon("assets/icons/Wishlist.svg", color: primaryColor),
+              label: "Wishlist",
             ),
             BottomNavigationBarItem(
               icon: svgIcon("assets/icons/Bag.svg"),
