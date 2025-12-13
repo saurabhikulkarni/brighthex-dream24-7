@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:shop/components/buy_full_ui_kit.dart';
 import 'package:shop/components/cart_button.dart';
 import 'package:shop/components/custom_modal_bottom_sheet.dart';
 import 'package:shop/components/product/product_card.dart';
@@ -75,8 +74,41 @@ class ProductDetailsScreen extends StatelessWidget {
                 customModalBottomSheet(
                   context,
                   height: MediaQuery.of(context).size.height * 0.92,
-                  child: const BuyFullKit(
-                      images: ["assets/screens/Product detail.png"]),
+                  child: Scaffold(
+                    appBar: AppBar(
+                      title: const Text("Product Details"),
+                    ),
+                    body: SingleChildScrollView(
+                      padding: const EdgeInsets.all(defaultPadding),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Description",
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            "Premium quality product with excellent durability. Made from sustainable materials with attention to detail. Perfect for everyday use.",
+                          ),
+                          const SizedBox(height: defaultPadding),
+                          Text(
+                            "Features",
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text("• High quality materials\n• Comfortable design\n• Durable construction\n• Easy to maintain"),
+                          const SizedBox(height: defaultPadding),
+                          Text(
+                            "Care Instructions",
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text("Wash in cold water. Do not bleach. Tumble dry low."),
+                        ],
+                      ),
+                    ),
+                  ),
                 );
               },
             ),
@@ -87,8 +119,53 @@ class ProductDetailsScreen extends StatelessWidget {
                 customModalBottomSheet(
                   context,
                   height: MediaQuery.of(context).size.height * 0.92,
-                  child: const BuyFullKit(
-                    images: ["assets/screens/Shipping information.png"],
+                  child: Scaffold(
+                    appBar: AppBar(
+                      title: const Text("Shipping Information"),
+                    ),
+                    body: SingleChildScrollView(
+                      padding: const EdgeInsets.all(defaultPadding),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Shipping Methods",
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 12),
+                          Card(
+                            child: ListTile(
+                              title: const Text("Standard Shipping"),
+                              subtitle: const Text("5-7 business days"),
+                              trailing: const Text("\$0"),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Card(
+                            child: ListTile(
+                              title: const Text("Express Shipping"),
+                              subtitle: const Text("2-3 business days"),
+                              trailing: const Text("\$10"),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Card(
+                            child: ListTile(
+                              title: const Text("Overnight"),
+                              subtitle: const Text("Next business day"),
+                              trailing: const Text("\$25"),
+                            ),
+                          ),
+                          const SizedBox(height: defaultPadding),
+                          Text(
+                            "Delivery Info",
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text("Orders are processed within 1-2 business days. Tracking information will be provided via email once your order ships."),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               },

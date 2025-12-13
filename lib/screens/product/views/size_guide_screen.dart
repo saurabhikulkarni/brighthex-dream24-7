@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shop/components/buy_full_ui_kit.dart';
+import 'package:shop/constants.dart';
 
 class SizeGuideScreen extends StatefulWidget {
   const SizeGuideScreen({super.key});
@@ -19,6 +19,118 @@ class _SizeGuideScreenState extends State<SizeGuideScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return const BuyFullKit(images: ["assets/screens/Size Guide.png"]);
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Size Guide"),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(defaultPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Measurements",
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                ElevatedButton(
+                  onPressed: updateSizes,
+                  child: Text(_isShowCentimetersSize ? "Show Inches" : "Show Centimeters"),
+                ),
+              ],
+            ),
+            const SizedBox(height: defaultPadding),
+            Table(
+              border: TableBorder.all(color: Colors.grey.shade300),
+              children: [
+                TableRow(
+                  decoration: BoxDecoration(color: Colors.grey.shade100),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text("Size", style: Theme.of(context).textTheme.titleSmall),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text("XS", style: Theme.of(context).textTheme.titleSmall),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text("S", style: Theme.of(context).textTheme.titleSmall),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text("M", style: Theme.of(context).textTheme.titleSmall),
+                    ),
+                  ],
+                ),
+                TableRow(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text("Chest"),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(_isShowCentimetersSize ? "76cm" : "30in"),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(_isShowCentimetersSize ? "81cm" : "32in"),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(_isShowCentimetersSize ? "86cm" : "34in"),
+                    ),
+                  ],
+                ),
+                TableRow(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text("Waist"),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(_isShowCentimetersSize ? "61cm" : "24in"),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(_isShowCentimetersSize ? "66cm" : "26in"),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(_isShowCentimetersSize ? "71cm" : "28in"),
+                    ),
+                  ],
+                ),
+                TableRow(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text("Length"),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(_isShowCentimetersSize ? "66cm" : "26in"),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(_isShowCentimetersSize ? "69cm" : "27in"),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(_isShowCentimetersSize ? "71cm" : "28in"),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
