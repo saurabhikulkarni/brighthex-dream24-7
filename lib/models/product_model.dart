@@ -7,7 +7,6 @@ class ProductModel {
   final String image, brandName, title;
   final double price; // Price in shopping tokens
   final double? priceAfetDiscount; // Discounted price in shopping tokens
-  final int? dicountpercent;
 
   ProductModel({
     required this.image,
@@ -15,7 +14,6 @@ class ProductModel {
     required this.title,
     required this.price,
     this.priceAfetDiscount,
-    this.dicountpercent,
   });
 }
 
@@ -25,8 +23,6 @@ List<ProductModel> demoPopularProducts = [
     title: "Mountain Warehouse for Women",
     brandName: "Lipsy london",
     price: 540,
-    priceAfetDiscount: 420,
-    dicountpercent: 20,
   ),
   ProductModel(
     image: productDemoImg4,
@@ -38,33 +34,25 @@ List<ProductModel> demoPopularProducts = [
     image: productDemoImg5,
     title: "FS - Nike Air Max 270 Really React",
     brandName: "Lipsy london",
-    price: 650.62,
-    priceAfetDiscount: 390.36,
-    dicountpercent: 40,
+    price: 650,
   ),
   ProductModel(
     image: productDemoImg6,
     title: "Green Poplin Ruched Front",
     brandName: "Lipsy london",
     price: 1264,
-    priceAfetDiscount: 1200.8,
-    dicountpercent: 5,
   ),
   ProductModel(
     image: "https://i.imgur.com/tXyOMMG.png",
     title: "Green Poplin Ruched Front",
     brandName: "Lipsy london",
-    price: 650.62,
-    priceAfetDiscount: 390.36,
-    dicountpercent: 40,
+    price: 650,
   ),
   ProductModel(
     image: "https://i.imgur.com/h2LqppX.png",
     title: "white satin corset top",
     brandName: "Lipsy london",
     price: 1264,
-    priceAfetDiscount: 1200.8,
-    dicountpercent: 5,
   ),
 ];
 List<ProductModel> demoFlashSaleProducts = [
@@ -72,25 +60,19 @@ List<ProductModel> demoFlashSaleProducts = [
     image: productDemoImg5,
     title: "FS - Nike Air Max 270 Really React",
     brandName: "Lipsy london",
-    price: 650.62,
-    priceAfetDiscount: 390.36,
-    dicountpercent: 40,
+    price: 650,
   ),
   ProductModel(
     image: productDemoImg6,
     title: "Green Poplin Ruched Front",
     brandName: "Lipsy london",
     price: 1264,
-    priceAfetDiscount: 1200.8,
-    dicountpercent: 5,
   ),
   ProductModel(
     image: productDemoImg4,
     title: "Mountain Beta Warehouse",
     brandName: "Lipsy london",
     price: 800,
-    priceAfetDiscount: 680,
-    dicountpercent: 15,
   ),
 ];
 List<ProductModel> demoBestSellersProducts = [
@@ -98,25 +80,19 @@ List<ProductModel> demoBestSellersProducts = [
     image: "https://i.imgur.com/tXyOMMG.png",
     title: "Green Poplin Ruched Front",
     brandName: "Lipsy london",
-    price: 650.62,
-    priceAfetDiscount: 390.36,
-    dicountpercent: 40,
+    price: 650,
   ),
   ProductModel(
     image: "https://i.imgur.com/h2LqppX.png",
     title: "white satin corset top",
     brandName: "Lipsy london",
     price: 1264,
-    priceAfetDiscount: 1200.8,
-    dicountpercent: 5,
   ),
   ProductModel(
     image: productDemoImg4,
     title: "Mountain Beta Warehouse",
     brandName: "Lipsy london",
     price: 800,
-    priceAfetDiscount: 680,
-    dicountpercent: 15,
   ),
 ];
 List<ProductModel> kidsProducts = [
@@ -124,15 +100,13 @@ List<ProductModel> kidsProducts = [
     image: "https://i.imgur.com/dbbT6PA.png",
     title: "Green Poplin Ruched Front",
     brandName: "Lipsy london",
-    price: 650.62,
-    priceAfetDiscount: 590.36,
-    dicountpercent: 24,
+    price: 590,
   ),
   ProductModel(
     image: "https://i.imgur.com/7fSxC7k.png",
     title: "Printed Sleeveless Tiered Swing Dress",
     brandName: "Lipsy london",
-    price: 650.62,
+    price: 650,
   ),
   ProductModel(
     image: "https://i.imgur.com/pXnYE9Q.png",
@@ -145,8 +119,6 @@ List<ProductModel> kidsProducts = [
     title: "Green Mountain Beta Warehouse",
     brandName: "Lipsy london",
     price: 400,
-    priceAfetDiscount: 360,
-    dicountpercent: 20,
   ),
   ProductModel(
     image: "https://i.imgur.com/8gvE5Ss.png",
