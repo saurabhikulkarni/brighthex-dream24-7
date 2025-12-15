@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/models/product_model.dart';
+import 'package:shop/services/razorpay_service.dart';
+import 'package:uuid/uuid.dart';
 
 import 'components/wallet_balance_card.dart';
 import 'components/wallet_history_card.dart';
@@ -37,6 +39,58 @@ class _WalletScreenState extends State<WalletScreen> {
       _selectedTopUpAmount = 0;
       _amountController.clear();
     });
+  }
+
+  void _initiatePayment() {
+    const uuid = Uuid();
+    final orderId = '#${uuid.v4().substring(0, 8).toUpperCase()}';
+
+    final razorpayService = RazorpayService();
+    
+    razorpayService.startPayment(
+      orderId: orderId,
+      amount: _selectedTopUpAmount,
+      userEmail: 'user@example.com',
+      userPhone: '+91 9999999999',
+      userName: 'Customer',
+      onSuccess: (response) {
+        // Payment successful, add money to wallet
+        _addMoney(_selectedTopUpAmount);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Successfully added \$${_selectedTopUpAmount.toStringAsFixed(2)} to wallet",
+            ),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+      },
+      onError: (error) {
+        // Payment failed
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Payment failed: $error",
+            ),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.red,
+          ),
+        );
+      },
+      onDismiss: () {
+        // Payment dismissed
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Payment cancelled",
+            ),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -169,15 +223,7 @@ class _WalletScreenState extends State<WalletScreen> {
                         ElevatedButton(
                           onPressed: _selectedTopUpAmount > 0
                               ? () {
-                                  _addMoney(_selectedTopUpAmount);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        "Added \$${_selectedTopUpAmount.toStringAsFixed(2)} to wallet",
-                                      ),
-                                      duration: const Duration(seconds: 2),
-                                    ),
-                                  );
+                                  _initiatePayment();
                                 }
                               : null,
                           style: ElevatedButton.styleFrom(
