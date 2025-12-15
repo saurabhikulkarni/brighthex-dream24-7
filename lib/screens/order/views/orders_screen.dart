@@ -1,21 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
-
-class Order {
-  final String id;
-  final String date;
-  final double total;
-  final String status;
-  final List<String> items;
-
-  Order({
-    required this.id,
-    required this.date,
-    required this.total,
-    required this.status,
-    required this.items,
-  });
-}
+import 'package:shop/models/order_model.dart';
+import 'order_tracking_screen.dart';
 
 class OrdersScreen extends StatelessWidget {
   const OrdersScreen({super.key});
@@ -23,26 +9,35 @@ class OrdersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final orders = [
-      Order(
+      OrderModel(
         id: "#123456",
         date: "Dec 10, 2024",
         total: 325.50,
         status: "Delivered",
         items: ["Nike Air Max", "Blue T-shirt"],
+        shippingId: "SHIP123456",
+        courierName: "DELHIVERY",
+        trackingNumber: "DEL123456",
       ),
-      Order(
+      OrderModel(
         id: "#123455",
         date: "Dec 5, 2024",
         total: 85.00,
         status: "In Transit",
         items: ["Adidas Jacket"],
+        shippingId: "SHIP123455",
+        courierName: "FedEx",
+        trackingNumber: "FDX123455",
       ),
-      Order(
+      OrderModel(
         id: "#123454",
         date: "Nov 28, 2024",
         total: 150.00,
         status: "Processing",
         items: ["Summer Sunglasses", "Black Belt"],
+        shippingId: "SHIP123454",
+        courierName: "Blue Dart",
+        trackingNumber: "BD123454",
       ),
     ];
 
@@ -133,14 +128,22 @@ class OrdersScreen extends StatelessWidget {
                               style: Theme.of(context).textTheme.titleSmall,
                             ),
                             ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        OrderTrackingScreen(orderId: order.id),
+                                  ),
+                                );
+                              },
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                   vertical: 8,
                                 ),
                               ),
-                              child: const Text("Details"),
+                              child: const Text("Track"),
                             ),
                           ],
                         ),
