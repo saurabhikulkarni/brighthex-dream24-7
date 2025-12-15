@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:shop/components/Banner/S/banner_s_style_1.dart';
 import 'package:shop/components/Banner/S/banner_s_style_5.dart';
 import 'package:shop/constants.dart';
-import 'package:shop/route/screen_export.dart';
 
 import 'components/best_sellers.dart';
+import 'components/category_banners.dart';
 import 'components/most_popular.dart';
 import 'components/offer_carousel_and_categories.dart';
 import 'components/popular_products.dart';
@@ -38,6 +38,7 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
+            const SliverToBoxAdapter(child: CategoryBanners()),
             const SliverToBoxAdapter(child: BestSellers()),
             const SliverToBoxAdapter(child: MostPopular()),
             SliverToBoxAdapter(

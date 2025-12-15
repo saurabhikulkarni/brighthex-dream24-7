@@ -11,6 +11,52 @@ class CategoryModel {
   });
 }
 
+/// Category banner data for home screen with shop now buttons
+class CategoryBannerData {
+  final String id;
+  final String categoryName;
+  final String subtitle;
+  final String bannerImageUrl;
+
+  CategoryBannerData({
+    required this.id,
+    required this.categoryName,
+    required this.subtitle,
+    required this.bannerImageUrl,
+  });
+}
+
+final List<CategoryBannerData> demoCategoryBanners = [
+  CategoryBannerData(
+    id: 'mens',
+    categoryName: "Men's Collection",
+    subtitle: "Premium styles for men",
+    bannerImageUrl:
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop',
+  ),
+  CategoryBannerData(
+    id: 'womens',
+    categoryName: "Women's Collection",
+    subtitle: "Elegant fashion for women",
+    bannerImageUrl:
+        'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&h=600&fit=crop',
+  ),
+  CategoryBannerData(
+    id: 'accessories',
+    categoryName: "Accessories",
+    subtitle: "Complete your look",
+    bannerImageUrl:
+        'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=800&h=600&fit=crop',
+  ),
+  CategoryBannerData(
+    id: 'electronics',
+    categoryName: "Electronics & Gadgets",
+    subtitle: "Latest tech gadgets",
+    bannerImageUrl:
+        'https://images.unsplash.com/photo-1505228395891-9a51e7e86e81?w=800&h=600&fit=crop',
+  ),
+];
+
 final List<CategoryModel> demoCategoriesWithImage = [
   CategoryModel(title: "Woman’s", image: "https://i.imgur.com/5M89G2P.png"),
   CategoryModel(title: "Man’s", image: "https://i.imgur.com/UM3GdWg.png"),
