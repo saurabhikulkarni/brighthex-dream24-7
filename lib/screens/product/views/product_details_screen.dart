@@ -5,7 +5,7 @@ import 'package:shop/components/custom_modal_bottom_sheet.dart';
 import 'package:shop/components/product/product_card.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/screens/product/views/product_returns_screen.dart';
-
+import 'package:flutter_svg/flutter_svg.dart' as svg;
 import 'package:shop/route/screen_export.dart';
 
 import 'components/notify_me_card.dart';
@@ -25,7 +25,7 @@ class ProductDetailsScreen extends StatelessWidget {
     return Scaffold(
       bottomNavigationBar: isProductAvailable
           ? CartButton(
-              price: 140,
+              price: 1200,
               press: () {
                 customModalBottomSheet(
                   context,
@@ -133,27 +133,60 @@ class ProductDetailsScreen extends StatelessWidget {
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 12),
-                          const Card(
+                          Card(
                             child: ListTile(
-                              title: Text("Standard Shipping"),
-                              subtitle: Text("5-7 business days"),
-                              trailing: Text("\$0"),
+                              title: const Text("Standard Shipping"),
+                              subtitle: const Text("5-7 business days"),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  svg.SvgPicture.asset(
+                                    'assets/icons/coin.svg',
+                                    width: 14,
+                                    height: 14,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  const Text("0"),
+                                ],
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Card(
+                          Card(
                             child: ListTile(
-                              title: Text("Express Shipping"),
-                              subtitle: Text("2-3 business days"),
-                              trailing: Text("\$10"),
+                              title: const Text("Express Shipping"),
+                              subtitle: const Text("2-3 business days"),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  svg.SvgPicture.asset(
+                                    'assets/icons/coin.svg',
+                                    width: 14,
+                                    height: 14,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  const Text("50"),
+                                ],
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Card(
+                          Card(
                             child: ListTile(
-                              title: Text("Overnight"),
-                              subtitle: Text("Next business day"),
-                              trailing: Text("\$25"),
+                              title: const Text("Overnight"),
+                              subtitle: const Text("Next business day"),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  svg.SvgPicture.asset(
+                                    'assets/icons/coin.svg',
+                                    width: 14,
+                                    height: 14,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  const Text("150"),
+                                ],
+                              ),
                             ),
                           ),
                           const SizedBox(height: defaultPadding),

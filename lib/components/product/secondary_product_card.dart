@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../constants.dart';
 import '../network_image_with_loader.dart';
@@ -92,8 +93,14 @@ class SecondaryProductCard extends StatelessWidget {
                   priceAfetDiscount != null
                       ? Row(
                           children: [
+                            SvgPicture.asset(
+                              'assets/icons/coin.svg',
+                              width: 14,
+                              height: 14,
+                            ),
+                            const SizedBox(width: 2),
                             Text(
-                              "\$$priceAfetDiscount",
+                              "${priceAfetDiscount!.toInt()}",
                               style: const TextStyle(
                                 color: Color(0xFF31B0D8),
                                 fontWeight: FontWeight.w500,
@@ -101,8 +108,15 @@ class SecondaryProductCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: defaultPadding / 4),
+                            SvgPicture.asset(
+                              'assets/icons/coin.svg',
+                              width: 12,
+                              height: 12,
+                              opacity: const AlwaysStoppedAnimation(0.5),
+                            ),
+                            const SizedBox(width: 2),
                             Text(
-                              "\$$price",
+                              "${price.toInt()}",
                               style: TextStyle(
                                 color: Theme.of(context)
                                     .textTheme
@@ -114,13 +128,23 @@ class SecondaryProductCard extends StatelessWidget {
                             ),
                           ],
                         )
-                      : Text(
-                          "\$$price",
-                          style: const TextStyle(
-                            color: Color(0xFF31B0D8),
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                          ),
+                      : Row(
+                          children: [
+                            SvgPicture.asset(
+                              'assets/icons/coin.svg',
+                              width: 14,
+                              height: 14,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              "${price.toInt()}",
+                              style: const TextStyle(
+                                color: Color(0xFF31B0D8),
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                 ],
               ),

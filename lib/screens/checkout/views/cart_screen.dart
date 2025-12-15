@@ -175,7 +175,17 @@ class _CartScreenState extends State<CartScreen> {
                               child: const Icon(Icons.image),
                             ),
                             title: Text(item.name),
-                            subtitle: Text("\$${item.price.toStringAsFixed(2)}"),
+                            subtitle: Row(
+                              children: [
+                                SvgPicture.asset(
+                                  'assets/icons/coin.svg',
+                                  width: 14,
+                                  height: 14,
+                                ),
+                                const SizedBox(width: 2),
+                                Text("${item.price.toInt()}"),
+                              ],
+                            ),
                             trailing: PopupMenuButton(
                               itemBuilder: (context) => [
                                 PopupMenuItem(
@@ -204,7 +214,17 @@ class _CartScreenState extends State<CartScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text("Subtotal"),
-                          Text("\$${subtotal.toStringAsFixed(2)}"),
+                          Row(
+                            children: [
+                              SvgPicture.asset(
+                                'assets/icons/coin.svg',
+                                width: 14,
+                                height: 14,
+                              ),
+                              const SizedBox(width: 2),
+                              Text("${subtotal.toInt()}"),
+                            ],
+                          ),
                         ],
                       ),
                       const SizedBox(height: defaultPadding / 2),
@@ -212,7 +232,17 @@ class _CartScreenState extends State<CartScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text("Tax (10%)"),
-                          Text("\$${tax.toStringAsFixed(2)}"),
+                          Row(
+                            children: [
+                              SvgPicture.asset(
+                                'assets/icons/coin.svg',
+                                width: 14,
+                                height: 14,
+                              ),
+                              const SizedBox(width: 2),
+                              Text("${tax.toInt()}"),
+                            ],
+                          ),
                         ],
                       ),
                       const Divider(),
@@ -223,9 +253,19 @@ class _CartScreenState extends State<CartScreen> {
                             "Total",
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
-                          Text(
-                            "\$${total.toStringAsFixed(2)}",
-                            style: Theme.of(context).textTheme.titleMedium,
+                          Row(
+                            children: [
+                              SvgPicture.asset(
+                                'assets/icons/coin.svg',
+                                width: 16,
+                                height: 16,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                "${total.toInt()}",
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ],
                           ),
                         ],
                       ),

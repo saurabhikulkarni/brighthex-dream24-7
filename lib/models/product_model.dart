@@ -1,10 +1,12 @@
 // For demo only
 import 'package:shop/constants.dart';
 
+/// ProductModel represents a shopping product with pricing in shopping tokens
+/// All prices (price, priceAfetDiscount) are in shopping tokens, not currency
 class ProductModel {
   final String image, brandName, title;
-  final double price;
-  final double? priceAfetDiscount;
+  final double price; // Price in shopping tokens
+  final double? priceAfetDiscount; // Discounted price in shopping tokens
   final int? dicountpercent;
 
   ProductModel({

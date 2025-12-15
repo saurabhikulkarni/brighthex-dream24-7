@@ -26,7 +26,7 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       bottomNavigationBar: CartButton(
-        price: 269.4,
+        price: 1200,
         title: "Add to cart",
         subTitle: "Total price",
         press: () {
