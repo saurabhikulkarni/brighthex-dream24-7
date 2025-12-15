@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../../constants.dart';
@@ -15,12 +17,35 @@ class _LogInFormState extends State<LogInForm> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
   bool _otpSent = false;
+  Timer? _resendTimer;
+  int _secondsLeft = 0;
+  static const int _resendDuration = 30;
 
   @override
   void dispose() {
     _phoneController.dispose();
     _otpController.dispose();
+    _resendTimer?.cancel();
     super.dispose();
+  }
+
+  void _startResendTimer() {
+    _resendTimer?.cancel();
+    setState(() {
+      _secondsLeft = _resendDuration;
+    });
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsLeft <= 1) {
+        timer.cancel();
+        setState(() {
+          _secondsLeft = 0;
+        });
+      } else {
+        setState(() {
+          _secondsLeft -= 1;
+        });
+      }
+    });
   }
 
   void _sendOtp() {
@@ -42,6 +67,7 @@ class _LogInFormState extends State<LogInForm> {
     setState(() {
       _otpSent = true;
     });
+    _startResendTimer();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('OTP sent to your mobile number.')),
     );
@@ -106,6 +132,17 @@ class _LogInFormState extends State<LogInForm> {
               },
             ),
             const SizedBox(height: defaultPadding),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _secondsLeft == 0 ? _sendOtp : null,
+                child: Text(
+                  _secondsLeft == 0
+                      ? 'Resend OTP'
+                      : 'Resend OTP (${_secondsLeft}s)',
+                ),
+              ),
+            ),
           ],
         ],
       ),
