@@ -18,7 +18,7 @@ class WalletBalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 220,
+      height: 180,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(defaultBorderRadious),
         child: Container(
@@ -37,6 +37,7 @@ class WalletBalanceCard extends StatelessWidget {
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Top - Available Balance Text
               const Text(
@@ -44,7 +45,7 @@ class WalletBalanceCard extends StatelessWidget {
                 style: TextStyle(
                     color: whileColor80,
                     fontWeight: FontWeight.w500,
-                    fontSize: 12),
+                    fontSize: 16),
               ),
               const SizedBox(height: 12),
               // Bottom - White Card with Balance and Tokens
