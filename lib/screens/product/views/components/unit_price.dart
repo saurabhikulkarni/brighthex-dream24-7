@@ -22,22 +22,9 @@ class UnitPrice extends StatelessWidget {
           style: Theme.of(context).textTheme.titleSmall,
         ),
         const SizedBox(height: defaultPadding / 1),
-        Text.rich(
-          TextSpan(
-            text: priceAfterDiscount == null
-                ? "\$${price.toStringAsFixed(2)}  "
-                : "\$${priceAfterDiscount!.toStringAsFixed(2)}  ",
-            style: Theme.of(context).textTheme.titleLarge,
-            children: [
-              if (priceAfterDiscount != null)
-                TextSpan(
-                  text: "\$${price.toStringAsFixed(2)}",
-                  style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                      color: Theme.of(context).textTheme.bodyMedium!.color,
-                      decoration: TextDecoration.lineThrough),
-                ),
-            ],
-          ),
+        Text(
+          "\$${price.toStringAsFixed(2)}",
+          style: Theme.of(context).textTheme.titleLarge,
         )
       ],
     );

@@ -17,12 +17,12 @@ class _EntryPointState extends State<EntryPoint> {
   int _currentIndex = 0;
 
   List<Widget> get _pages => [
-    HomeScreen(),
-    DiscoverScreen(),
-    WishlistScreen(),
+    const HomeScreen(),
+    const DiscoverScreen(),
+    const WishlistScreen(),
     // EmptyCartScreen(), // if Cart is empty
-    CartScreen(),
-    ProfileScreen(),
+    const CartScreen(),
+    const ProfileScreen(),
   ];
 
   @override
@@ -93,29 +93,17 @@ class _EntryPointState extends State<EntryPoint> {
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Row(
               children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFFFB800), Color(0xFFFF8A00)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.circle,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                SvgPicture.asset(
+                  "assets/icons/coin.svg",
+                  height: 24,
+                  width: 24,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   shoppingTokens.toString(),
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 18,
+                    fontSize: 14,
                     color: Color(0xFFFFC107),
                   ),
                 ),

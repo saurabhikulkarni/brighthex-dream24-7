@@ -68,8 +68,8 @@ class _SizeGuideScreenState extends State<SizeGuideScreen> {
                 ),
                 TableRow(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8),
+                    const Padding(
+                      padding: EdgeInsets.all(8),
                       child: Text("Chest"),
                     ),
                     Padding(
@@ -88,8 +88,8 @@ class _SizeGuideScreenState extends State<SizeGuideScreen> {
                 ),
                 TableRow(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8),
+                    const Padding(
+                      padding: EdgeInsets.all(8),
                       child: Text("Waist"),
                     ),
                     Padding(
@@ -108,8 +108,8 @@ class _SizeGuideScreenState extends State<SizeGuideScreen> {
                 ),
                 TableRow(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8),
+                    const Padding(
+                      padding: EdgeInsets.all(8),
                       child: Text("Length"),
                     ),
                     Padding(

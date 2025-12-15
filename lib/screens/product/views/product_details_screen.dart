@@ -133,27 +133,27 @@ class ProductDetailsScreen extends StatelessWidget {
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 12),
-                          Card(
+                          const Card(
                             child: ListTile(
-                              title: const Text("Standard Shipping"),
-                              subtitle: const Text("5-7 business days"),
-                              trailing: const Text("\$0"),
+                              title: Text("Standard Shipping"),
+                              subtitle: Text("5-7 business days"),
+                              trailing: Text("\$0"),
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Card(
+                          const Card(
                             child: ListTile(
-                              title: const Text("Express Shipping"),
-                              subtitle: const Text("2-3 business days"),
-                              trailing: const Text("\$10"),
+                              title: Text("Express Shipping"),
+                              subtitle: Text("2-3 business days"),
+                              trailing: Text("\$10"),
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Card(
+                          const Card(
                             child: ListTile(
-                              title: const Text("Overnight"),
-                              subtitle: const Text("Next business day"),
-                              trailing: const Text("\$25"),
+                              title: Text("Overnight"),
+                              subtitle: Text("Next business day"),
+                              trailing: Text("\$25"),
                             ),
                           ),
                           const SizedBox(height: defaultPadding),

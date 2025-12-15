@@ -163,10 +163,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => const DiscoverScreen(),
       );
-    case onSaleScreenRoute:
-      return MaterialPageRoute(
-        builder: (context) => const OnSaleScreen(),
-      );
+    // Removed onSaleScreenRoute: sale screen deprecated
     case kidsScreenRoute:
       return MaterialPageRoute(
         builder: (context) => const KidsScreen(),

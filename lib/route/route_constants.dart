@@ -23,7 +23,7 @@ const String brandScreenRoute = "brand";
 const String discoverWithImageScreenRoute = "discover_with_image";
 const String subDiscoverScreenRoute = "sub_discover";
 const String discoverScreenRoute = "discover";
-const String onSaleScreenRoute = "on_sale";
+// Removed onSaleScreenRoute: sale feature deprecated
 const String kidsScreenRoute = "kids";
 const String searchScreenRoute = "search";
 const String searchHistoryScreenRoute = "search_history";

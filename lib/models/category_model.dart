@@ -19,17 +19,7 @@ final List<CategoryModel> demoCategoriesWithImage = [
 ];
 
 final List<CategoryModel> demoCategories = [
-  CategoryModel(
-    title: "On sale",
-    svgSrc: "assets/icons/Sale.svg",
-    subCategories: [
-      CategoryModel(title: "All Clothing"),
-      CategoryModel(title: "New In"),
-      CategoryModel(title: "Coats & Jackets"),
-      CategoryModel(title: "Dresses"),
-      CategoryModel(title: "Jeans"),
-    ],
-  ),
+  // Removed On sale category
   CategoryModel(
     title: "Man’s & Woman’s",
     svgSrc: "assets/icons/Man&Woman.svg",

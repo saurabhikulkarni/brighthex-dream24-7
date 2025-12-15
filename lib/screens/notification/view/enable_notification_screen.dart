@@ -34,9 +34,10 @@ class _EnableNotificationScreenState extends State<EnableNotificationScreen> {
               });
             },
           ),
+          // Removed sales-related notifications wording
           SwitchListTile(
-            title: const Text("Special Offers"),
-            subtitle: const Text("Receive exclusive deals and discounts"),
+            title: const Text("Recommendations"),
+            subtitle: const Text("Get personalized product suggestions"),
             value: _offersNotifications,
             onChanged: (value) {
               setState(() {

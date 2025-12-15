@@ -85,7 +85,7 @@ class OnSaleScreen extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             "\$${product['originalPrice']}",
-                            style: TextStyle(
+                            style: const TextStyle(
                               decoration: TextDecoration.lineThrough,
                               color: Colors.grey,
                             ),

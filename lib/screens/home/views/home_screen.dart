@@ -5,7 +5,6 @@ import 'package:shop/constants.dart';
 import 'package:shop/route/screen_export.dart';
 
 import 'components/best_sellers.dart';
-import 'components/flash_sale.dart';
 import 'components/most_popular.dart';
 import 'components/offer_carousel_and_categories.dart';
 import 'components/popular_products.dart';
@@ -21,22 +20,18 @@ class HomeScreen extends StatelessWidget {
           slivers: [
             const SliverToBoxAdapter(child: OffersCarouselAndCategories()),
             const SliverToBoxAdapter(child: PopularProducts()),
-            const SliverPadding(
-              padding: EdgeInsets.symmetric(vertical: defaultPadding * 1.5),
-              sliver: SliverToBoxAdapter(child: FlashSale()),
-            ),
+            // Removed FlashSale section to eliminate sale alerts/banners
             SliverToBoxAdapter(
               child: Column(
                 children: [
                   // While loading use 👇
                   // const BannerMSkelton(),‚
+                  // Removed sale navigation from banner button
                   BannerSStyle1(
                     title: "New \narrival",
-                    subtitle: "SPECIAL OFFER",
-                    discountParcent: 50,
-                    press: () {
-                      Navigator.pushNamed(context, onSaleScreenRoute);
-                    },
+                    subtitle: "Explore",
+                    discountParcent: 0,
+                    press: () {},
                   ),
                   const SizedBox(height: defaultPadding / 4),
                   // We have 4 banner styles, all in the pro version
@@ -53,13 +48,12 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: defaultPadding / 4),
                   // While loading use 👇
                   // const BannerSSkelton(),
+                  // Removed sale messaging and navigation from banner
                   BannerSStyle5(
-                    title: "Black \nfriday",
-                    subtitle: "50% Off",
+                    title: "Featured \ncollection",
+                    subtitle: "New arrivals",
                     bottomText: "Collection".toUpperCase(),
-                    press: () {
-                      Navigator.pushNamed(context, onSaleScreenRoute);
-                    },
+                    press: () {},
                   ),
                   const SizedBox(height: defaultPadding / 4),
                 ],

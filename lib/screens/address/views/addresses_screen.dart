@@ -132,7 +132,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                   color: primaryColor.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: Text(
+                                child: const Text(
                                   "Default",
                                   style: TextStyle(
                                     fontSize: 12,
