@@ -24,6 +24,20 @@ class _LogInFormState extends State<LogInForm> {
   }
 
   void _sendOtp() {
+    // Validate Indian mobile number before sending OTP
+    String phone = _phoneController.text.replaceAll(RegExp(r'[^\d]'), '');
+    
+    // Check if it's a valid Indian mobile number (10 digits, starts with 6-9)
+    if (!RegExp(r'^[6-9]\d{9}$').hasMatch(phone)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid Indian mobile number'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+    
     // Simulate sending OTP
     setState(() {
       _otpSent = true;
@@ -50,8 +64,12 @@ class _LogInFormState extends State<LogInForm> {
               if (value == null || value.isEmpty) {
                 return 'Please enter your mobile number';
               }
-              if (!RegExp(r'^\d{10,}$').hasMatch(value)) {
-                return 'Enter a valid mobile number';
+              // Remove non-numeric characters for validation
+              String cleanPhone = value.replaceAll(RegExp(r'[^\d]'), '');
+              
+              // Validate Indian mobile number (10 digits, starts with 6-9)
+              if (!RegExp(r'^[6-9]\d{9}$').hasMatch(cleanPhone)) {
+                return 'Enter a valid Indian mobile number (10 digits starting with 6-9)';
               }
               return null;
             },
