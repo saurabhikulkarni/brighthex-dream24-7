@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/constants.dart';
-import 'package:shop/services/razorpay_service.dart';
 import 'package:uuid/uuid.dart';
 import 'payment_method_selection_screen.dart';
 

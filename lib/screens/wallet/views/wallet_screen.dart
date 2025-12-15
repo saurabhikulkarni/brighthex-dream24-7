@@ -228,8 +228,6 @@ class _WalletScreenState extends State<WalletScreen> {
                             title: "Mountain Warehouse for Women",
                             brandName: "Lipsy london",
                             price: 540,
-                            priceAfetDiscount: 420,
-                            dicountpercent: 20,
                           ),
                           ProductModel(
                             image: productDemoImg4,

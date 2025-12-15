@@ -84,11 +84,13 @@ class SecondaryProductCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: defaultPadding / 4),
-                            SvgPicture.asset(
-                              'assets/icons/coin.svg',
-                              width: 12,
-                              height: 12,
-                              opacity: const AlwaysStoppedAnimation(0.5),
+                              Opacity(
+                                opacity: 0.5,
+                                child: SvgPicture.asset(
+                                  'assets/icons/coin.svg',
+                                  width: 12,
+                                  height: 12,
+                                ),
                             ),
                             const SizedBox(width: 2),
                             Text(

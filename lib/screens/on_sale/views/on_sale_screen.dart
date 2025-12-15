@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/constants.dart';
 
 class OnSaleScreen extends StatelessWidget {
@@ -95,11 +96,13 @@ class OnSaleScreen extends StatelessWidget {
                           const SizedBox(width: 8),
                           Row(
                             children: [
-                              SvgPicture.asset(
-                                'assets/icons/coin.svg',
-                                width: 12,
-                                height: 12,
-                                opacity: const AlwaysStoppedAnimation(0.5),
+                              Opacity(
+                                opacity: 0.5,
+                                child: SvgPicture.asset(
+                                  'assets/icons/coin.svg',
+                                  width: 12,
+                                  height: 12,
+                                ),
                               ),
                               const SizedBox(width: 2),
                               Text(

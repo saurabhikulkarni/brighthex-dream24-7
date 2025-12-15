@@ -332,7 +332,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       case 'cancelled':
         return Icons.cancel;
       default:
-        return Icons.package;
+        return Icons.local_shipping;
     }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../constants.dart';
 
@@ -35,7 +36,7 @@ class WalletBalanceCard extends StatelessWidget {
             ),
           ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               // Top - Available Balance Text
               const Text(
@@ -45,6 +46,7 @@ class WalletBalanceCard extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                     fontSize: 12),
               ),
+              const SizedBox(height: 12),
               // Bottom - White Card with Balance and Tokens
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: defaultPadding, vertical: defaultPadding / 1.5),
@@ -95,13 +97,24 @@ class WalletBalanceCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          shoppingTokens.toString(),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2A0845),
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SvgPicture.asset(
+                              'assets/icons/coin.svg',
+                              width: 18,
+                              height: 18,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              shoppingTokens.toString(),
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2A0845),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
