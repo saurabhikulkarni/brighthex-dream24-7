@@ -16,14 +16,17 @@ class _WalletScreenState extends State<WalletScreen> {
   double walletBalance = 0.0;
   int shoppingTokens = 0;
   final TextEditingController _amountController = TextEditingController();
+  double _selectedTopUpAmount = 0.0;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
-    if (args != null) {
-      walletBalance = (args['walletBalance'] ?? 0.0) as double;
-      shoppingTokens = (args['shoppingTokens'] ?? 0) as int;
+    if (args != null && args.isNotEmpty) {
+      setState(() {
+        walletBalance = (args['walletBalance'] ?? 0.0) as double;
+        shoppingTokens = (args['shoppingTokens'] ?? 0) as int;
+      });
     }
   }
 
@@ -31,8 +34,58 @@ class _WalletScreenState extends State<WalletScreen> {
     setState(() {
       walletBalance += amount;
       shoppingTokens += amount.toInt();
+      _selectedTopUpAmount = 0;
+      _amountController.clear();
     });
-    // TODO: Persist wallet and token state
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildQuickSelectButton(double amount) {
+    final isSelected = _selectedTopUpAmount == amount;
+    return SizedBox(
+      width: 90,
+      child: OutlinedButton(
+        onPressed: () {
+          setState(() {
+            _selectedTopUpAmount = amount;
+            _amountController.text = amount.toStringAsFixed(0);
+          });
+        },
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(
+            color: isSelected ? const Color(0xFF219A00) : Colors.grey[400]!,
+            width: 2,
+          ),
+          backgroundColor: isSelected ? const Color(0xFF219A00).withOpacity(0.1) : Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        child: Column(
+          children: [
+            const Text(
+              "Add",
+              style: TextStyle(fontSize: 10),
+            ),
+            Text(
+              "\$${amount.toStringAsFixed(0)}",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: isSelected ? const Color(0xFF219A00) : Colors.grey[600],
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -62,45 +115,92 @@ class _WalletScreenState extends State<WalletScreen> {
                       children: [
                         WalletBalanceCard(
                           balance: walletBalance,
-                          onTabChargeBalance: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) {
-                                return AlertDialog(
-                                  title: const Text('Add Money to Wallet'),
-                                  content: TextField(
-                                    controller: _amountController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Enter amount',
-                                    ),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: const Text('Cancel'),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        final amount = double.tryParse(_amountController.text);
-                                        if (amount != null && amount > 0) {
-                                          _addMoney(amount);
-                                          _amountController.clear();
-                                          Navigator.of(context).pop();
-                                        }
-                                      },
-                                      child: const Text('Add'),
-                                    ),
-                                  ],
-                                );
-                              },
-                            );
-                          },
+                          shoppingTokens: shoppingTokens,
+                          onTabChargeBalance: () {},
                         ),
-                        const SizedBox(height: 12),
-                        Text('Shopping Tokens: $shoppingTokens', style: const TextStyle(fontSize: 16)),
+                        const SizedBox(height: defaultPadding * 2),
+                        // Add Top-up Section
+                        Text(
+                          "Add Top-up",
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: defaultPadding),
+                        // Input field
+                        TextField(
+                          controller: _amountController,
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            setState(() {
+                              if (value.isEmpty) {
+                                _selectedTopUpAmount = 0;
+                              } else {
+                                _selectedTopUpAmount = double.tryParse(value) ?? 0;
+                              }
+                            });
+                          },
+                          decoration: InputDecoration(
+                            hintText: "Enter amount here",
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[200],
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          ),
+                        ),
+                        const SizedBox(height: defaultPadding),
+                        // Quick select buttons
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _buildQuickSelectButton(50),
+                              const SizedBox(width: 12),
+                              _buildQuickSelectButton(100),
+                              const SizedBox(width: 12),
+                              _buildQuickSelectButton(200),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: defaultPadding * 1.5),
+                        // Add Top-up button
+                        ElevatedButton(
+                          onPressed: _selectedTopUpAmount > 0
+                              ? () {
+                                  _addMoney(_selectedTopUpAmount);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        "Added \$${_selectedTopUpAmount.toStringAsFixed(2)} to wallet",
+                                      ),
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  );
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _selectedTopUpAmount > 0
+                                ? const Color(0xFF219A00)
+                                : Colors.grey[400],
+                            disabledBackgroundColor: Colors.grey[400],
+                            minimumSize: const Size(double.infinity, 56),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(defaultBorderRadious),
+                            ),
+                          ),
+                          child: Text(
+                            _selectedTopUpAmount > 0
+                                ? "Add \$${_selectedTopUpAmount.toStringAsFixed(0)}"
+                                : "Add Top-up",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),

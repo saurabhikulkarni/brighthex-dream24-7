@@ -7,72 +7,110 @@ class WalletBalanceCard extends StatelessWidget {
     super.key,
     required this.balance,
     required this.onTabChargeBalance,
+    this.shoppingTokens = 0,
   });
 
   final double balance;
+  final int shoppingTokens;
   final VoidCallback onTabChargeBalance;
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 2,
-      child: Column(
-        children: [
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(defaultPadding),
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(defaultBorderRadious),
-                  topRight: Radius.circular(defaultBorderRadious),
+    return SizedBox(
+      height: 220,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(defaultBorderRadious),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(defaultPadding),
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF6441A5),
+                Color(0xFF472575),
+                Color(0xFF2A0845),
+              ],
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Top - Available Balance Text
+              const Text(
+                "Available Balance",
+                style: TextStyle(
+                    color: whileColor80,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12),
+              ),
+              // Bottom - White Card with Balance and Tokens
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: defaultPadding, vertical: defaultPadding / 1.5),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF6441A5),
-                    Color(0xFF472575),
-                    Color(0xFF2A0845),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // Wallet Balance
+                    Column(
+                      children: [
+                        const Text(
+                          "Wallet Balance",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF2A0845),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          "\$${balance.toStringAsFixed(0)}",
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2A0845),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Divider
+                    Container(
+                      width: 1,
+                      height: 50,
+                      color: Colors.grey[300],
+                    ),
+                    // Shopping Tokens
+                    Column(
+                      children: [
+                        const Text(
+                          "Shopping Tokens",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF2A0845),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          shoppingTokens.toString(),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2A0845),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    "Your current balance",
-                    style: TextStyle(
-                        color: whileColor80,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12),
-                  ),
-                  const SizedBox(height: defaultPadding / 2),
-                  Text(
-                    "\$${balance.toStringAsFixed(2)}",
-                    style: Theme.of(context)
-                        .textTheme
-                        .headlineSmall!
-                        .copyWith(color: Colors.white),
-                  )
-                ],
-              ),
-            ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: onTabChargeBalance,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF472575),
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(defaultBorderRadious),
-                  bottomRight: Radius.circular(defaultBorderRadious),
-                ),
-              ),
-            ),
-            child: const Text("+ Charge Balance"),
-          )
-        ],
+        ),
       ),
     );
   }

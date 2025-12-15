@@ -49,11 +49,10 @@ class _EntryPointState extends State<EntryPoint> {
         leadingWidth: 0,
         centerTitle: false,
         title: SvgPicture.asset(
-          "assets/logo/Shoplon.svg",
-          colorFilter: ColorFilter.mode(
-              Theme.of(context).iconTheme.color!, BlendMode.srcIn),
-          height: 20,
-          width: 100,
+          "assets/logo/Dream247logo.svg",
+          height: MediaQuery.of(context).size.height * 0.03,
+          width: MediaQuery.of(context).size.width * 0.35,
+          fit: BoxFit.contain,
         ),
         actions: [
           IconButton(
@@ -129,50 +128,69 @@ class _EntryPointState extends State<EntryPoint> {
         color: Theme.of(context).brightness == Brightness.light
             ? Colors.white
             : const Color(0xFF101015),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            if (index != _currentIndex) {
-              setState(() {
-                _currentIndex = index;
-              });
-            }
-          },
-          backgroundColor: Theme.of(context).brightness == Brightness.light
-              ? Colors.white
-              : const Color(0xFF101015),
-          type: BottomNavigationBarType.fixed,
-          selectedFontSize: 12,
-          selectedItemColor: primaryColor,
-          unselectedItemColor: Colors.transparent,
-          items: [
-            BottomNavigationBarItem(
-              icon: svgIcon("assets/icons/Shop.svg"),
-              activeIcon: svgIcon("assets/icons/Shop.svg", color: primaryColor),
-              label: "Shop",
+        child: Stack(
+          children: [
+            // Gradient background for active tab
+            Positioned(
+              left: (_currentIndex * (MediaQuery.of(context).size.width / 5)).toDouble(),
+              right: ((4 - _currentIndex) * (MediaQuery.of(context).size.width / 5)).toDouble(),
+              bottom: 0,
+              child: Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: appPrimaryGradient,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                ),
+              ),
             ),
-            BottomNavigationBarItem(
-              icon: svgIcon("assets/icons/Category.svg"),
-              activeIcon:
-                  svgIcon("assets/icons/Category.svg", color: primaryColor),
-              label: "Discover",
-            ),
-            BottomNavigationBarItem(
-              icon: svgIcon("assets/icons/Wishlist.svg"),
-              activeIcon:
-                  svgIcon("assets/icons/Wishlist.svg", color: primaryColor),
-              label: "Wishlist",
-            ),
-            BottomNavigationBarItem(
-              icon: svgIcon("assets/icons/Bag.svg"),
-              activeIcon: svgIcon("assets/icons/Bag.svg", color: primaryColor),
-              label: "Cart",
-            ),
-            BottomNavigationBarItem(
-              icon: svgIcon("assets/icons/Profile.svg"),
-              activeIcon:
-                  svgIcon("assets/icons/Profile.svg", color: primaryColor),
-              label: "Profile",
+            // Navigation bar on top
+            BottomNavigationBar(
+              currentIndex: _currentIndex,
+              onTap: (index) {
+                if (index != _currentIndex) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                }
+              },
+              backgroundColor: Colors.transparent,
+              type: BottomNavigationBarType.fixed,
+              selectedFontSize: 12,
+              selectedItemColor: Colors.white,
+              unselectedItemColor: Colors.transparent,
+              items: [
+                BottomNavigationBarItem(
+                  icon: svgIcon("assets/icons/Shop.svg"),
+                  activeIcon: svgIcon("assets/icons/Shop.svg", color: Colors.white),
+                  label: "Shop",
+                ),
+                BottomNavigationBarItem(
+                  icon: svgIcon("assets/icons/Category.svg"),
+                  activeIcon:
+                      svgIcon("assets/icons/Category.svg", color: Colors.white),
+                  label: "Discover",
+                ),
+                BottomNavigationBarItem(
+                  icon: svgIcon("assets/icons/Wishlist.svg"),
+                  activeIcon:
+                      svgIcon("assets/icons/Wishlist.svg", color: Colors.white),
+                  label: "Wishlist",
+                ),
+                BottomNavigationBarItem(
+                  icon: svgIcon("assets/icons/Bag.svg"),
+                  activeIcon: svgIcon("assets/icons/Bag.svg", color: Colors.white),
+                  label: "Cart",
+                ),
+                BottomNavigationBarItem(
+                  icon: svgIcon("assets/icons/Profile.svg"),
+                  activeIcon:
+                      svgIcon("assets/icons/Profile.svg", color: Colors.white),
+                  label: "Profile",
+                ),
+              ],
             ),
           ],
         ),

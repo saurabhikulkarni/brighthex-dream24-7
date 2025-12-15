@@ -19,6 +19,7 @@ class EmptyWalletScreen extends StatelessWidget {
               padding: const EdgeInsets.all(defaultPadding),
               child: WalletBalanceCard(
                 balance: 384.90,
+                shoppingTokens: 384,
                 onTabChargeBalance: () {},
               ),
             ),
