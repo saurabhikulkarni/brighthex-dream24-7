@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shop/components/gradient_button.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/components/network_image_with_loader.dart';
 
@@ -69,18 +70,11 @@ class CategoryBannerCard extends StatelessWidget {
                   ),
                   const SizedBox(height: defaultPadding),
                   // Shop Now Button
-                  ElevatedButton(
+                  GradientButton(
                     onPressed: onPressed,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: defaultPadding,
-                        vertical: defaultPadding / 2,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(defaultBorderRadious / 2),
-                      ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: defaultPadding,
+                      vertical: defaultPadding / 2,
                     ),
                     child: Text(
                       buttonText,

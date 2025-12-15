@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shop/components/gradient_button.dart';
 import 'package:shop/constants.dart';
 import 'package:uuid/uuid.dart';
 import 'payment_method_selection_screen.dart';
@@ -270,13 +271,28 @@ class _CartScreenState extends State<CartScreen> {
                         ],
                       ),
                       const SizedBox(height: defaultPadding),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            _proceedToPayment(context);
-                          },
-                          child: const Text("Proceed to Checkout"),
+                      GradientButton(
+                        onPressed: () {
+                          _proceedToPayment(context);
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SvgPicture.asset(
+                              'assets/icons/coin.svg',
+                              width: 20,
+                              height: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text("Redeem"),
+                            const SizedBox(width: 8),
+                            Text(
+                              "${total.toInt()}",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
