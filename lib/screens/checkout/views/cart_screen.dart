@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
+import 'package:shop/services/razorpay_service.dart';
+import 'package:uuid/uuid.dart';
+import 'payment_method_selection_screen.dart';
 
 class CartItem {
   final String name;
@@ -61,6 +64,70 @@ class _CartScreenState extends State<CartScreen> {
     setState(() {
       cartItems.removeAt(index);
     });
+  }
+
+  void _proceedToPayment(BuildContext context) {
+    if (cartItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Your cart is empty')),
+      );
+      return;
+    }
+
+    // Generate unique order ID
+    const uuid = Uuid();
+    final orderId = '#${uuid.v4().substring(0, 8).toUpperCase()}';
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentMethodSelectionScreen(
+          totalAmount: total,
+          orderId: orderId,
+        ),
+      ),
+    ).then((result) {
+      if (result != null && result['status'] == 'success') {
+        // Handle successful payment
+        _handlePaymentSuccess(result);
+      }
+    });
+  }
+
+  void _handlePaymentSuccess(Map<dynamic, dynamic> paymentResult) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Order Placed Successfully'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Thank you for your purchase!'),
+            const SizedBox(height: defaultPadding),
+            Text(
+              'Payment ID: ${paymentResult['paymentId']}',
+              style: const TextStyle(fontSize: 12),
+            ),
+            Text(
+              'Order ID: ${paymentResult['orderId']}',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                cartItems.clear();
+              });
+            },
+            child: const Text('Continue Shopping'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -167,11 +234,7 @@ class _CartScreenState extends State<CartScreen> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Proceeding to checkout..."),
-                              ),
-                            );
+                            _proceedToPayment(context);
                           },
                           child: const Text("Proceed to Checkout"),
                         ),
