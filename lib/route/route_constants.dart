@@ -58,3 +58,5 @@ const String paymentMethodScreenRoute = "payment_method";
 const String addNewCardScreenRoute = "add_new_card";
 const String thanksForOrderScreenRoute = "thanks_order";
 const String categoryProductsScreenRoute = "category_products";
+const String addAddressScreenRoute = "add_address";
+const String returnsScreenRoute = "returns";

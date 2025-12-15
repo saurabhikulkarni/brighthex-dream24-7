@@ -292,6 +292,26 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           products: args?['products'] ?? [],
         ),
       );
+    case addAddressScreenRoute:
+      final args = settings.arguments as Map<String, dynamic>?;
+      return MaterialPageRoute(
+        builder: (context) => AddAddressScreen(
+          addressId: args?['addressId'],
+          fullName: args?['fullName'],
+          emailId: args?['emailId'],
+          phoneNumber: args?['phoneNumber'],
+          houseNumber: args?['houseNumber'],
+          roadName: args?['roadName'],
+          landmark: args?['landmark'],
+          pincode: args?['pincode'],
+          city: args?['city'],
+          state: args?['state'],
+        ),
+      );
+    case returnsScreenRoute:
+      return MaterialPageRoute(
+        builder: (context) => const ReturnsScreen(),
+      );
     // case paymentMethodScreenRoute:
     //   return MaterialPageRoute(
     //     builder: (context) => const PaymentMethodScreen(),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
+import 'package:shop/route/screen_export.dart';
 
 class Address {
   final String id;
@@ -78,9 +79,23 @@ class _AddressesScreenState extends State<AddressesScreen> {
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Add new address")),
-              );
+              Navigator.pushNamed(context, addAddressScreenRoute).then((result) {
+                if (result != null && result is Map<String, dynamic>) {
+                  // Add new address to list
+                  final newAddress = Address(
+                    id: DateTime.now().toString(),
+                    name: result['fullName'] ?? 'New Address',
+                    address:
+                        '${result['houseNumber'] ?? ''}, ${result['roadName'] ?? ''}',
+                    city: result['city'] ?? '',
+                    zipCode: result['pincode'] ?? '',
+                    isDefault: false,
+                  );
+                  setState(() {
+                    addresses.add(newAddress);
+                  });
+                }
+              });
             },
           ),
         ],
