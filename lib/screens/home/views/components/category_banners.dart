@@ -52,10 +52,9 @@ class CategoryBanners extends StatelessWidget {
           (index) {
             final banner = demoCategoryBanners[index];
             return Padding(
-              padding: const EdgeInsets.only(
-                bottom: defaultPadding,
-                left: defaultPadding,
-                right: defaultPadding,
+              padding: const EdgeInsets.symmetric(
+                horizontal: defaultPadding,
+                vertical: defaultPadding / 2,
               ),
               child: CategoryBannerCard(
                 title: banner.categoryName,

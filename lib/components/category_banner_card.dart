@@ -23,72 +23,77 @@ class CategoryBannerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: defaultPadding,
-        vertical: defaultPadding / 2,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(defaultBorderRadious),
-        child: Stack(
-          children: [
-            // Background Image
-            AspectRatio(
-              aspectRatio: 2.0,
-              child: NetworkImageWithLoader(
-                image,
-                radius: defaultBorderRadious,
-              ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(defaultBorderRadious),
+      child: Stack(
+        children: [
+          // Background Image
+          AspectRatio(
+            aspectRatio: 2.0,
+            child: NetworkImageWithLoader(
+              image,
+              radius: defaultBorderRadious,
             ),
-            // Dark overlay
-            Container(
-              color: Colors.black38,
-            ),
-            // Content
-            Padding(
+          ),
+          // Dark overlay
+          Container(
+            color: Colors.black38,
+          ),
+          // Content
+          Positioned.fill(
+            child: Padding(
               padding: const EdgeInsets.all(defaultPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Subtitle
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
+                  // Title and Subtitle Section
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Subtitle
+                      Text(
+                        subtitle,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                      ),
+                      const SizedBox(height: defaultPadding / 4),
+                      // Title
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: defaultPadding / 4),
-                  // Title
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: defaultPadding),
                   // Shop Now Button
-                  GradientButton(
-                    onPressed: onPressed,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: defaultPadding,
-                      vertical: defaultPadding / 2,
-                    ),
-                    child: Text(
-                      buttonText,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
+                  SizedBox(
+                    width: 120,
+                    child: GradientButton(
+                      onPressed: onPressed,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: defaultPadding / 2,
+                        vertical: defaultPadding / 3,
+                      ),
+                      child: Text(
+                        buttonText,
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
