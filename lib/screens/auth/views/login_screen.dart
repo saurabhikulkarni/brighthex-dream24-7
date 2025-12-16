@@ -22,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           children: [
             Image.asset(
-              "assets/images/welcome_img.jpg",
+              "assets/images/welcome.jpg",
               fit: BoxFit.cover,
             ),
             Padding(
@@ -33,7 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     "Welcome",
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontSize: 28,
+                          fontSize: 36,
                           fontWeight: FontWeight.bold,
                         ),
                   ),
