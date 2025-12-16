@@ -4,7 +4,7 @@ import 'package:shop/components/Banner/S/banner_s_style_5.dart';
 import 'package:shop/constants.dart';
 
 import 'components/best_sellers.dart';
-import 'components/category_banners.dart';
+import 'components/category_banners_carousel.dart';
 import 'components/most_popular.dart';
 import 'components/offer_carousel_and_categories.dart';
 import 'components/popular_products.dart';
@@ -24,21 +24,19 @@ class HomeScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: Column(
                 children: [
-                  // While loading use 👇
-                  // const BannerMSkelton(),‚
-                  // Removed sale navigation from banner button
+                  // New Arrival Banner
                   BannerSStyle1(
                     title: "New \narrival",
                     subtitle: "Explore",
                     discountParcent: 0,
                     press: () {},
                   ),
-                  const SizedBox(height: defaultPadding / 4),
-                  // We have 4 banner styles, all in the pro version
+                  const SizedBox(height: defaultPadding),
+                  // Category Banners Carousel
+                  const CategoryBannersCarousel(),
                 ],
               ),
             ),
-            const SliverToBoxAdapter(child: CategoryBanners()),
             const SliverToBoxAdapter(child: BestSellers()),
             const SliverToBoxAdapter(child: MostPopular()),
             SliverToBoxAdapter(
