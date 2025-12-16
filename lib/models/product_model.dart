@@ -250,6 +250,42 @@ List<ProductModel> electronicsProducts = [
     brandName: "Tech Gadgets",
     price: 260,
   ),
+  ProductModel(
+    image: "https://i.imgur.com/GgH0jJx.png",
+    title: "Wired Headphones Premium",
+    brandName: "Sound Master",
+    price: 520,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/HhI1kKx.png",
+    title: "USB Type-C Cable",
+    brandName: "Cable Connect",
+    price: 180,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/IiJ2lLx.png",
+    title: "Portable Bluetooth Speaker",
+    brandName: "Audio Plus",
+    price: 890,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/JjK3mMx.png",
+    title: "Type-C Charger 65W",
+    brandName: "Power Tech",
+    price: 580,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/KkL4nNx.png",
+    title: "Stereo Bluetooth Speaker",
+    brandName: "Bass Booster",
+    price: 1050,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/LlM5oOx.png",
+    title: "USB 3.0 Cable",
+    brandName: "Cable Connect",
+    price: 220,
+  ),
 ];
 
 
