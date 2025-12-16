@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/components/gradient_button.dart';
 import 'package:shop/constants.dart';
 import 'package:uuid/uuid.dart';
-import 'payment_method_selection_screen.dart';
 
 class CartItem {
   final String name;
@@ -28,6 +27,7 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   late List<CartItem> cartItems;
+  int walletBalance = 500; // User's shopping tokens
 
   @override
   void initState() {
@@ -75,27 +75,72 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
+    final totalTokensNeeded = total.toInt();
+
+    // Check if wallet has enough tokens
+    if (walletBalance < totalTokensNeeded) {
+      final tokensShort = totalTokensNeeded - walletBalance;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Insufficient Tokens'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('You need $totalTokensNeeded tokens to complete this purchase.'),
+              const SizedBox(height: defaultPadding / 2),
+              Text(
+                'Your wallet has: $walletBalance tokens',
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: defaultPadding / 2),
+              Text(
+                'You need $tokensShort more tokens.',
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Continue Shopping'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Add Top-up'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Deduct tokens from wallet and complete purchase
+    setState(() {
+      walletBalance -= totalTokensNeeded;
+    });
+
     // Generate unique order ID
     const uuid = Uuid();
     final orderId = '#${uuid.v4().substring(0, 8).toUpperCase()}';
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PaymentMethodSelectionScreen(
-          totalAmount: total,
-          orderId: orderId,
-        ),
-      ),
-    ).then((result) {
-      if (result != null && result['status'] == 'success') {
-        // Handle successful payment
-        _handlePaymentSuccess(result);
-      }
+    _handlePaymentSuccess({
+      'orderId': orderId,
+      'paymentId': 'TOKEN_${uuid.v4().substring(0, 8).toUpperCase()}',
+      'tokensDeducted': totalTokensNeeded,
     });
   }
 
   void _handlePaymentSuccess(Map<dynamic, dynamic> paymentResult) {
+    final tokensDeducted = paymentResult['tokensDeducted'] ?? 0;
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -107,12 +152,38 @@ class _CartScreenState extends State<CartScreen> {
             const Text('Thank you for your purchase!'),
             const SizedBox(height: defaultPadding),
             Text(
-              'Payment ID: ${paymentResult['paymentId']}',
-              style: const TextStyle(fontSize: 12),
-            ),
-            Text(
               'Order ID: ${paymentResult['orderId']}',
               style: const TextStyle(fontSize: 12),
+            ),
+            const SizedBox(height: defaultPadding / 2),
+            Row(
+              children: [
+                SvgPicture.asset(
+                  'assets/icons/coin.svg',
+                  width: 16,
+                  height: 16,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Tokens Deducted: $tokensDeducted',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+            const SizedBox(height: defaultPadding / 2),
+            Row(
+              children: [
+                SvgPicture.asset(
+                  'assets/icons/coin.svg',
+                  width: 16,
+                  height: 16,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Remaining Balance: $walletBalance',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                ),
+              ],
             ),
           ],
         ),
