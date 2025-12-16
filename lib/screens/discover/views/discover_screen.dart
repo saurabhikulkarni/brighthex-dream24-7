@@ -8,6 +8,19 @@ import 'components/expansion_category.dart';
 class DiscoverScreen extends StatelessWidget {
   const DiscoverScreen({super.key});
 
+  String? _getCategoryId(String categoryTitle) {
+    if (categoryTitle.toLowerCase().contains("men")) {
+      return "mens";
+    } else if (categoryTitle.toLowerCase().contains("women")) {
+      return "womens";
+    } else if (categoryTitle.toLowerCase().contains("accessor")) {
+      return "accessories";
+    } else if (categoryTitle.toLowerCase().contains("electron")) {
+      return "electronics";
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,6 +50,7 @@ class DiscoverScreen extends StatelessWidget {
                 itemBuilder: (context, index) => ExpansionCategory(
                   svgSrc: demoCategories[index].svgSrc!,
                   title: demoCategories[index].title,
+                  categoryId: _getCategoryId(demoCategories[index].title),
                   subCategory: demoCategories[index].subCategories!,
                 ),
               ),

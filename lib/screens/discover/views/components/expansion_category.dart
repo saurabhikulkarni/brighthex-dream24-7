@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/route/screen_export.dart';
+import 'package:shop/models/product_model.dart';
 
 import '../../../../constants.dart';
 
@@ -10,10 +11,27 @@ class ExpansionCategory extends StatelessWidget {
     required this.title,
     required this.subCategory,
     required this.svgSrc,
+    this.categoryId,
   });
 
   final String title, svgSrc;
+  final String? categoryId;
   final List subCategory;
+
+  List<ProductModel> _getProductsForCategory(String? catId) {
+    switch (catId) {
+      case 'mens':
+        return mensProducts;
+      case 'womens':
+        return womensProducts;
+      case 'accessories':
+        return accessoriesProducts;
+      case 'electronics':
+        return electronicsProducts;
+      default:
+        return [];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +59,16 @@ class ExpansionCategory extends StatelessWidget {
           children: [
             ListTile(
               onTap: () {
-                // Removed navigation to sale screen
+                // Navigate to category products screen
+                final products = _getProductsForCategory(categoryId);
+                Navigator.pushNamed(
+                  context,
+                  categoryProductsScreenRoute,
+                  arguments: {
+                    'categoryName': subCategory[index].title,
+                    'products': products.isEmpty ? [] : products,
+                  },
+                );
               },
               title: Text(
                 subCategory[index].title,

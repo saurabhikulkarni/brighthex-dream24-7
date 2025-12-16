@@ -91,6 +91,168 @@ List<ProductModel> demoPopularProducts = [
     price: 380,
   ),
 ];
+
+// Men's Products Category
+List<ProductModel> mensProducts = [
+  ProductModel(
+    image: "https://i.imgur.com/XrEy2eD.png",
+    title: "Premium Cotton T-Shirt",
+    brandName: "Urban Style",
+    price: 450,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/6N1TzYl.png",
+    title: "Casual Striped Shirt",
+    brandName: "Fashion Hub",
+    price: 520,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/8XkZqwL.png",
+    title: "Classic Blue Hoodie",
+    brandName: "Comfort Wear",
+    price: 780,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/PqW3mJK.png",
+    title: "Grey Slim Fit Shirt",
+    brandName: "Modern Men",
+    price: 640,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/MnVqTHx.png",
+    title: "Black Cotton Hoodie",
+    brandName: "Urban Trend",
+    price: 850,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/RkLpZnV.png",
+    title: "White Casual T-Shirt",
+    brandName: "Basic Essentials",
+    price: 380,
+  ),
+];
+
+// Women's Products Category
+List<ProductModel> womensProducts = [
+  ProductModel(
+    image: productDemoImg1,
+    title: "Mountain Warehouse for Women",
+    brandName: "Lipsy london",
+    price: 540,
+  ),
+  ProductModel(
+    image: productDemoImg4,
+    title: "Mountain Beta Warehouse",
+    brandName: "Lipsy london",
+    price: 800,
+  ),
+  ProductModel(
+    image: productDemoImg5,
+    title: "FS - Nike Air Max 270 Really React",
+    brandName: "Lipsy london",
+    price: 650,
+  ),
+  ProductModel(
+    image: productDemoImg6,
+    title: "Green Poplin Ruched Front",
+    brandName: "Lipsy london",
+    price: 1264,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/tXyOMMG.png",
+    title: "Green Poplin Ruched Front",
+    brandName: "Lipsy london",
+    price: 650,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/h2LqppX.png",
+    title: "white satin corset top",
+    brandName: "Lipsy london",
+    price: 1264,
+  ),
+];
+
+// Accessories Products Category
+List<ProductModel> accessoriesProducts = [
+  ProductModel(
+    image: "https://i.imgur.com/JkM9pZx.png",
+    title: "Silver Chain Necklace",
+    brandName: "Jewelry Plus",
+    price: 320,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/HnQ7vWx.png",
+    title: "Leather Crossbody Bag",
+    brandName: "Bag Store",
+    price: 750,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/QwL5mKx.png",
+    title: "Classic Wrist Watch",
+    brandName: "Time Masters",
+    price: 580,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/TpR2nXx.png",
+    title: "Gold Hoop Earrings",
+    brandName: "Jewelry Plus",
+    price: 280,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/VsK8oYx.png",
+    title: "Leather Belt",
+    brandName: "Fashion Hub",
+    price: 420,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/WxL3pZx.png",
+    title: "Mobile Phone Case",
+    brandName: "Mobile Accessories",
+    price: 180,
+  ),
+];
+
+// Electronics Products Category
+List<ProductModel> electronicsProducts = [
+  ProductModel(
+    image: "https://i.imgur.com/AaB4cDx.png",
+    title: "Wireless Bluetooth Headphones",
+    brandName: "Audio Tech",
+    price: 1200,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/BbC5dEx.png",
+    title: "USB-C Fast Charger",
+    brandName: "Power Solutions",
+    price: 450,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/CcD6fFx.png",
+    title: "Portable Power Bank",
+    brandName: "Energy Plus",
+    price: 680,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/DdE7gGx.png",
+    title: "Wired Earbuds",
+    brandName: "Audio Tech",
+    price: 320,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/EeF8hHx.png",
+    title: "Phone Screen Protector",
+    brandName: "Protection Plus",
+    price: 140,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/FfG9iIx.png",
+    title: "LED USB Light",
+    brandName: "Tech Gadgets",
+    price: 260,
+  ),
+];
+
+
 List<ProductModel> demoFlashSaleProducts = [
   ProductModel(
     image: productDemoImg5,

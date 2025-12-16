@@ -38,13 +38,13 @@ class _CategoryBannersCarouselState extends State<CategoryBannersCarousel> {
   List<ProductModel> _getProductsForCategory(String categoryId) {
     switch (categoryId) {
       case 'mens':
-        return demoPopularProducts.sublist(0, 2);
+        return mensProducts;
       case 'womens':
-        return demoPopularProducts.sublist(2, 4);
+        return womensProducts;
       case 'accessories':
-        return demoPopularProducts.sublist(4, 6);
+        return accessoriesProducts;
       case 'electronics':
-        return demoPopularProducts.sublist(6);
+        return electronicsProducts;
       default:
         return demoPopularProducts;
     }
