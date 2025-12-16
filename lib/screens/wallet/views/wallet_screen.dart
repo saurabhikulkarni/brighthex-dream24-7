@@ -266,26 +266,26 @@ class _WalletScreenState extends State<WalletScreen> {
                       final transactions = [
                         {
                           'type': 'Top-up',
-                          'date': '20-09-2025',
-                          'amount': 100.0,
+                          'date': '28-09-2025',
+                          'amount': 150.0,
                           'isIncome': true,
                         },
                         {
-                          'type': 'Withdrawal',
-                          'date': '22-09-2025',
-                          'amount': 50.0,
-                          'isIncome': false,
-                        },
-                        {
-                          'type': 'Transfer',
+                          'type': 'Purchase',
                           'date': '25-09-2025',
                           'amount': 200.0,
                           'isIncome': false,
                         },
                         {
+                          'type': 'Purchase',
+                          'date': '22-09-2025',
+                          'amount': 50.0,
+                          'isIncome': false,
+                        },
+                        {
                           'type': 'Top-up',
-                          'date': '28-09-2025',
-                          'amount': 150.0,
+                          'date': '20-09-2025',
+                          'amount': 100.0,
                           'isIncome': true,
                         },
                       ];

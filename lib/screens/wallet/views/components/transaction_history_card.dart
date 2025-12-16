@@ -21,8 +21,6 @@ class TransactionHistoryCard extends StatelessWidget {
     switch (transactionType.toLowerCase()) {
       case 'top-up':
         return "assets/icons/Plus1.svg";
-      case 'withdrawal':
-      case 'transfer':
       case 'purchase':
         return "assets/icons/Return.svg";
       default:
