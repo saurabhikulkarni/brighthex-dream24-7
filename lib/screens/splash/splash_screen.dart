@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shop/entry_point.dart';
+import 'package:shop/screens/auth/views/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -37,11 +37,11 @@ class _SplashScreenState extends State<SplashScreen>
     // Start animation
     _animationController.forward();
 
-    // Navigate to home after 3 seconds
+    // Navigate to login after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const EntryPoint()),
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       }
     });
@@ -93,6 +93,35 @@ class _SplashScreenState extends State<SplashScreen>
                     child: Image.asset(
                       'assets/images/splashscreen.png',
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Fallback for web or when image is not available
+                        return Container(
+                          color: const Color(0xFF6441A5),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.shopping_bag_outlined,
+                                  size: 80,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  'DREAM 247',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),
