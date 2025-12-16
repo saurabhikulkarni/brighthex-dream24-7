@@ -4,8 +4,8 @@ import 'package:shop/models/product_model.dart';
 import 'package:shop/services/razorpay_service.dart';
 import 'package:uuid/uuid.dart';
 
+import 'components/transaction_history_card.dart';
 import 'components/wallet_balance_card.dart';
-import 'components/wallet_history_card.dart';
 
 class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
@@ -255,35 +255,52 @@ class _WalletScreenState extends State<WalletScreen> {
                   padding: const EdgeInsets.only(top: defaultPadding / 2),
                   sliver: SliverToBoxAdapter(
                     child: Text(
-                      "Wallet history",
+                      "Transaction History",
                       style: Theme.of(context).textTheme.titleSmall,
                     ),
                   ),
                 ),
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => Padding(
-                      padding: const EdgeInsets.only(top: defaultPadding),
-                      child: WalletHistoryCard(
-                        isReturn: index == 1,
-                        date: "JUN 12, 2020",
-                        amount: 129,
-                        products: [
-                          ProductModel(
-                            image: productDemoImg1,
-                            title: "Mountain Warehouse for Women",
-                            brandName: "Lipsy london",
-                            price: 540,
-                          ),
-                          ProductModel(
-                            image: productDemoImg4,
-                            title: "Mountain Beta Warehouse",
-                            brandName: "Lipsy london",
-                            price: 800,
-                          ),
-                        ],
-                      ),
-                    ),
+                    (context, index) {
+                      final transactions = [
+                        {
+                          'type': 'Top-up',
+                          'date': '20-09-2025',
+                          'amount': 100.0,
+                          'isIncome': true,
+                        },
+                        {
+                          'type': 'Withdrawal',
+                          'date': '22-09-2025',
+                          'amount': 50.0,
+                          'isIncome': false,
+                        },
+                        {
+                          'type': 'Transfer',
+                          'date': '25-09-2025',
+                          'amount': 200.0,
+                          'isIncome': false,
+                        },
+                        {
+                          'type': 'Top-up',
+                          'date': '28-09-2025',
+                          'amount': 150.0,
+                          'isIncome': true,
+                        },
+                      ];
+
+                      final transaction = transactions[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(top: defaultPadding),
+                        child: TransactionHistoryCard(
+                          transactionType: transaction['type'] as String,
+                          date: transaction['date'] as String,
+                          amount: transaction['amount'] as double,
+                          isIncome: transaction['isIncome'] as bool,
+                        ),
+                      );
+                    },
                     childCount: 4,
                   ),
                 )
