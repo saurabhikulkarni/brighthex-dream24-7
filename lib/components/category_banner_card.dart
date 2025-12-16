@@ -71,25 +71,25 @@ class CategoryBannerCard extends StatelessWidget {
                   ),
                   // Shop Now Button
                   SizedBox(
-                    width: 120,
+                    width: 90,
                     child: ElevatedButton(
                       onPressed: onPressed,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: defaultPadding / 2,
-                          vertical: defaultPadding / 3,
+                          horizontal: defaultPadding / 3,
+                          vertical: defaultPadding / 4,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                       ),
                       child: Text(
                         buttonText,
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: Colors.black,
                               fontWeight: FontWeight.w600,
-                              fontSize: 13,
+                              fontSize: 11,
                             ),
                       ),
                     ),
