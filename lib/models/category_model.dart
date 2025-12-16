@@ -100,7 +100,7 @@ final List<CategoryModel> demoCategories = [
     ],
   ),
   CategoryModel(
-    title: "Electronics",
+    title: "Electronics & Gadgets",
     svgSrc: "assets/icons/Electronics.svg",
     subCategories: [
       CategoryModel(title: "Chargers"),
