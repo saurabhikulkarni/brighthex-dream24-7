@@ -50,6 +50,24 @@ class ExpansionCategory extends StatelessWidget {
       }
     }
     
+    // For electronics category, return products based on subcategory
+    if (categoryId == 'electronics') {
+      switch (subcategoryTitle.toLowerCase()) {
+        case 'chargers':
+          return chargersProducts;
+        case 'wired headphones':
+          return wiredHeadphonesProducts;
+        case 'bluetooth headphones':
+          return bluetoothHeadphonesProducts;
+        case 'usb cables':
+          return usbCablesProducts;
+        case 'speakers':
+          return speakersProducts;
+        default:
+          return [];
+      }
+    }
+    
     // For other categories, use category-based products
     return _getProductsForCategory(categoryId);
   }

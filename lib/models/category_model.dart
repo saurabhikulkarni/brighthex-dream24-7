@@ -103,15 +103,11 @@ final List<CategoryModel> demoCategories = [
     title: "Electronics",
     svgSrc: "assets/icons/Electronics.svg",
     subCategories: [
-      CategoryModel(title: "Phones"),
-      CategoryModel(title: "Laptops"),
-      CategoryModel(title: "Tablets"),
-      CategoryModel(title: "Audio"),
-      CategoryModel(title: "Cameras"),
+      CategoryModel(title: "Chargers"),
       CategoryModel(title: "Wired Headphones"),
       CategoryModel(title: "Bluetooth Headphones"),
-      CategoryModel(title: "USB Cords"),
-      CategoryModel(title: "Type C Chargers"),
+      CategoryModel(title: "USB Cables"),
+      CategoryModel(title: "Speakers"),
     ],
   ),
 ];

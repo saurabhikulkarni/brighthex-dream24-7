@@ -402,7 +402,81 @@ List<ProductModel> accessoriesProducts = [
   ),
 ];
 
-// Electronics Products Category
+// Chargers Products Category
+List<ProductModel> chargersProducts = [
+  ProductModel(
+    image: "https://i.imgur.com/BbC5dEx.png",
+    title: "USB-C Fast Charger",
+    brandName: "Power Solutions",
+    price: 450,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/JjK3mMx.png",
+    title: "Type-C Charger 65W",
+    brandName: "Power Tech",
+    price: 580,
+  ),
+];
+
+// Wired Headphones Products Category
+List<ProductModel> wiredHeadphonesProducts = [
+  ProductModel(
+    image: "https://i.imgur.com/DdE7gGx.png",
+    title: "Wired Earbuds",
+    brandName: "Audio Tech",
+    price: 320,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/GgH0jJx.png",
+    title: "Wired Headphones Premium",
+    brandName: "Sound Master",
+    price: 520,
+  ),
+];
+
+// Bluetooth Headphones Products Category
+List<ProductModel> bluetoothHeadphonesProducts = [
+  ProductModel(
+    image: "https://i.imgur.com/AaB4cDx.png",
+    title: "Wireless Bluetooth Headphones",
+    brandName: "Audio Tech",
+    price: 1200,
+  ),
+];
+
+// USB Cables Products Category
+List<ProductModel> usbCablesProducts = [
+  ProductModel(
+    image: "https://i.imgur.com/HhI1kKx.png",
+    title: "USB Type-C Cable",
+    brandName: "Cable Connect",
+    price: 180,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/LlM5oOx.png",
+    title: "USB 3.0 Cable",
+    brandName: "Cable Connect",
+    price: 220,
+  ),
+];
+
+// Speakers Products Category
+List<ProductModel> speakersProducts = [
+  ProductModel(
+    image: "https://i.imgur.com/IiJ2lLx.png",
+    title: "Portable Bluetooth Speaker",
+    brandName: "Audio Plus",
+    price: 890,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/KkL4nNx.png",
+    title: "Stereo Bluetooth Speaker",
+    brandName: "Bass Booster",
+    price: 1050,
+  ),
+];
+
+// Electronics Products Category (Legacy - kept for backward compatibility)
 List<ProductModel> electronicsProducts = [
   ProductModel(
     image: "https://i.imgur.com/AaB4cDx.png",
@@ -417,28 +491,10 @@ List<ProductModel> electronicsProducts = [
     price: 450,
   ),
   ProductModel(
-    image: "https://i.imgur.com/CcD6fFx.png",
-    title: "Portable Power Bank",
-    brandName: "Energy Plus",
-    price: 680,
-  ),
-  ProductModel(
     image: "https://i.imgur.com/DdE7gGx.png",
     title: "Wired Earbuds",
     brandName: "Audio Tech",
     price: 320,
-  ),
-  ProductModel(
-    image: "https://i.imgur.com/EeF8hHx.png",
-    title: "Phone Screen Protector",
-    brandName: "Protection Plus",
-    price: 140,
-  ),
-  ProductModel(
-    image: "https://i.imgur.com/FfG9iIx.png",
-    title: "LED USB Light",
-    brandName: "Tech Gadgets",
-    price: 260,
   ),
   ProductModel(
     image: "https://i.imgur.com/GgH0jJx.png",
