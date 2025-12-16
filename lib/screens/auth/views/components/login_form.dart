@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shop/components/gradient_button.dart';
 
 import '../../../../constants.dart';
 
@@ -102,16 +103,14 @@ class _LogInFormState extends State<LogInForm> {
           ),
           const SizedBox(height: defaultPadding),
           if (!_otpSent)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  if (widget.formKey.currentState!.validate()) {
-                    _sendOtp();
-                  }
-                },
-                child: const Text('Send OTP'),
-              ),
+            GradientButton(
+              onPressed: () {
+                if (widget.formKey.currentState!.validate()) {
+                  _sendOtp();
+                }
+              },
+              padding: const EdgeInsets.symmetric(vertical: defaultPadding / 1.5),
+              child: const Text('Send OTP'),
             ),
           if (_otpSent) ...[
             TextFormField(

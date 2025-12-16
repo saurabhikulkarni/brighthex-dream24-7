@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/route_constants.dart';
+import 'package:shop/components/gradient_button.dart';
 
 import 'components/login_form.dart';
 
@@ -16,8 +17,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
-
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -33,7 +32,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Text(
                     "Welcome",
-                    style: Theme.of(context).textTheme.headlineSmall,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                   const SizedBox(height: defaultPadding / 2),
                   const Text(
@@ -41,12 +43,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: defaultPadding),
                   LogInForm(formKey: _formKey),
-                  SizedBox(
-                    height: size.height > 700
-                        ? size.height * 0.1
-                        : defaultPadding,
-                  ),
-                  ElevatedButton(
+                  const SizedBox(height: defaultPadding),
+                  GradientButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
                         Navigator.pushNamedAndRemoveUntil(
@@ -55,6 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ModalRoute.withName(logInScreenRoute));
                       }
                     },
+                    padding: const EdgeInsets.symmetric(vertical: defaultPadding / 1.5),
                     child: const Text("Log in"),
                   ),
                   Row(

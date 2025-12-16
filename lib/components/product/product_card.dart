@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../constants.dart';
+import '../../utils/responsive_extension.dart';
 import '../network_image_with_loader.dart';
 
 class ProductCard extends StatelessWidget {
@@ -21,12 +22,16 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cardWidth = context.isTablet ? 160 : 140;
+    final cardHeight = context.isTablet ? 260 : 220;
+    final fontSize = context.fontSize(10, minSize: 8, maxSize: 12);
+    
     return OutlinedButton(
       onPressed: press,
       style: OutlinedButton.styleFrom(
-          minimumSize: const Size(140, 220),
-          maximumSize: const Size(140, 220),
-          padding: const EdgeInsets.all(8)),
+          minimumSize: Size(cardWidth.toDouble(), cardHeight.toDouble()),
+          maximumSize: Size(cardWidth.toDouble(), cardHeight.toDouble()),
+          padding: EdgeInsets.all(context.responsiveSpacing)),
       child: Column(
         children: [
           AspectRatio(
@@ -39,8 +44,9 @@ class ProductCard extends StatelessWidget {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: defaultPadding / 2, vertical: defaultPadding / 2),
+              padding: EdgeInsets.symmetric(
+                  horizontal: context.responsiveSpacing / 2, 
+                  vertical: context.responsiveSpacing / 2),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -49,7 +55,7 @@ class ProductCard extends StatelessWidget {
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium!
-                        .copyWith(fontSize: 10),
+                        .copyWith(fontSize: fontSize),
                   ),
                   const SizedBox(height: defaultPadding / 2),
                   Text(
@@ -59,7 +65,7 @@ class ProductCard extends StatelessWidget {
                     style: Theme.of(context)
                         .textTheme
                         .titleSmall!
-                        .copyWith(fontSize: 12),
+                        .copyWith(fontSize: fontSize + 2),
                   ),
                   const Spacer(),
                   priceAfetDiscount != null
