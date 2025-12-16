@@ -37,7 +37,7 @@ final List<CategoryBannerData> demoCategoryBanners = [
     id: 'womens',
     categoryName: "Women's Collection",
     subtitle: "Elegant fashion for women",
-    bannerImageUrl: 'assets/screens/women_collection.jpg',
+    bannerImageUrl: 'assets/screens/womens_collection.jpg',
   ),
   CategoryBannerData(
     id: 'accessories',
