@@ -95,37 +95,37 @@ List<ProductModel> demoPopularProducts = [
 // Men's Products Category
 List<ProductModel> mensProducts = [
   ProductModel(
-    image: "https://i.imgur.com/XrEy2eD.png",
+    image: "assets/images/shirt1.png",
     title: "Premium Cotton T-Shirt",
     brandName: "Urban Style",
     price: 450,
   ),
   ProductModel(
-    image: "https://i.imgur.com/6N1TzYl.png",
+    image: "assets/images/shirt2.png",
     title: "Casual Striped Shirt",
     brandName: "Fashion Hub",
     price: 520,
   ),
   ProductModel(
-    image: "https://i.imgur.com/8XkZqwL.png",
+    image: "assets/images/hoodie1.png",
     title: "Classic Blue Hoodie",
     brandName: "Comfort Wear",
     price: 780,
   ),
   ProductModel(
-    image: "https://i.imgur.com/PqW3mJK.png",
+    image: "assets/images/shirt3.png",
     title: "Grey Slim Fit Shirt",
     brandName: "Modern Men",
     price: 640,
   ),
   ProductModel(
-    image: "https://i.imgur.com/MnVqTHx.png",
+    image: "assets/images/hoodie1.png",
     title: "Black Cotton Hoodie",
     brandName: "Urban Trend",
     price: 850,
   ),
   ProductModel(
-    image: "https://i.imgur.com/RkLpZnV.png",
+    image: "assets/images/shirt4.png",
     title: "White Casual T-Shirt",
     brandName: "Basic Essentials",
     price: 380,
