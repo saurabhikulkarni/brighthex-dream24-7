@@ -13,6 +13,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  String _displayedText = '';
 
   @override
   void initState() {
@@ -37,6 +38,9 @@ class _SplashScreenState extends State<SplashScreen>
     // Start animation
     _animationController.forward();
 
+    // Typing animation for DREAM 247
+    _typeText();
+
     // Navigate to login after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
@@ -45,6 +49,19 @@ class _SplashScreenState extends State<SplashScreen>
         );
       }
     });
+  }
+
+  void _typeText() {
+    const String fullText = 'DREAM 247';
+    for (int i = 0; i <= fullText.length; i++) {
+      Future.delayed(Duration(milliseconds: 80 * i), () {
+        if (mounted) {
+          setState(() {
+            _displayedText = fullText.substring(0, i);
+          });
+        }
+      });
+    }
   }
 
   @override
@@ -88,9 +105,9 @@ class _SplashScreenState extends State<SplashScreen>
                     color: Colors.white,
                   ),
                   const SizedBox(height: 30),
-                  // DREAM 247 Text with College Regular Font
+                  // DREAM 247 Typing Animation with College Regular Font
                   Text(
-                    'DREAM 247',
+                    _displayedText,
                     style: TextStyle(
                       fontFamily: 'College Regular',
                       fontSize: 64,
@@ -106,6 +123,27 @@ class _SplashScreenState extends State<SplashScreen>
                       ],
                     ),
                   ),
+                  // Blinking cursor after typing
+                  if (_displayedText.length < 9)
+                    Container(
+                      width: 4,
+                      height: 64,
+                      margin: const EdgeInsets.only(left: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    )
+                  else
+                    Container(
+                      width: 4,
+                      height: 64,
+                      margin: const EdgeInsets.only(left: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
                   const SizedBox(height: 12),
                   // Tagline
                   Text(
