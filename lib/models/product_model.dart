@@ -210,6 +210,78 @@ List<ProductModel> accessoriesProducts = [
     brandName: "Mobile Accessories",
     price: 180,
   ),
+  ProductModel(
+    image: "https://i.imgur.com/MmN6pPx.png",
+    title: "Canvas Handbag",
+    brandName: "Style Store",
+    price: 520,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/NnO7qQx.png",
+    title: "Pearl Bracelet",
+    brandName: "Luxury Wear",
+    price: 380,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/OoP8rRx.png",
+    title: "Diamond Stud Earrings",
+    brandName: "Fine Jewelry",
+    price: 650,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/PpQ9sSx.png",
+    title: "Mens Stainless Steel Chain",
+    brandName: "Bold Style",
+    price: 440,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/QqR0tTx.png",
+    title: "Mens Leather Bracelet",
+    brandName: "Vintage Gear",
+    price: 310,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/RrS1uUx.png",
+    title: "Leather Wallet",
+    brandName: "Pocket Essentials",
+    price: 380,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/SsT2vVx.png",
+    title: "Phone Back Cover - Black",
+    brandName: "Mobile Protect",
+    price: 150,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/TtU3wWx.png",
+    title: "Phone Back Cover - Blue",
+    brandName: "Mobile Protect",
+    price: 150,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/UuV4xXx.png",
+    title: "Mobile Charm - Heart",
+    brandName: "Cute Charms",
+    price: 95,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/VvW5yYx.png",
+    title: "Mobile Charm - Star",
+    brandName: "Cute Charms",
+    price: 95,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/WwX6zZx.png",
+    title: "Womens Fabric Wallet",
+    brandName: "Design Studio",
+    price: 290,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/XxY7aaX.png",
+    title: "Beaded Bracelet Set",
+    brandName: "Accessory Hub",
+    price: 260,
+  ),
 ];
 
 // Electronics Products Category
