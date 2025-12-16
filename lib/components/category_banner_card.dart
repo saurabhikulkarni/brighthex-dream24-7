@@ -78,7 +78,7 @@ class CategoryBannerCard extends StatelessWidget {
                         backgroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                           horizontal: defaultPadding / 3,
-                          vertical: defaultPadding / 4,
+                          vertical: defaultPadding / 6,
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
