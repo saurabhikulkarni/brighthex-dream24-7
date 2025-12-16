@@ -27,8 +27,8 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     return Scaffold(
       bottomNavigationBar: CartButton(
         price: 1200,
-        title: "Add to cart",
-        subTitle: "Total price",
+        title: "Redeem Now",
+        subTitle: "Total tokens",
         press: () {
           customModalBottomSheet(
             context,

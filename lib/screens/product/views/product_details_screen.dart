@@ -47,6 +47,10 @@ class ProductDetailsScreen extends StatelessWidget {
             SliverAppBar(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               floating: true,
+              leading: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back),
+              ),
               actions: [
                 IconButton(
                   onPressed: () {},
