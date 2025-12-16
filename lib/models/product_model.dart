@@ -54,6 +54,42 @@ List<ProductModel> demoPopularProducts = [
     brandName: "Lipsy london",
     price: 1264,
   ),
+  ProductModel(
+    image: "https://i.imgur.com/XrEy2eD.png",
+    title: "Premium Cotton T-Shirt",
+    brandName: "Urban Style",
+    price: 450,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/6N1TzYl.png",
+    title: "Casual Striped Shirt",
+    brandName: "Fashion Hub",
+    price: 520,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/8XkZqwL.png",
+    title: "Classic Blue Hoodie",
+    brandName: "Comfort Wear",
+    price: 780,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/PqW3mJK.png",
+    title: "Grey Slim Fit Shirt",
+    brandName: "Modern Men",
+    price: 640,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/MnVqTHx.png",
+    title: "Black Cotton Hoodie",
+    brandName: "Urban Trend",
+    price: 850,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/RkLpZnV.png",
+    title: "White Casual T-Shirt",
+    brandName: "Basic Essentials",
+    price: 380,
+  ),
 ];
 List<ProductModel> demoFlashSaleProducts = [
   ProductModel(
