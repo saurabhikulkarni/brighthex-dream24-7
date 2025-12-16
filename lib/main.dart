@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shop/route/route_constants.dart';
 import 'package:shop/route/router.dart' as router;
 import 'package:shop/theme/app_theme.dart';
+import 'package:shop/screens/splash/splash_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,12 +18,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Shop Template by The Flutter Way',
+      title: 'DREAM 247 - Shopping App',
       theme: AppTheme.lightTheme(context),
-      // Dark theme is inclided in the Full template
       themeMode: ThemeMode.light,
       onGenerateRoute: router.generateRoute,
-      initialRoute: onbordingScreenRoute,
+      home: const SplashScreen(),
     );
   }
 }
