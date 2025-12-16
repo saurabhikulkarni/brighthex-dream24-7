@@ -172,7 +172,125 @@ List<ProductModel> womensProducts = [
   ),
 ];
 
-// Accessories Products Category
+// Jewelry Products Category (Mens & Womens)
+List<ProductModel> jewelryProducts = [
+  ProductModel(
+    image: "https://i.imgur.com/JkM9pZx.png",
+    title: "Silver Chain Necklace",
+    brandName: "Jewelry Plus",
+    price: 320,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/TpR2nXx.png",
+    title: "Gold Hoop Earrings",
+    brandName: "Jewelry Plus",
+    price: 280,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/NnO7qQx.png",
+    title: "Pearl Bracelet",
+    brandName: "Luxury Wear",
+    price: 380,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/OoP8rRx.png",
+    title: "Diamond Stud Earrings",
+    brandName: "Fine Jewelry",
+    price: 650,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/PpQ9sSx.png",
+    title: "Mens Stainless Steel Chain",
+    brandName: "Bold Style",
+    price: 440,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/QqR0tTx.png",
+    title: "Mens Leather Bracelet",
+    brandName: "Vintage Gear",
+    price: 310,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/XxY7aaX.png",
+    title: "Womens Beaded Bracelet Set",
+    brandName: "Accessory Hub",
+    price: 260,
+  ),
+];
+
+// Handbags Products Category
+List<ProductModel> handbagsProducts = [
+  ProductModel(
+    image: "https://i.imgur.com/HnQ7vWx.png",
+    title: "Leather Crossbody Bag",
+    brandName: "Bag Store",
+    price: 750,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/MmN6pPx.png",
+    title: "Canvas Handbag",
+    brandName: "Style Store",
+    price: 520,
+  ),
+];
+
+// Mobile Accessories Products Category
+List<ProductModel> mobileAccessoriesProducts = [
+  ProductModel(
+    image: "https://i.imgur.com/WxL3pZx.png",
+    title: "Mobile Phone Case",
+    brandName: "Mobile Accessories",
+    price: 180,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/SsT2vVx.png",
+    title: "Phone Back Cover - Black",
+    brandName: "Mobile Protect",
+    price: 150,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/TtU3wWx.png",
+    title: "Phone Back Cover - Blue",
+    brandName: "Mobile Protect",
+    price: 150,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/UuV4xXx.png",
+    title: "Mobile Charm - Heart",
+    brandName: "Cute Charms",
+    price: 95,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/VvW5yYx.png",
+    title: "Mobile Charm - Star",
+    brandName: "Cute Charms",
+    price: 95,
+  ),
+];
+
+// Mens Wallet Products Category
+List<ProductModel> mensWalletProducts = [
+  ProductModel(
+    image: "https://i.imgur.com/VsK8oYx.png",
+    title: "Leather Belt",
+    brandName: "Fashion Hub",
+    price: 420,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/RrS1uUx.png",
+    title: "Leather Wallet",
+    brandName: "Pocket Essentials",
+    price: 380,
+  ),
+  ProductModel(
+    image: "https://i.imgur.com/WwX6zZx.png",
+    title: "Womens Fabric Wallet",
+    brandName: "Design Studio",
+    price: 290,
+  ),
+];
+
+// Accessories Products Category (Legacy - kept for backward compatibility)
 List<ProductModel> accessoriesProducts = [
   ProductModel(
     image: "https://i.imgur.com/JkM9pZx.png",

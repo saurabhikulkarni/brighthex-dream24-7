@@ -33,6 +33,27 @@ class ExpansionCategory extends StatelessWidget {
     }
   }
 
+  List<ProductModel> _getProductsForSubcategory(String? categoryId, String subcategoryTitle) {
+    // For accessories category, return products based on subcategory
+    if (categoryId == 'accessories') {
+      switch (subcategoryTitle.toLowerCase()) {
+        case 'jewelry':
+          return jewelryProducts;
+        case 'handbags':
+          return handbagsProducts;
+        case 'mobile accessories':
+          return mobileAccessoriesProducts;
+        case "men's wallet":
+          return mensWalletProducts;
+        default:
+          return [];
+      }
+    }
+    
+    // For other categories, use category-based products
+    return _getProductsForCategory(categoryId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ExpansionTile(
@@ -60,7 +81,7 @@ class ExpansionCategory extends StatelessWidget {
             ListTile(
               onTap: () {
                 // Navigate to category products screen
-                final products = _getProductsForCategory(categoryId);
+                final products = _getProductsForSubcategory(categoryId, subCategory[index].title);
                 Navigator.pushNamed(
                   context,
                   categoryProductsScreenRoute,
