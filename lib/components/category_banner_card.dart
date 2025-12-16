@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shop/components/gradient_button.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/components/network_image_with_loader.dart';
 
@@ -73,16 +72,22 @@ class CategoryBannerCard extends StatelessWidget {
                   // Shop Now Button
                   SizedBox(
                     width: 120,
-                    child: GradientButton(
+                    child: ElevatedButton(
                       onPressed: onPressed,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: defaultPadding / 2,
-                        vertical: defaultPadding / 3,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: defaultPadding / 2,
+                          vertical: defaultPadding / 3,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                       child: Text(
                         buttonText,
                         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: Colors.white,
+                              color: Colors.black,
                               fontWeight: FontWeight.w600,
                               fontSize: 13,
                             ),

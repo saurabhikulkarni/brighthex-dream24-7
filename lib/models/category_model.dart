@@ -31,29 +31,25 @@ final List<CategoryBannerData> demoCategoryBanners = [
     id: 'mens',
     categoryName: "Men's Collection",
     subtitle: "Premium styles for men",
-    bannerImageUrl:
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=600&fit=crop',
+    bannerImageUrl: 'assets/screens/mens_collection.jpg',
   ),
   CategoryBannerData(
     id: 'womens',
     categoryName: "Women's Collection",
     subtitle: "Elegant fashion for women",
-    bannerImageUrl:
-        'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=800&h=600&fit=crop',
+    bannerImageUrl: 'assets/screens/women_collection.jpg',
   ),
   CategoryBannerData(
     id: 'accessories',
     categoryName: "Accessories",
     subtitle: "Complete your look",
-    bannerImageUrl:
-        'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=800&h=600&fit=crop',
+    bannerImageUrl: 'assets/screens/accessories.jpg',
   ),
   CategoryBannerData(
     id: 'electronics',
     categoryName: "Electronics & Gadgets",
     subtitle: "Latest tech gadgets",
-    bannerImageUrl:
-        'https://images.unsplash.com/photo-1505228395891-9a51e7e86e81?w=800&h=600&fit=crop',
+    bannerImageUrl: 'assets/screens/electronics.jpg',
   ),
 ];
 
