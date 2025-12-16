@@ -52,7 +52,7 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _typeText() {
-    const String fullText = 'DREAM 247';
+    const String fullText = 'DREAM247';
     for (int i = 0; i <= fullText.length; i++) {
       Future.delayed(Duration(milliseconds: 80 * i), () {
         if (mounted) {
@@ -124,7 +124,7 @@ class _SplashScreenState extends State<SplashScreen>
                     ),
                   ),
                   // Blinking cursor after typing
-                  if (_displayedText.length < 9)
+                  if (_displayedText.length < 8)
                     Container(
                       width: 4,
                       height: 64,
