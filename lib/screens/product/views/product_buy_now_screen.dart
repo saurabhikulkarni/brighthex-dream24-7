@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/components/cart_button.dart';
 import 'package:shop/components/custom_modal_bottom_sheet.dart';
 import 'package:shop/components/network_image_with_loader.dart';
+import 'package:shop/route/route_constants.dart';
 import 'package:shop/screens/product/views/added_to_cart_message_screen.dart';
 import 'package:shop/screens/product/views/components/product_list_tile.dart';
 import 'package:shop/screens/product/views/location_permission_store_availability_screen.dart';
@@ -22,6 +23,85 @@ class ProductBuyNowScreen extends StatefulWidget {
 }
 
 class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
+  int walletBalance = 500; // User's shopping tokens
+  final int productPrice = 1200; // Product price in tokens
+
+  void _handleRedeemNow() {
+    if (walletBalance >= productPrice) {
+      // Sufficient balance - deduct tokens
+      setState(() {
+        walletBalance -= productPrice;
+      });
+
+      customModalBottomSheet(
+        context,
+        isDismissible: false,
+        child: const AddedToCartMessageScreen(),
+      );
+    } else {
+      // Insufficient balance - show dialog
+      final tokensShort = productPrice - walletBalance;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Insufficient Shopping Tokens'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('This product costs $productPrice tokens.'),
+              const SizedBox(height: defaultPadding / 2),
+              Text(
+                'Your wallet has: $walletBalance tokens',
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: defaultPadding / 2),
+              Row(
+                children: [
+                  SvgPicture.asset(
+                    'assets/icons/coin.svg',
+                    width: 16,
+                    height: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'You need $tokensShort more tokens',
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Continue Shopping'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.of(context).pop();
+                // Navigate to wallet screen
+                Navigator.pushNamed(
+                  context,
+                  walletScreenRoute,
+                  arguments: {
+                    'walletBalance': walletBalance,
+                    'shoppingTokens': walletBalance,
+                  },
+                );
+              },
+              child: const Text('Add Tokens'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,11 +110,7 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
         title: "Redeem Now",
         subTitle: "Total tokens",
         press: () {
-          customModalBottomSheet(
-            context,
-            isDismissible: false,
-            child: const AddedToCartMessageScreen(),
-          );
+          _handleRedeemNow();
         },
       ),
       body: Column(
