@@ -141,99 +141,112 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.addressId == null ? 'Add Address' : 'Edit Address'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(defaultPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Basic Details Section
-              Text(
-                'Basic Details',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: defaultPadding),
-              _buildTextField(
-                controller: fullNameController,
-                label: 'Full Name',
-                hint: 'Enter your full name',
-              ),
-              const SizedBox(height: defaultPadding),
-              _buildTextField(
-                controller: emailController,
-                label: 'Email ID',
-                hint: 'Enter your email id',
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: defaultPadding),
-              _buildTextField(
-                controller: phoneController,
-                label: 'Phone Number',
-                hint: 'Enter your phone number',
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: defaultPadding * 1.5),
-              // Address Section
-              Text(
-                'Address',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: defaultPadding),
-              _buildTextField(
-                controller: houseNumberController,
-                label: 'House No/ Building Name',
-                hint: 'Enter your House No/ Building Name',
-              ),
-              const SizedBox(height: defaultPadding),
-              _buildTextField(
-                controller: roadNameController,
-                label: 'Road Name/ Area/ Colony',
-                hint: 'Enter your Road Name/ Area/ Colony',
-              ),
-              const SizedBox(height: defaultPadding),
-              _buildTextField(
-                controller: landmarkController,
-                label: 'Landmark (Optional)',
-                hint: 'Enter your Landmark (Optional)',
-              ),
-              const SizedBox(height: defaultPadding),
-              _buildTextField(
-                controller: pincodeController,
-                label: 'Pincode',
-                hint: 'Enter your Pincode',
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: defaultPadding),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTextField(
-                      controller: cityController,
-                      label: 'City',
-                      hint: 'Enter your City',
+    return WillPopScope(
+      onWillPop: () async {
+        // Allow back button to work properly
+        Navigator.pop(context);
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.addressId == null ? 'Add Address' : 'Edit Address'),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        ),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(defaultPadding),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Basic Details Section
+                Text(
+                  'Basic Details',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: defaultPadding),
+                _buildTextField(
+                  controller: fullNameController,
+                  label: 'Full Name',
+                  hint: 'Enter your full name',
+                ),
+                const SizedBox(height: defaultPadding),
+                _buildTextField(
+                  controller: emailController,
+                  label: 'Email ID',
+                  hint: 'Enter your email id',
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: defaultPadding),
+                _buildTextField(
+                  controller: phoneController,
+                  label: 'Phone Number',
+                  hint: 'Enter your phone number',
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: defaultPadding * 1.5),
+                // Address Section
+                Text(
+                  'Address',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: defaultPadding),
+                _buildTextField(
+                  controller: houseNumberController,
+                  label: 'House No/ Building Name',
+                  hint: 'Enter your House No/ Building Name',
+                ),
+                const SizedBox(height: defaultPadding),
+                _buildTextField(
+                  controller: roadNameController,
+                  label: 'Road Name/ Area/ Colony',
+                  hint: 'Enter your Road Name/ Area/ Colony',
+                ),
+                const SizedBox(height: defaultPadding),
+                _buildTextField(
+                  controller: landmarkController,
+                  label: 'Landmark (Optional)',
+                  hint: 'Enter your Landmark (Optional)',
+                ),
+                const SizedBox(height: defaultPadding),
+                _buildTextField(
+                  controller: pincodeController,
+                  label: 'Pincode',
+                  hint: 'Enter your Pincode',
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: defaultPadding),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        controller: cityController,
+                        label: 'City',
+                        hint: 'Enter your City',
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: defaultPadding),
-                  Expanded(
-                    child: _buildTextField(
-                      controller: stateController,
-                      label: 'State',
-                      hint: 'Enter State',
+                    const SizedBox(width: defaultPadding),
+                    Expanded(
+                      child: _buildTextField(
+                        controller: stateController,
+                        label: 'State',
+                        hint: 'Enter State',
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: defaultPadding * 2),
-              // Save Button
-              GradientButton(
-                onPressed: _saveAddress,
-                child: const Text('Save Address'),
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: defaultPadding * 2),
+                // Save Button
+                GradientButton(
+                  onPressed: _saveAddress,
+                  child: const Text('Save Address'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
