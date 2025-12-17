@@ -30,6 +30,12 @@ class _EntryPointState extends State<EntryPoint> {
   int get _wishlistItemCount => wishlistService.getWishlistCount();
 
   @override
+  void initState() {
+    super.initState();
+    // Refresh UI whenever page is visited
+  }
+
+  @override
   Widget build(BuildContext context) {
     SvgPicture svgIcon(String src, {Color? color}) {
       return SvgPicture.asset(

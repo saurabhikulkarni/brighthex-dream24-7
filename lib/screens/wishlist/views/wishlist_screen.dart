@@ -23,15 +23,22 @@ class _WishlistScreenState extends State<WishlistScreen> {
     _loadWishlist();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh wishlist when screen comes back to focus
+    _loadWishlist();
+  }
+
   void _loadWishlist() {
-    _wishlistItems = wishlistService.getWishlist();
+    setState(() {
+      _wishlistItems = wishlistService.getWishlist();
+    });
   }
 
   void _removeFromWishlist(String productId) {
-    setState(() {
-      wishlistService.removeFromWishlist(productId);
-      _loadWishlist();
-    });
+    wishlistService.removeFromWishlist(productId);
+    _loadWishlist();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Item removed from wishlist'),
@@ -144,6 +151,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                               price: product.price,
                               priceAfetDiscount:
                                   product.priceAfetDiscount,
+                              product: product,
                               press: () {
                                 Navigator.pushNamed(
                                   context,

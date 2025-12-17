@@ -210,7 +210,6 @@ class OrderService {
     if (_orders.isNotEmpty) return; // Don't add if already have orders
 
     final now = DateTime.now();
-    final mockTrackingData = ShiprocketService.getMockOrderTracking('SR001');
     
     // Sample order 1 - Delivered
     addOrder(Order(

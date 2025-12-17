@@ -52,7 +52,7 @@ class RazorpayService {
 
   /// Handle external wallet
   void _handleExternalWallet(ExternalWalletResponse response) {
-    final walletName = response.walletName ?? 'Unknown Wallet';
+    // Handle external wallet selection (e.g., PhonePe, Google Pay, etc.)
     _onDismiss?.call();
   }
 

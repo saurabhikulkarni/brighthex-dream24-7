@@ -166,11 +166,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               ),
               actions: [
                 IconButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_product != null) {
+                      final newState = await wishlistService.toggleWishlist(_product!);
                       setState(() {
-                        _isInWishlist =
-                            wishlistService.toggleWishlist(_product!);
+                        _isInWishlist = newState;
                       });
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -388,6 +388,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             title: _relatedProducts[index].title,
                             brandName: _relatedProducts[index].brandName,
                             price: _relatedProducts[index].price,
+                            product: _relatedProducts[index],
                             press: () {
                               Navigator.push(
                                 context,

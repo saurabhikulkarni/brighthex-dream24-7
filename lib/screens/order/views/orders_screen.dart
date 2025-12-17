@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/services/order_service.dart';
-import 'package:shop/services/shiprocket_service.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
