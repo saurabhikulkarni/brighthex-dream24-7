@@ -294,6 +294,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => const CartScreen(),
       );
+    case checkoutScreenRoute:
+      return MaterialPageRoute(
+        builder: (context) => const CartScreen(),
+      );
     case categoryProductsScreenRoute:
       final args = settings.arguments as Map<String, dynamic>?;
       return MaterialPageRoute(
