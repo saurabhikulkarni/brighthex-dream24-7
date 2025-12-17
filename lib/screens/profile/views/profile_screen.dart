@@ -2,12 +2,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/screen_export.dart';
+import 'package:shop/services/auth_service.dart';
 
 import 'components/profile_card.dart';
 import 'components/profile_menu_item_list_tile.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String _userName = 'User';
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+  
+  Future<void> _loadUserName() async {
+    final name = await AuthService().getUserName();
+    if (mounted) {
+      setState(() {
+        _userName = name ?? 'User';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,8 +38,8 @@ class ProfileScreen extends StatelessWidget {
       body: ListView(
         children: [
           ProfileCard(
-            name: "Sepide",
-            email: "theflutterway@gmail.com",
+            name: _userName,
+            email: "user@shop.com",
             imageSrc: "https://i.imgur.com/IXnwbLk.png",
             // proLableText: "Sliver",
             // isPro: true, if the user is pro
@@ -105,7 +128,10 @@ class ProfileScreen extends StatelessWidget {
                       child: const Text("Cancel"),
                     ),
                     TextButton(
-                      onPressed: () {
+                      onPressed: () async {
+                        // Clear session from AuthService
+                        await AuthService().logout();
+                        if (!context.mounted) return;
                         Navigator.pop(context);
                         Navigator.pushNamedAndRemoveUntil(
                           context,

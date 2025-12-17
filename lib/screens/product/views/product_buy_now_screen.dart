@@ -11,6 +11,7 @@ import 'package:shop/screens/product/views/size_guide_screen.dart';
 import 'package:shop/screens/checkout/views/order_confirmation_screen.dart';
 import 'package:shop/services/cart_service.dart';
 import 'package:shop/services/order_service.dart';
+import 'package:shop/services/wallet_service.dart';
 
 import '../../../constants.dart';
 import 'components/product_quantity.dart';
@@ -34,7 +35,7 @@ class ProductBuyNowScreen extends StatefulWidget {
 class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   int _quantity = 1;
   int _selectedSizeIndex = 0;
-  int walletBalance = 500; // User's shopping tokens
+  double walletBalance = 0.0; // User's shopping tokens
 
   SizeModel? get selectedSize {
     if (widget.sizes.isEmpty) return null;
@@ -43,6 +44,23 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   }
 
   double get totalPrice => widget.product.price * _quantity;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWalletBalance();
+  }
+
+  Future<void> _loadWalletBalance() async {
+    try {
+      final balance = await walletService.getBalance();
+      setState(() {
+        walletBalance = balance;
+      });
+    } catch (e) {
+      print('Error loading wallet balance: $e');
+    }
+  }
 
   void _incrementQuantity() {
     setState(() {
@@ -168,19 +186,25 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     );
   }
 
-  void _processRedeemNow() {
+  void _processRedeemNow() async {
     final int productPrice = totalPrice.toInt();
 
     if (walletBalance >= productPrice) {
       // Sufficient balance - create order and deduct tokens
-      setState(() {
-        walletBalance -= productPrice;
-      });
-
-      _createOrder();
+      final success = await walletService.deductBalance(productPrice.toDouble());
+      if (success) {
+        setState(() {
+          walletBalance -= productPrice;
+        });
+        _createOrder();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to deduct from wallet')),
+        );
+      }
     } else {
       // Insufficient balance - show dialog
-      final tokensShort = productPrice - walletBalance;
+      final tokensShort = productPrice - walletBalance.toInt();
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -192,7 +216,7 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
               Text('This product costs $productPrice tokens.'),
               const SizedBox(height: defaultPadding / 2),
               Text(
-                'Your wallet has: $walletBalance tokens',
+                'Your wallet has: ${walletBalance.toStringAsFixed(2)} tokens',
                 style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: defaultPadding / 2),

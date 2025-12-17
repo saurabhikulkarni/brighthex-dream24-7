@@ -238,4 +238,96 @@ class GraphQLQueries {
       }
     }
   ''';
-}
+  // ============ Wallet Queries ============
+  // Get user wallet balance
+  static const String getUserWallet = '''
+    query GetUserWallet($userId: ID!) {
+      userDetail(where: {id: $userId}) {
+        id
+        walletBalance
+      }
+    }
+  ''';
+
+  // Update user wallet balance (shopping tokens)
+  static const String updateUserWallet = '''
+    mutation UpdateUserWallet($userId: ID!, $walletBalance: Int!) {
+      updateUserDetail(
+        where: {id: $userId}
+        data: {walletBalance: $walletBalance}
+      ) {
+        id
+        walletBalance
+      }
+    }
+  ''';
+
+  // ============ Wishlist Queries ============
+  // Get user wishlist from separate Wishlist collection
+  static const String getUserWishlist = '''
+    query GetUserWishlist($userId: ID!) {
+      wishlists(where: {userDetail: {id: $userId}}) {
+        id
+        product {
+          id
+          title
+          slug
+          price
+          discountPercent
+          rating
+          isInStock
+          productImage {
+            url
+          }
+        }
+        size {
+          id
+          sizeType
+        }
+      }
+    }
+  ''';
+
+  // Add product to wishlist - creates new Wishlist record
+  static const String addToWishlist = '''
+    mutation AddToWishlist($userId: ID!, $productId: ID!, $sizeId: ID) {
+      createWishlist(
+        data: {
+          userDetail: {connect: {id: $userId}}
+          product: {connect: {id: $productId}}
+          size: {connect: {id: $sizeId}}
+        }
+      ) {
+        id
+        product {
+          id
+          title
+          price
+        }
+      }
+    }
+  ''';
+
+  // Remove product from wishlist - deletes Wishlist record
+  static const String removeFromWishlist = '''
+    mutation RemoveFromWishlist($wishlistId: ID!) {
+      deleteWishlist(where: {id: $wishlistId}) {
+        id
+      }
+    }
+  ''';
+
+  // Get full user profile with wallet
+  static const String getUserProfile = '''
+    query GetUserProfile($userId: ID!) {
+      userDetail(where: {id: $userId}) {
+        id
+        firstName
+        lastName
+        username
+        email
+        phone
+        walletBalance
+      }
+    }
+  ''';}

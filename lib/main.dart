@@ -4,12 +4,16 @@ import 'package:shop/route/router.dart' as router;
 import 'package:shop/theme/app_theme.dart';
 import 'package:shop/screens/splash/splash_screen.dart';
 import 'package:shop/services/wishlist_service.dart';
+import 'package:shop/services/auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize Hive for GraphQL caching
   await initHiveForFlutter();
+  
+  // Initialize Auth Service for session persistence
+  await authService.initialize();
   
   // Initialize Wishlist Service
   await wishlistService.initialize();

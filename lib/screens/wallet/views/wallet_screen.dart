@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/services/razorpay_service.dart';
+import 'package:shop/services/wallet_service.dart';
 import 'package:uuid/uuid.dart';
 
 import 'components/transaction_history_card.dart';
@@ -20,24 +21,46 @@ class _WalletScreenState extends State<WalletScreen> {
   double _selectedTopUpAmount = 0.0;
 
   @override
+  void initState() {
+    super.initState();
+    _loadWalletBalance();
+  }
+
+  Future<void> _loadWalletBalance() async {
+    try {
+      final balance = await walletService.getBalance();
+      setState(() {
+        walletBalance = balance;
+        shoppingTokens = balance.toInt();
+      });
+    } catch (e) {
+      print('Error loading wallet balance: $e');
+    }
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Try to get from arguments, fallback to WalletService
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
     if (args != null && args.isNotEmpty) {
       setState(() {
-        walletBalance = (args['walletBalance'] ?? 0.0) as double;
-        shoppingTokens = (args['shoppingTokens'] ?? 0) as int;
+        walletBalance = (args['walletBalance'] ?? walletBalance) as double;
+        shoppingTokens = (args['shoppingTokens'] ?? shoppingTokens.toInt()) as int;
       });
     }
   }
 
-  void _addMoney(double amount) {
+  void _addMoney(double amount) async {
+    // Update in memory
     setState(() {
       walletBalance += amount;
       shoppingTokens += amount.toInt();
       _selectedTopUpAmount = 0;
       _amountController.clear();
     });
+    // Persist to storage
+    await walletService.addBalance(amount);
   }
 
   void _initiatePayment() {

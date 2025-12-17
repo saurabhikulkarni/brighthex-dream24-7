@@ -6,6 +6,7 @@ import 'package:shop/constants.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/services/cart_service.dart';
 import 'package:shop/services/order_service.dart';
+import 'package:shop/services/wallet_service.dart';
 import 'package:shop/screens/checkout/views/order_confirmation_screen.dart';
 
 class CartScreen extends StatefulWidget {
@@ -16,13 +17,30 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  int walletBalance = 500; // User's shopping tokens
+  double walletBalance = 0.0; // User's shopping tokens
 
   List<CartModel> get cartItems => cartService.getLocalCart();
 
   double get subtotal => cartService.getCartTotal();
   double get tax => subtotal * 0.1;
   double get total => subtotal + tax;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWalletBalance();
+  }
+
+  Future<void> _loadWalletBalance() async {
+    try {
+      final balance = await walletService.getBalance();
+      setState(() {
+        walletBalance = balance;
+      });
+    } catch (e) {
+      print('Error loading wallet balance: $e');
+    }
+  }
 
   void _removeItem(String cartItemId) {
     setState(() {
@@ -37,7 +55,7 @@ class _CartScreenState extends State<CartScreen> {
     });
   }
 
-  void _proceedToPayment(BuildContext context) {
+  void _proceedToPayment(BuildContext context) async {
     if (cartItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Your cart is empty')),
@@ -49,7 +67,7 @@ class _CartScreenState extends State<CartScreen> {
 
     // Check if wallet has enough tokens
     if (walletBalance < totalTokensNeeded) {
-      final tokensShort = totalTokensNeeded - walletBalance;
+      final tokensShort = totalTokensNeeded - walletBalance.toInt();
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -61,7 +79,7 @@ class _CartScreenState extends State<CartScreen> {
               Text('You need $totalTokensNeeded tokens to complete this purchase.'),
               const SizedBox(height: defaultPadding / 2),
               Text(
-                'Your wallet has: $walletBalance tokens',
+                'Your wallet has: ${walletBalance.toStringAsFixed(2)} tokens',
                 style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: defaultPadding / 2),
@@ -96,7 +114,7 @@ class _CartScreenState extends State<CartScreen> {
     _createOrderFromCart(totalTokensNeeded);
   }
 
-  void _createOrderFromCart(int totalTokensNeeded) {
+  void _createOrderFromCart(int totalTokensNeeded) async {
     // Convert cart items to order items
     final orderItems = cartItems.map((cartItem) {
       return OrderItem(
@@ -116,22 +134,25 @@ class _CartScreenState extends State<CartScreen> {
       status: 'confirmed',
     );
 
-    // Add order to service
-    orderService.addOrder(order);
+    // Deduct tokens from wallet using WalletService
+    final success = await walletService.deductBalance(totalTokensNeeded.toDouble());
+    if (success) {
+      setState(() {
+        walletBalance -= totalTokensNeeded;
+        // Clear the cart after successful order
+        cartService.clearLocalCart();
+      });
 
-    // Deduct tokens from wallet
-    setState(() {
-      walletBalance -= totalTokensNeeded;
-      // Clear the cart after successful order
-      cartService.clearLocalCart();
-    });
+      // Add order to service
+      orderService.addOrder(order);
 
-    // Navigate to order confirmation screen
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => OrderConfirmationScreen(order: order),
-      ),
-    );
+      // Navigate to order confirmation screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => OrderConfirmationScreen(order: order),
+        ),
+      );
+    }
   }
 
   @override

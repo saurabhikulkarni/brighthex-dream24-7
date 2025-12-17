@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shop/services/auth_service.dart';
 
 import '../../../../constants.dart';
 
@@ -8,15 +9,22 @@ class SignUpForm extends StatefulWidget {
   const SignUpForm({
     super.key,
     required this.formKey,
+    this.onFormCreated,
   });
 
   final GlobalKey<FormState> formKey;
+  final Function(_SignUpFormState)? onFormCreated;
 
   @override
-  State<SignUpForm> createState() => _SignUpFormState();
+  State<SignUpForm> createState() {
+    final state = _SignUpFormState();
+    onFormCreated?.call(state);
+    return state;
+  }
 }
 
 class _SignUpFormState extends State<SignUpForm> {
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
   bool _otpSent = false;
@@ -26,6 +34,7 @@ class _SignUpFormState extends State<SignUpForm> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _phoneController.dispose();
     _otpController.dispose();
     _resendTimer?.cancel();
@@ -70,12 +79,64 @@ class _SignUpFormState extends State<SignUpForm> {
     );
   }
 
+  Future<void> verifyPhoneAndGetNumber() async {
+    if (!_otpSent) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please send OTP first'),
+        ),
+      );
+      return;
+    }
+
+    if (_otpController.text.isEmpty || _otpController.text.length < 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid OTP'),
+        ),
+      );
+      return;
+    }
+
+    // Mark phone as verified in AuthService
+    final phone = _phoneController.text.replaceAll(RegExp(r'[^\d]'), '');
+    await AuthService().markPhoneVerified(phone);
+  }
+
+  String? getVerifiedPhone() {
+    if (_otpSent && _otpController.text.isNotEmpty) {
+      return _phoneController.text.replaceAll(RegExp(r'[^\d]'), '');
+    }
+    return null;
+  }
+
+  String getUserName() {
+    return _nameController.text.trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
       key: widget.formKey,
       child: Column(
         children: [
+          TextFormField(
+            controller: _nameController,
+            decoration: const InputDecoration(
+              hintText: 'Full name',
+              prefixIcon: Icon(Icons.person),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your full name';
+              }
+              if (value.length < 2) {
+                return 'Name must be at least 2 characters';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: defaultPadding),
           TextFormField(
             controller: _phoneController,
             keyboardType: TextInputType.phone,
