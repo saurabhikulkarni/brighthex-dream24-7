@@ -241,8 +241,8 @@ class GraphQLQueries {
   // ============ Wallet Queries ============
   // Get user wallet balance
   static const String getUserWallet = '''
-    query GetUserWallet($userId: ID!) {
-      userDetail(where: {id: $userId}) {
+    query GetUserWallet(\$userId: ID!) {
+      userDetail(where: {id: \$userId}) {
         id
         walletBalance
       }
@@ -251,10 +251,10 @@ class GraphQLQueries {
 
   // Update user wallet balance (shopping tokens)
   static const String updateUserWallet = '''
-    mutation UpdateUserWallet($userId: ID!, $walletBalance: Int!) {
+    mutation UpdateUserWallet(\$userId: ID!, \$walletBalance: Int!) {
       updateUserDetail(
-        where: {id: $userId}
-        data: {walletBalance: $walletBalance}
+        where: {id: \$userId}
+        data: {walletBalance: \$walletBalance}
       ) {
         id
         walletBalance
@@ -265,8 +265,8 @@ class GraphQLQueries {
   // ============ Wishlist Queries ============
   // Get user wishlist from separate Wishlist collection
   static const String getUserWishlist = '''
-    query GetUserWishlist($userId: ID!) {
-      wishlists(where: {userDetail: {id: $userId}}) {
+    query GetUserWishlist(\$userId: ID!) {
+      wishlists(where: {userDetail: {id: \$userId}}) {
         id
         product {
           id
@@ -290,12 +290,12 @@ class GraphQLQueries {
 
   // Add product to wishlist - creates new Wishlist record
   static const String addToWishlist = '''
-    mutation AddToWishlist($userId: ID!, $productId: ID!, $sizeId: ID) {
+    mutation AddToWishlist(\$userId: ID!, \$productId: ID!, \$sizeId: ID) {
       createWishlist(
         data: {
-          userDetail: {connect: {id: $userId}}
-          product: {connect: {id: $productId}}
-          size: {connect: {id: $sizeId}}
+          userDetail: {connect: {id: \$userId}}
+          product: {connect: {id: \$productId}}
+          size: {connect: {id: \$sizeId}}
         }
       ) {
         id
@@ -310,8 +310,8 @@ class GraphQLQueries {
 
   // Remove product from wishlist - deletes Wishlist record
   static const String removeFromWishlist = '''
-    mutation RemoveFromWishlist($wishlistId: ID!) {
-      deleteWishlist(where: {id: $wishlistId}) {
+    mutation RemoveFromWishlist(\$wishlistId: ID!) {
+      deleteWishlist(where: {id: \$wishlistId}) {
         id
       }
     }
@@ -319,8 +319,8 @@ class GraphQLQueries {
 
   // Get full user profile with wallet
   static const String getUserProfile = '''
-    query GetUserProfile($userId: ID!) {
-      userDetail(where: {id: $userId}) {
+    query GetUserProfile(\$userId: ID!) {
+      userDetail(where: {id: \$userId}) {
         id
         firstName
         lastName
