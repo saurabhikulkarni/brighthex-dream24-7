@@ -60,12 +60,12 @@ class ProductService {
   }
 
   // Fetch products by category
-  Future<List<ProductModel>> getProductsByCategory(String category) async {
+  Future<List<ProductModel>> getProductsByCategory(String categoryName) async {
     try {
       final QueryResult result = await _client.query(
         QueryOptions(
           document: gql(GraphQLQueries.getProductsByCategory),
-          variables: {'category': category},
+          variables: {'categoryName': categoryName},
           fetchPolicy: FetchPolicy.networkOnly,
         ),
       );
@@ -87,85 +87,46 @@ class ProductService {
     }
   }
 
-  // Fetch popular products
+  // Fetch all categories
+  Future<List<CategoryModel>> getAllCategories() async {
+    try {
+      final QueryResult result = await _client.query(
+        QueryOptions(
+          document: gql(GraphQLQueries.getAllCategories),
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      if (result.hasException) {
+        throw Exception(result.exception.toString());
+      }
+
+      if (result.data == null || result.data!['categories'] == null) {
+        return [];
+      }
+
+      final List<dynamic> categoriesJson = result.data!['categories'] as List<dynamic>;
+      return categoriesJson
+          .map((json) => CategoryModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw Exception('Error fetching categories: $e');
+    }
+  }
+
+  // Fetch popular products (returns all products for now)
   Future<List<ProductModel>> getPopularProducts() async {
-    try {
-      final QueryResult result = await _client.query(
-        QueryOptions(
-          document: gql(GraphQLQueries.getPopularProducts),
-          fetchPolicy: FetchPolicy.networkOnly,
-        ),
-      );
-
-      if (result.hasException) {
-        throw Exception(result.exception.toString());
-      }
-
-      if (result.data == null || result.data!['products'] == null) {
-        return [];
-      }
-
-      final List<dynamic> productsJson = result.data!['products'] as List<dynamic>;
-      return productsJson
-          .map((json) => ProductModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      throw Exception('Error fetching popular products: $e');
-    }
+    return getAllProducts();
   }
 
-  // Fetch flash sale products
+  // Fetch flash sale products (returns all products for now)
   Future<List<ProductModel>> getFlashSaleProducts() async {
-    try {
-      final QueryResult result = await _client.query(
-        QueryOptions(
-          document: gql(GraphQLQueries.getFlashSaleProducts),
-          fetchPolicy: FetchPolicy.networkOnly,
-        ),
-      );
-
-      if (result.hasException) {
-        throw Exception(result.exception.toString());
-      }
-
-      if (result.data == null || result.data!['products'] == null) {
-        return [];
-      }
-
-      final List<dynamic> productsJson = result.data!['products'] as List<dynamic>;
-      return productsJson
-          .map((json) => ProductModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      throw Exception('Error fetching flash sale products: $e');
-    }
+    return getAllProducts();
   }
 
-  // Fetch best sellers
+  // Fetch best sellers (returns all products for now)
   Future<List<ProductModel>> getBestSellers() async {
-    try {
-      final QueryResult result = await _client.query(
-        QueryOptions(
-          document: gql(GraphQLQueries.getBestSellers),
-          fetchPolicy: FetchPolicy.networkOnly,
-        ),
-      );
-
-      if (result.hasException) {
-        throw Exception(result.exception.toString());
-      }
-
-      if (result.data == null || result.data!['products'] == null) {
-        return [];
-      }
-
-      final List<dynamic> productsJson = result.data!['products'] as List<dynamic>;
-      return productsJson
-          .map((json) => ProductModel.fromJson(json as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      throw Exception('Error fetching best sellers: $e');
-    }
+    return getAllProducts();
   }
 
   // Search products
@@ -193,6 +154,34 @@ class ProductService {
           .toList();
     } catch (e) {
       throw Exception('Error searching products: $e');
+    }
+  }
+
+  // Fetch sizes for a product
+  Future<List<SizeModel>> getSizesByProduct(String productId) async {
+    try {
+      final QueryResult result = await _client.query(
+        QueryOptions(
+          document: gql(GraphQLQueries.getSizesByProduct),
+          variables: {'productId': productId},
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      if (result.hasException) {
+        throw Exception(result.exception.toString());
+      }
+
+      if (result.data == null || result.data!['sizes'] == null) {
+        return [];
+      }
+
+      final List<dynamic> sizesJson = result.data!['sizes'] as List<dynamic>;
+      return sizesJson
+          .map((json) => SizeModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw Exception('Error fetching sizes: $e');
     }
   }
 }

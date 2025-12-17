@@ -1,22 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/components/gradient_button.dart';
+import 'package:shop/components/network_image_with_loader.dart';
 import 'package:shop/constants.dart';
+import 'package:shop/models/product_model.dart';
+import 'package:shop/services/cart_service.dart';
 import 'package:uuid/uuid.dart';
-
-class CartItem {
-  final String name;
-  final double price;
-  int quantity;
-  final String image;
-
-  CartItem({
-    required this.name,
-    required this.price,
-    required this.quantity,
-    required this.image,
-  });
-}
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -26,44 +15,24 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  late List<CartItem> cartItems;
   int walletBalance = 500; // User's shopping tokens
 
-  @override
-  void initState() {
-    super.initState();
-    cartItems = [
-      CartItem(
-        name: "Nike Air Max",
-        price: 120.0,
-        quantity: 1,
-        image: "assets/images/image_1.png",
-      ),
-      CartItem(
-        name: "Adidas Jacket",
-        price: 85.0,
-        quantity: 2,
-        image: "assets/images/image_2.png",
-      ),
-      CartItem(
-        name: "Blue T-shirt",
-        price: 25.0,
-        quantity: 1,
-        image: "assets/images/image_3.png",
-      ),
-    ];
-  }
+  List<CartModel> get cartItems => cartService.getLocalCart();
 
-  double get subtotal {
-    return cartItems.fold(0, (sum, item) => sum + (item.price * item.quantity));
-  }
-
+  double get subtotal => cartService.getCartTotal();
   double get tax => subtotal * 0.1;
   double get total => subtotal + tax;
 
-  void _removeItem(int index) {
+  void _removeItem(String cartItemId) {
     setState(() {
-      cartItems.removeAt(index);
+      cartService.removeFromLocalCart(cartItemId);
+    });
+  }
+
+  void _updateQuantity(String cartItemId, int newQuantity) {
+    if (newQuantity < 1) return;
+    setState(() {
+      cartService.updateLocalCartQuantity(cartItemId, newQuantity);
     });
   }
 
@@ -192,7 +161,7 @@ class _CartScreenState extends State<CartScreen> {
             onPressed: () {
               Navigator.pop(context);
               setState(() {
-                cartItems.clear();
+                cartService.clearLocalCart();
               });
             },
             child: const Text('Continue Shopping'),
@@ -206,7 +175,7 @@ class _CartScreenState extends State<CartScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Shopping Cart"),
+        title: Text("Shopping Cart (${cartService.getCartItemCount()})"),
       ),
       body: cartItems.isEmpty
           ? Center(
@@ -223,6 +192,11 @@ class _CartScreenState extends State<CartScreen> {
                     "Your cart is empty",
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
+                  const SizedBox(height: defaultPadding),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Continue Shopping"),
+                  ),
                 ],
               ),
             )
@@ -233,39 +207,110 @@ class _CartScreenState extends State<CartScreen> {
                     itemCount: cartItems.length,
                     itemBuilder: (context, index) {
                       final item = cartItems[index];
-                      return Padding(
-                        padding: const EdgeInsets.all(defaultPadding / 2),
-                        child: Card(
-                          child: ListTile(
-                            leading: Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(8),
+                      final product = item.product;
+                      
+                      return Dismissible(
+                        key: Key(item.id ?? index.toString()),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: defaultPadding),
+                          color: Colors.red,
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        onDismissed: (_) => _removeItem(item.id!),
+                        child: Padding(
+                          padding: const EdgeInsets.all(defaultPadding / 2),
+                          child: Card(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Row(
+                                children: [
+                                  // Product Image
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: SizedBox(
+                                      width: 80,
+                                      height: 80,
+                                      child: product?.image.isNotEmpty == true
+                                          ? NetworkImageWithLoader(product!.image)
+                                          : Container(
+                                              color: Colors.grey.shade200,
+                                              child: const Icon(Icons.image),
+                                            ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: defaultPadding),
+                                  // Product Details
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          product?.title ?? 'Product',
+                                          style: Theme.of(context).textTheme.titleSmall,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        if (item.size != null)
+                                          Text(
+                                            'Size: ${item.size!.sizeName}',
+                                            style: Theme.of(context).textTheme.bodySmall,
+                                          ),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            SvgPicture.asset(
+                                              'assets/icons/coin.svg',
+                                              width: 14,
+                                              height: 14,
+                                            ),
+                                            const SizedBox(width: 2),
+                                            Text(
+                                              "${product?.price.toInt() ?? 0}",
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Quantity Controls
+                                  Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.remove_circle_outline),
+                                            onPressed: () => _updateQuantity(
+                                              item.id!,
+                                              item.quantity - 1,
+                                            ),
+                                          ),
+                                          Text(
+                                            '${item.quantity}',
+                                            style: Theme.of(context).textTheme.titleMedium,
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.add_circle_outline),
+                                            onPressed: () => _updateQuantity(
+                                              item.id!,
+                                              item.quantity + 1,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                        onPressed: () => _removeItem(item.id!),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                              child: const Icon(Icons.image),
-                            ),
-                            title: Text(item.name),
-                            subtitle: Row(
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/icons/coin.svg',
-                                  width: 14,
-                                  height: 14,
-                                ),
-                                const SizedBox(width: 2),
-                                Text("${item.price.toInt()}"),
-                              ],
-                            ),
-                            trailing: PopupMenuButton(
-                              itemBuilder: (context) => [
-                                PopupMenuItem(
-                                  child: const Text("Delete"),
-                                  onTap: () => _removeItem(index),
-                                ),
-                              ],
-                              child: const Icon(Icons.more_vert),
                             ),
                           ),
                         ),
@@ -276,9 +321,14 @@ class _CartScreenState extends State<CartScreen> {
                 Container(
                   padding: const EdgeInsets.all(defaultPadding),
                   decoration: BoxDecoration(
-                    border: Border(
-                      top: BorderSide(color: Colors.grey.shade300),
-                    ),
+                    color: Theme.of(context).cardColor,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -5),
+                      ),
+                    ],
                   ),
                   child: Column(
                     children: [
@@ -317,7 +367,7 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                         ],
                       ),
-                      const Divider(),
+                      const Divider(height: defaultPadding),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -335,7 +385,9 @@ class _CartScreenState extends State<CartScreen> {
                               const SizedBox(width: 3),
                               Text(
                                 "${total.toInt()}",
-                                style: Theme.of(context).textTheme.titleMedium,
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ],
                           ),

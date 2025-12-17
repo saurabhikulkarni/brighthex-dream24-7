@@ -131,8 +131,18 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case productDetailsScreenRoute:
       return MaterialPageRoute(
         builder: (context) {
-          bool isProductAvailable = settings.arguments as bool? ?? true;
-          return ProductDetailsScreen(isProductAvailable: isProductAvailable);
+          final args = settings.arguments;
+          // Handle different argument types
+          if (args is Map<String, dynamic>) {
+            return ProductDetailsScreen(
+              product: args['product'],
+              productId: args['productId'],
+              isProductAvailable: args['isProductAvailable'] ?? true,
+            );
+          } else if (args is bool) {
+            return ProductDetailsScreen(isProductAvailable: args);
+          }
+          return const ProductDetailsScreen();
         },
       );
     case productReviewsScreenRoute:
@@ -289,7 +299,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => CategoryProductsScreen(
           categoryName: args?['categoryName'] ?? 'Products',
-          products: args?['products'] ?? [],
+          categoryId: args?['categoryId'],
         ),
       );
     case addAddressScreenRoute:

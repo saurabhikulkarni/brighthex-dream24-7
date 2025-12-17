@@ -3,41 +3,86 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/components/cart_button.dart';
 import 'package:shop/components/custom_modal_bottom_sheet.dart';
 import 'package:shop/components/network_image_with_loader.dart';
+import 'package:shop/models/product_model.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:shop/screens/product/views/added_to_cart_message_screen.dart';
 import 'package:shop/screens/product/views/components/product_list_tile.dart';
 import 'package:shop/screens/product/views/location_permission_store_availability_screen.dart';
 import 'package:shop/screens/product/views/size_guide_screen.dart';
+import 'package:shop/services/cart_service.dart';
 
 import '../../../constants.dart';
 import 'components/product_quantity.dart';
-import 'components/selected_colors.dart';
 import 'components/selected_size.dart';
 import 'components/unit_price.dart';
 
 class ProductBuyNowScreen extends StatefulWidget {
-  const ProductBuyNowScreen({super.key});
+  const ProductBuyNowScreen({
+    super.key,
+    required this.product,
+    this.sizes = const [],
+  });
+
+  final ProductModel product;
+  final List<SizeModel> sizes;
 
   @override
   _ProductBuyNowScreenState createState() => _ProductBuyNowScreenState();
 }
 
 class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
+  int _quantity = 1;
+  int _selectedSizeIndex = 0;
   int walletBalance = 500; // User's shopping tokens
-  final int productPrice = 1200; // Product price in tokens
+
+  SizeModel? get selectedSize {
+    if (widget.sizes.isEmpty) return null;
+    if (_selectedSizeIndex >= widget.sizes.length) return null;
+    return widget.sizes[_selectedSizeIndex];
+  }
+
+  double get totalPrice => widget.product.price * _quantity;
+
+  void _incrementQuantity() {
+    setState(() {
+      _quantity++;
+    });
+  }
+
+  void _decrementQuantity() {
+    if (_quantity > 1) {
+      setState(() {
+        _quantity--;
+      });
+    }
+  }
+
+  void _addToCart() {
+    // Add to local cart
+    cartService.addToLocalCart(
+      widget.product,
+      selectedSize,
+      _quantity,
+    );
+
+    // Show success message
+    customModalBottomSheet(
+      context,
+      isDismissible: false,
+      child: const AddedToCartMessageScreen(),
+    );
+  }
 
   void _handleRedeemNow() {
+    final int productPrice = totalPrice.toInt();
+
     if (walletBalance >= productPrice) {
-      // Sufficient balance - deduct tokens
+      // Sufficient balance - add to cart and deduct tokens
+      _addToCart();
+
       setState(() {
         walletBalance -= productPrice;
       });
-
-      customModalBottomSheet(
-        context,
-        isDismissible: false,
-        child: const AddedToCartMessageScreen(),
-      );
     } else {
       // Insufficient balance - show dialog
       final tokensShort = productPrice - walletBalance;
@@ -84,7 +129,6 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
               onPressed: () {
                 Navigator.pop(context);
                 Navigator.of(context).pop();
-                // Navigate to wallet screen
                 Navigator.pushNamed(
                   context,
                   walletScreenRoute,
@@ -104,14 +148,14 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final sizeNames = widget.sizes.map((s) => s.sizeName).toList();
+
     return Scaffold(
       bottomNavigationBar: CartButton(
-        price: 1200,
-        title: "Redeem Now",
+        price: totalPrice,
+        title: "Add to Cart",
         subTitle: "Total tokens",
-        press: () {
-          _handleRedeemNow();
-        },
+        press: _addToCart,
       ),
       body: Column(
         children: [
@@ -122,9 +166,13 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const BackButton(),
-                Text(
-                  "Sleeveless Ruffle",
-                  style: Theme.of(context).textTheme.titleSmall,
+                Expanded(
+                  child: Text(
+                    widget.product.title,
+                    style: Theme.of(context).textTheme.titleSmall,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
                 IconButton(
                   onPressed: () {},
@@ -137,12 +185,14 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
           Expanded(
             child: CustomScrollView(
               slivers: [
-                const SliverToBoxAdapter(
+                SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: defaultPadding),
+                    padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
                     child: AspectRatio(
                       aspectRatio: 1.05,
-                      child: NetworkImageWithLoader(productDemoImg1),
+                      child: widget.product.image.isNotEmpty
+                          ? NetworkImageWithLoader(widget.product.image)
+                          : const NetworkImageWithLoader(productDemoImg1),
                     ),
                   ),
                 ),
@@ -152,42 +202,44 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: UnitPrice(
-                            price: 145,
-                            priceAfterDiscount: 134.7,
+                            price: widget.product.price,
+                            priceAfterDiscount: widget.product.priceAfetDiscount,
                           ),
                         ),
                         ProductQuantity(
-                          numOfItem: 2,
-                          onIncrement: () {},
-                          onDecrement: () {},
+                          numOfItem: _quantity,
+                          onIncrement: _incrementQuantity,
+                          onDecrement: _decrementQuantity,
                         ),
                       ],
                     ),
                   ),
                 ),
                 const SliverToBoxAdapter(child: Divider()),
-                SliverToBoxAdapter(
-                  child: SelectedColors(
-                    colors: const [
-                      Color(0xFFEA6262),
-                      Color(0xFFB1CC63),
-                      Color(0xFFFFBF5F),
-                      Color(0xFF9FE1DD),
-                      Color(0xFFC482DB),
-                    ],
-                    selectedColorIndex: 2,
-                    press: (value) {},
+                if (sizeNames.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: SelectedSize(
+                      sizes: sizeNames,
+                      selectedIndex: _selectedSizeIndex,
+                      press: (index) {
+                        setState(() {
+                          _selectedSizeIndex = index;
+                        });
+                      },
+                    ),
                   ),
-                ),
-                SliverToBoxAdapter(
-                  child: SelectedSize(
-                    sizes: const ["S", "M", "L", "XL", "XXL"],
-                    selectedIndex: 1,
-                    press: (value) {},
+                if (sizeNames.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(defaultPadding),
+                      child: Text(
+                        "One size fits all",
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
                   ),
-                ),
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(vertical: defaultPadding),
                   sliver: ProductListTile(
@@ -212,12 +264,14 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
                       children: [
                         const SizedBox(height: defaultPadding / 2),
                         Text(
-                          "Store pickup availability",
+                          "Product Info",
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         const SizedBox(height: defaultPadding / 2),
-                        const Text(
-                            "Select a size to check store availability and In-Store pickup options.")
+                        Text(
+                          widget.product.description ?? 
+                              "Premium quality product with excellent durability.",
+                        ),
                       ],
                     ),
                   ),

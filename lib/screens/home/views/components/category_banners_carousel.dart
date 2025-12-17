@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shop/components/category_banner_card.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/models/category_model.dart';
-import 'package:shop/models/product_model.dart';
 import 'package:shop/route/route_constants.dart';
 
 class CategoryBannersCarousel extends StatefulWidget {
@@ -34,34 +33,17 @@ class _CategoryBannersCarouselState extends State<CategoryBannersCarousel> {
     super.dispose();
   }
 
-  // Get products for the selected category
-  List<ProductModel> _getProductsForCategory(String categoryId) {
-    switch (categoryId) {
-      case 'mens':
-        return mensProducts;
-      case 'womens':
-        return womensProducts;
-      case 'accessories':
-        return accessoriesProducts;
-      case 'electronics':
-        return electronicsProducts;
-      default:
-        return demoPopularProducts;
-    }
-  }
-
   void _navigateToCategoryProducts(
     BuildContext context,
     String categoryId,
     String categoryName,
   ) {
-    final products = _getProductsForCategory(categoryId);
     Navigator.pushNamed(
       context,
       categoryProductsScreenRoute,
       arguments: {
         'categoryName': categoryName,
-        'products': products,
+        'categoryId': categoryId,
       },
     );
   }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/route/screen_export.dart';
-import 'package:shop/models/product_model.dart';
 
 import '../../../../constants.dart';
 
@@ -17,60 +16,6 @@ class ExpansionCategory extends StatelessWidget {
   final String title, svgSrc;
   final String? categoryId;
   final List subCategory;
-
-  List<ProductModel> _getProductsForCategory(String? catId) {
-    switch (catId) {
-      case 'mens':
-        return mensProducts;
-      case 'womens':
-        return womensProducts;
-      case 'accessories':
-        return accessoriesProducts;
-      case 'electronics':
-        return electronicsProducts;
-      default:
-        return [];
-    }
-  }
-
-  List<ProductModel> _getProductsForSubcategory(String? categoryId, String subcategoryTitle) {
-    // For accessories category, return products based on subcategory
-    if (categoryId == 'accessories') {
-      switch (subcategoryTitle.toLowerCase()) {
-        case 'jewelry':
-          return jewelryProducts;
-        case 'handbags':
-          return handbagsProducts;
-        case 'mobile accessories':
-          return mobileAccessoriesProducts;
-        case "men's wallet":
-          return mensWalletProducts;
-        default:
-          return [];
-      }
-    }
-    
-    // For electronics category, return products based on subcategory
-    if (categoryId == 'electronics') {
-      switch (subcategoryTitle.toLowerCase()) {
-        case 'chargers':
-          return chargersProducts;
-        case 'wired headphones':
-          return wiredHeadphonesProducts;
-        case 'bluetooth headphones':
-          return bluetoothHeadphonesProducts;
-        case 'usb cables':
-          return usbCablesProducts;
-        case 'speakers':
-          return speakersProducts;
-        default:
-          return [];
-      }
-    }
-    
-    // For other categories, use category-based products
-    return _getProductsForCategory(categoryId);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,14 +43,14 @@ class ExpansionCategory extends StatelessWidget {
           children: [
             ListTile(
               onTap: () {
-                // Navigate to category products screen
-                final products = _getProductsForSubcategory(categoryId, subCategory[index].title);
+                // Navigate to category products screen with category name
+                // Products will be fetched from GraphQL in the CategoryProductsScreen
                 Navigator.pushNamed(
                   context,
                   categoryProductsScreenRoute,
                   arguments: {
                     'categoryName': subCategory[index].title,
-                    'products': products.isEmpty ? [] : products,
+                    'categoryId': categoryId,
                   },
                 );
               },

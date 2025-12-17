@@ -4,19 +4,18 @@ class GraphQLQueries {
     query GetAllProducts {
       products {
         id
-        title
-        brandName
+        productName
+        slug
+        description
         price
-        priceAfterDiscount
-        discountPercent
         image {
           url
         }
-        description
-        category
-        inStock
-        createdAt
-        updatedAt
+        category {
+          id
+          categoryName
+          slug
+        }
       }
     }
   ''';
@@ -26,119 +25,216 @@ class GraphQLQueries {
     query GetProductById(\$id: ID!) {
       product(where: {id: \$id}) {
         id
-        title
-        brandName
+        productName
+        slug
+        description
         price
-        priceAfterDiscount
-        discountPercent
         image {
           url
         }
-        description
-        category
-        inStock
-        createdAt
-        updatedAt
+        category {
+          id
+          categoryName
+          slug
+        }
       }
     }
   ''';
 
   // Query to fetch products by category
   static const String getProductsByCategory = '''
-    query GetProductsByCategory(\$category: String!) {
-      products(where: {category: \$category}) {
+    query GetProductsByCategory(\$categoryName: String!) {
+      products(where: {category: {categoryName: \$categoryName}}) {
         id
-        title
-        brandName
+        productName
+        slug
+        description
         price
-        priceAfterDiscount
-        discountPercent
         image {
           url
         }
-        description
-        category
-        inStock
+        category {
+          id
+          categoryName
+          slug
+        }
       }
     }
   ''';
 
-  // Query to fetch popular products (you can customize this based on your schema)
-  static const String getPopularProducts = '''
-    query GetPopularProducts {
-      products(where: {isPopular: true}) {
+  // Query to fetch all categories
+  static const String getAllCategories = '''
+    query GetAllCategories {
+      categories {
         id
-        title
-        brandName
-        price
-        priceAfterDiscount
-        discountPercent
-        image {
-          url
-        }
-        description
-        category
-        inStock
+        categoryName
+        slug
       }
     }
   ''';
 
-  // Query to fetch flash sale products
-  static const String getFlashSaleProducts = '''
-    query GetFlashSaleProducts {
-      products(where: {isFlashSale: true}) {
+  // Query to fetch sizes for a product
+  static const String getSizesByProduct = '''
+    query GetSizesByProduct(\$productId: ID!) {
+      sizes(where: {product: {id: \$productId}}) {
         id
-        title
-        brandName
-        price
-        priceAfterDiscount
-        discountPercent
-        image {
-          url
+        sizeName
+        quantity
+        product {
+          id
         }
-        description
-        category
-        inStock
       }
     }
   ''';
 
-  // Query to fetch best sellers
-  static const String getBestSellers = '''
-    query GetBestSellers {
-      products(where: {isBestSeller: true}) {
+  // Query to fetch cart items for a user
+  static const String getCartByUser = '''
+    query GetCartByUser(\$userId: ID!) {
+      carts(where: {userDetail: {id: \$userId}}) {
         id
-        title
-        brandName
-        price
-        priceAfterDiscount
-        discountPercent
-        image {
-          url
+        quantity
+        product {
+          id
+          productName
+          slug
+          description
+          price
+          image {
+            url
+          }
+          category {
+            id
+            categoryName
+          }
         }
-        description
-        category
-        inStock
+        size {
+          id
+          sizeName
+        }
       }
     }
   ''';
 
-  // Query to search products
+  // Query to fetch user details
+  static const String getUserById = '''
+    query GetUserById(\$id: ID!) {
+      userDetail(where: {id: \$id}) {
+        id
+        firstName
+        lastName
+        username
+      }
+    }
+  ''';
+
+  // Query to fetch user by username (for login)
+  static const String getUserByUsername = '''
+    query GetUserByUsername(\$username: String!) {
+      userDetails(where: {username: \$username}) {
+        id
+        firstName
+        lastName
+        username
+        password
+      }
+    }
+  ''';
+
+  // Search products by name
   static const String searchProducts = '''
     query SearchProducts(\$searchTerm: String!) {
-      products(where: {_search: \$searchTerm}) {
+      products(where: {productName_contains: \$searchTerm}) {
         id
-        title
-        brandName
+        productName
+        slug
+        description
         price
-        priceAfterDiscount
-        discountPercent
         image {
           url
         }
-        description
-        category
-        inStock
+        category {
+          id
+          categoryName
+          slug
+        }
+      }
+    }
+  ''';
+
+  // Mutations
+
+  // Create a new cart item
+  static const String createCartItem = '''
+    mutation CreateCartItem(\$quantity: Int!, \$userId: ID!, \$productId: ID!, \$sizeId: ID) {
+      createCart(
+        data: {
+          quantity: \$quantity
+          userDetail: {connect: {id: \$userId}}
+          product: {connect: {id: \$productId}}
+          size: {connect: {id: \$sizeId}}
+        }
+      ) {
+        id
+        quantity
+      }
+    }
+  ''';
+
+  // Update cart item quantity
+  static const String updateCartItem = '''
+    mutation UpdateCartItem(\$cartId: ID!, \$quantity: Int!) {
+      updateCart(
+        where: {id: \$cartId}
+        data: {quantity: \$quantity}
+      ) {
+        id
+        quantity
+      }
+    }
+  ''';
+
+  // Delete cart item
+  static const String deleteCartItem = '''
+    mutation DeleteCartItem(\$cartId: ID!) {
+      deleteCart(where: {id: \$cartId}) {
+        id
+      }
+    }
+  ''';
+
+  // Create new user
+  static const String createUser = '''
+    mutation CreateUser(\$firstName: String!, \$lastName: String!, \$username: String!, \$password: String!) {
+      createUserDetail(
+        data: {
+          firstName: \$firstName
+          lastName: \$lastName
+          username: \$username
+          password: \$password
+        }
+      ) {
+        id
+        firstName
+        lastName
+        username
+      }
+    }
+  ''';
+
+  // Publish user (required for Hygraph)
+  static const String publishUser = '''
+    mutation PublishUser(\$id: ID!) {
+      publishUserDetail(where: {id: \$id}) {
+        id
+      }
+    }
+  ''';
+
+  // Publish cart item
+  static const String publishCart = '''
+    mutation PublishCart(\$id: ID!) {
+      publishCart(where: {id: \$id}) {
+        id
       }
     }
   ''';
