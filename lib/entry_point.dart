@@ -211,9 +211,9 @@ class _EntryPointState extends State<EntryPoint> {
                   label: "Discover",
                 ),
                 BottomNavigationBarItem(
-                  icon: svgIcon("assets/icons/Wishlist.svg"),
+                  icon: svgIcon("assets/icons/Like.svg"),
                   activeIcon:
-                      svgIcon("assets/icons/Wishlist.svg", color: Colors.white),
+                      svgIcon("assets/icons/Like.svg", color: Colors.white),
                   label: "Wishlist",
                 ),
                 BottomNavigationBarItem(
