@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/screen_export.dart';
 import 'package:shop/services/cart_service.dart';
+import 'package:shop/services/wishlist_service.dart';
 
 class EntryPoint extends StatefulWidget {
   const EntryPoint({super.key});
@@ -25,6 +26,8 @@ class _EntryPointState extends State<EntryPoint> {
   ];
 
   int get _cartItemCount => cartService.getLocalCart().length;
+
+  int get _wishlistItemCount => wishlistService.getWishlistCount();
 
   @override
   Widget build(BuildContext context) {
@@ -211,9 +214,66 @@ class _EntryPointState extends State<EntryPoint> {
                   label: "Discover",
                 ),
                 BottomNavigationBarItem(
-                  icon: svgIcon("assets/icons/Like.svg"),
-                  activeIcon:
+                  icon: Stack(
+                    children: [
+                      svgIcon("assets/icons/Like.svg"),
+                      if (_wishlistItemCount > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            child: Text(
+                              _wishlistItemCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  activeIcon: Stack(
+                    children: [
                       svgIcon("assets/icons/Like.svg", color: Colors.white),
+                      if (_wishlistItemCount > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            child: Text(
+                              _wishlistItemCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                   label: "Wishlist",
                 ),
                 BottomNavigationBarItem(

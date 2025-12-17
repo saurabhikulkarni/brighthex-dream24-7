@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shop/components/product/product_card.dart';
-import 'package:shop/components/skleton/others/book_marks_skelton.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/services/product_service.dart';
 import 'package:shop/route/route_constants.dart';
@@ -49,7 +48,7 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _isLoading
-          ? const BookMarksSkelton()
+          ? const Center(child: CircularProgressIndicator())
           : _error != null
               ? Center(child: Text('Error loading products'))
               : _products.isEmpty
