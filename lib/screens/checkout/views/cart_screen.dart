@@ -5,7 +5,8 @@ import 'package:shop/components/network_image_with_loader.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/services/cart_service.dart';
-import 'package:uuid/uuid.dart';
+import 'package:shop/services/order_service.dart';
+import 'package:shop/screens/checkout/views/order_confirmation_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -91,82 +92,44 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-    // Deduct tokens from wallet and complete purchase
-    setState(() {
-      walletBalance -= totalTokensNeeded;
-    });
-
-    // Generate unique order ID
-    const uuid = Uuid();
-    final orderId = '#${uuid.v4().substring(0, 8).toUpperCase()}';
-
-    _handlePaymentSuccess({
-      'orderId': orderId,
-      'paymentId': 'TOKEN_${uuid.v4().substring(0, 8).toUpperCase()}',
-      'tokensDeducted': totalTokensNeeded,
-    });
+    // Sufficient tokens - create order
+    _createOrderFromCart(totalTokensNeeded);
   }
 
-  void _handlePaymentSuccess(Map<dynamic, dynamic> paymentResult) {
-    final tokensDeducted = paymentResult['tokensDeducted'] ?? 0;
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Order Placed Successfully'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Thank you for your purchase!'),
-            const SizedBox(height: defaultPadding),
-            Text(
-              'Order ID: ${paymentResult['orderId']}',
-              style: const TextStyle(fontSize: 12),
-            ),
-            const SizedBox(height: defaultPadding / 2),
-            Row(
-              children: [
-                SvgPicture.asset(
-                  'assets/icons/coin.svg',
-                  width: 16,
-                  height: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Tokens Deducted: $tokensDeducted',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-            const SizedBox(height: defaultPadding / 2),
-            Row(
-              children: [
-                SvgPicture.asset(
-                  'assets/icons/coin.svg',
-                  width: 16,
-                  height: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Remaining Balance: $walletBalance',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() {
-                cartService.clearLocalCart();
-              });
-            },
-            child: const Text('Continue Shopping'),
-          ),
-        ],
+  void _createOrderFromCart(int totalTokensNeeded) {
+    // Convert cart items to order items
+    final orderItems = cartItems.map((cartItem) {
+      return OrderItem(
+        productId: cartItem.product?.id ?? cartItem.id ?? 'unknown',
+        productTitle: cartItem.product?.title ?? 'Product',
+        productImage: cartItem.product?.image ?? '',
+        quantity: cartItem.quantity,
+        pricePerUnit: (cartItem.product?.price ?? 0).toInt(),
+        size: cartItem.size,
+      );
+    }).toList();
+
+    // Create order
+    final order = Order(
+      items: orderItems,
+      totalTokens: totalTokensNeeded,
+      status: 'confirmed',
+    );
+
+    // Add order to service
+    orderService.addOrder(order);
+
+    // Deduct tokens from wallet
+    setState(() {
+      walletBalance -= totalTokensNeeded;
+      // Clear the cart after successful order
+      cartService.clearLocalCart();
+    });
+
+    // Navigate to order confirmation screen
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => OrderConfirmationScreen(order: order),
       ),
     );
   }

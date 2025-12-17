@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shop/entry_point.dart';
+import 'package:shop/services/order_service.dart';
 
 import 'screen_export.dart';
 
@@ -253,6 +254,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case ordersScreenRoute:
       return MaterialPageRoute(
         builder: (context) => const OrdersScreen(),
+      );
+    case orderConfirmationScreenRoute:
+      final order = settings.arguments as Order;
+      return MaterialPageRoute(
+        builder: (context) => OrderConfirmationScreen(order: order),
       );
     // case orderProcessingScreenRoute:
     //   return MaterialPageRoute(

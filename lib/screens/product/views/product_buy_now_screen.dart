@@ -8,6 +8,7 @@ import 'package:shop/screens/product/views/added_to_cart_message_screen.dart';
 import 'package:shop/screens/product/views/components/product_list_tile.dart';
 import 'package:shop/screens/product/views/location_permission_store_availability_screen.dart';
 import 'package:shop/screens/product/views/size_guide_screen.dart';
+import 'package:shop/screens/checkout/views/order_confirmation_screen.dart';
 import 'package:shop/services/cart_service.dart';
 import 'package:shop/services/order_service.dart';
 
@@ -101,14 +102,23 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
         content: Text(
           'Order created successfully! Order ID: ${order.id.substring(0, 8)}',
         ),
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 2),
       ),
     );
 
-    // Navigate back to home after 1 second
+    // Deduct tokens from wallet
+    setState(() {
+      walletBalance -= totalPrice.toInt();
+    });
+
+    // Navigate to order confirmation screen
     Future.delayed(const Duration(seconds: 1), () {
       if (mounted) {
-        Navigator.popUntil(context, (route) => route.isFirst);
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => OrderConfirmationScreen(order: order),
+          ),
+        );
       }
     });
   }
