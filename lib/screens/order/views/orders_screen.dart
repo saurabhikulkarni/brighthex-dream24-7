@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/services/order_service.dart';
+import 'package:shop/services/shiprocket_service.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -16,6 +17,18 @@ class _OrdersScreenState extends State<OrdersScreen> {
     // Add sample orders if no orders exist (for demo)
     if (orderService.getAllOrders().isEmpty) {
       orderService.addSampleOrders();
+    }
+    // Sync orders with Shiprocket in background
+    _syncOrdersWithShiprocket();
+  }
+
+  Future<void> _syncOrdersWithShiprocket() async {
+    try {
+      // Sync all orders with Shiprocket to get latest tracking info
+      await orderService.syncAllOrdersWithShiprocket();
+      setState(() {}); // Refresh UI with updated data
+    } catch (e) {
+      print('Error syncing orders: $e');
     }
   }
 
@@ -108,6 +121,79 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const SizedBox(height: defaultPadding / 2),
+                        // Show Shiprocket tracking info if available
+                        if (order.shiprocketData != null)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (order.courierName != null)
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.local_shipping,
+                                      size: 16,
+                                      color: Theme.of(context).primaryColor,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      order.courierName!,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              if (order.trackingNumber != null) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.track_changes,
+                                      size: 16,
+                                      color: Colors.grey,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        'Tracking: ${order.trackingNumber}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              if (order.shiprocketData?.currentLocation != null) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.location_on,
+                                      size: 16,
+                                      color: Colors.grey,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        'Location: ${order.shiprocketData!.currentLocation}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              const SizedBox(height: 4),
+                            ],
+                          ),
+                        const SizedBox(height: defaultPadding / 2),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -115,14 +201,28 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               "${order.totalTokens} Tokens",
                               style: Theme.of(context).textTheme.titleSmall,
                             ),
-                            if (order.trackingNumber != null)
-                              Chip(
-                                label: Text(
-                                  "Track: ${order.trackingNumber}",
-                                  style: const TextStyle(fontSize: 11),
-                                ),
-                                labelPadding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
+                            if (order.shiprocketData != null)
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  // Refresh tracking info from Shiprocket
+                                  await orderService
+                                      .syncOrderWithShiprocket(order.id);
+                                  setState(() {});
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content:
+                                          Text('Tracking info updated'),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.refresh, size: 16),
+                                label: const Text('Refresh'),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
                                 ),
                               ),
                           ],

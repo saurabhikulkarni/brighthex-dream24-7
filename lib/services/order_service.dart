@@ -1,4 +1,5 @@
 import 'package:shop/models/product_model.dart';
+import 'package:shop/services/shiprocket_service.dart';
 import 'package:uuid/uuid.dart';
 
 class OrderItem {
@@ -28,6 +29,8 @@ class Order {
   final int totalTokens;
   final String status; // pending, confirmed, shipped, delivered, cancelled
   final String? trackingNumber;
+  final String? courierName;
+  final ShiprocketOrderData? shiprocketData;
 
   Order({
     String? id,
@@ -36,6 +39,8 @@ class Order {
     required this.totalTokens,
     this.status = 'confirmed',
     this.trackingNumber,
+    this.courierName,
+    this.shiprocketData,
   })  : id = id ?? const Uuid().v4(),
         orderDate = orderDate ?? DateTime.now();
 
@@ -47,6 +52,25 @@ class Order {
       return '${items.first.productTitle} x${items.first.quantity}';
     }
     return '${items.length} items';
+  }
+
+  // Create a copy with updated fields
+  Order copyWith({
+    String? status,
+    String? trackingNumber,
+    String? courierName,
+    ShiprocketOrderData? shiprocketData,
+  }) {
+    return Order(
+      id: id,
+      orderDate: orderDate,
+      items: items,
+      totalTokens: totalTokens,
+      status: status ?? this.status,
+      trackingNumber: trackingNumber ?? this.trackingNumber,
+      courierName: courierName ?? this.courierName,
+      shiprocketData: shiprocketData ?? this.shiprocketData,
+    );
   }
 }
 
@@ -91,15 +115,78 @@ class OrderService {
     final index = _orders.indexWhere((order) => order.id == orderId);
     if (index != -1) {
       final oldOrder = _orders[index];
-      final updatedOrder = Order(
-        id: oldOrder.id,
-        orderDate: oldOrder.orderDate,
-        items: oldOrder.items,
-        totalTokens: oldOrder.totalTokens,
-        status: newStatus,
-        trackingNumber: oldOrder.trackingNumber,
+      final updatedOrder = oldOrder.copyWith(status: newStatus);
+      _orders[index] = updatedOrder;
+    }
+  }
+
+  // Update order with Shiprocket data
+  void updateOrderWithShiprocketData(
+    String orderId,
+    ShiprocketOrderData shiprocketData,
+  ) {
+    final index = _orders.indexWhere((order) => order.id == orderId);
+    if (index != -1) {
+      final oldOrder = _orders[index];
+      
+      // Map Shiprocket status to our order status
+      String mappedStatus = _mapShiprocketStatus(shiprocketData.orderStatus);
+      
+      final updatedOrder = oldOrder.copyWith(
+        status: mappedStatus,
+        trackingNumber: shiprocketData.trackingNumber,
+        courierName: shiprocketData.courierName,
+        shiprocketData: shiprocketData,
       );
       _orders[index] = updatedOrder;
+    }
+  }
+
+  // Sync order status with Shiprocket
+  Future<void> syncOrderWithShiprocket(String orderId) async {
+    try {
+      final shiprocketData = await ShiprocketService.getOrderTracking(orderId);
+      if (shiprocketData != null) {
+        updateOrderWithShiprocketData(orderId, shiprocketData);
+      }
+    } catch (e) {
+      print('Error syncing order with Shiprocket: $e');
+    }
+  }
+
+  // Map Shiprocket status to our order status
+  String _mapShiprocketStatus(String shiprocketStatus) {
+    final status = shiprocketStatus.toLowerCase();
+    
+    if (status.contains('delivered') || status.contains('completed')) {
+      return 'delivered';
+    } else if (status.contains('transit') || status.contains('in-transit') || status.contains('out for delivery')) {
+      return 'shipped';
+    } else if (status.contains('cancelled') || status.contains('cancel')) {
+      return 'cancelled';
+    } else if (status.contains('confirmed') || status.contains('pending') || status.contains('processing')) {
+      return 'confirmed';
+    } else if (status.contains('picked') || status.contains('packed')) {
+      return 'confirmed';
+    }
+    
+    return 'confirmed'; // Default status
+  }
+
+  // Sync all orders with Shiprocket
+  Future<void> syncAllOrdersWithShiprocket() async {
+    for (final order in _orders) {
+      await syncOrderWithShiprocket(order.id);
+    }
+  }
+
+  // Get Shiprocket tracking data for an order
+  ShiprocketOrderData? getOrderTrackingData(String orderId) {
+    try {
+      final order = getOrderById(orderId);
+      return order?.shiprocketData;
+    } catch (e) {
+      return null;
     }
   }
 
@@ -123,8 +210,9 @@ class OrderService {
     if (_orders.isNotEmpty) return; // Don't add if already have orders
 
     final now = DateTime.now();
+    final mockTrackingData = ShiprocketService.getMockOrderTracking('SR001');
     
-    // Sample order 1
+    // Sample order 1 - Delivered
     addOrder(Order(
       orderDate: now.subtract(const Duration(days: 5)),
       items: [
@@ -138,10 +226,19 @@ class OrderService {
       ],
       totalTokens: 450,
       status: 'delivered',
-      trackingNumber: 'TRACK123456',
+      trackingNumber: 'DEL123456',
+      courierName: 'DELHIVERY',
+      shiprocketData: ShiprocketOrderData(
+        orderId: 'SR001',
+        orderStatus: 'Delivered',
+        courierName: 'DELHIVERY',
+        trackingNumber: 'DEL123456',
+        estimatedDeliveryDate: now.subtract(const Duration(days: 1)).toString(),
+        currentLocation: 'Delivered to customer',
+      ),
     ));
 
-    // Sample order 2
+    // Sample order 2 - In Transit
     addOrder(Order(
       orderDate: now.subtract(const Duration(days: 2)),
       items: [
@@ -156,9 +253,25 @@ class OrderService {
       totalTokens: 780,
       status: 'shipped',
       trackingNumber: 'TRACK789012',
+      courierName: 'FedEx',
+      shiprocketData: ShiprocketOrderData(
+        orderId: 'SR002',
+        orderStatus: 'In Transit',
+        courierName: 'FedEx',
+        trackingNumber: 'TRACK789012',
+        estimatedDeliveryDate: now.add(const Duration(days: 1)).toString(),
+        currentLocation: 'Mumbai Distribution Center',
+        deliveryPartner: DeliveryPartner(
+          name: 'Raj Kumar',
+          phone: '+91 9876543210',
+          vehicleInfo: 'Maruti Swift - MH02AB1234',
+          latitude: 19.0760,
+          longitude: 72.8777,
+        ),
+      ),
     ));
 
-    // Sample order 3
+    // Sample order 3 - Confirmed
     addOrder(Order(
       orderDate: now,
       items: [
@@ -172,6 +285,11 @@ class OrderService {
       ],
       totalTokens: 1040,
       status: 'confirmed',
+      shiprocketData: ShiprocketOrderData(
+        orderId: 'SR003',
+        orderStatus: 'Processing',
+        estimatedDeliveryDate: now.add(const Duration(days: 3)).toString(),
+      ),
     ));
   }
 }
