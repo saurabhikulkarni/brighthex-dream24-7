@@ -5,6 +5,7 @@ import 'package:shop/theme/app_theme.dart';
 import 'package:shop/screens/splash/splash_screen.dart';
 import 'package:shop/services/wishlist_service.dart';
 import 'package:shop/services/auth_service.dart';
+import 'package:shop/services/cart_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +18,9 @@ void main() async {
   
   // Initialize Wishlist Service
   await wishlistService.initialize();
+  
+  // Initialize Cart Service
+  await cartService.initialize();
   
   runApp(const MyApp());
 }

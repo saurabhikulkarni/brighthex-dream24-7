@@ -4,6 +4,7 @@ import 'package:shop/services/graphql_client.dart';
 import 'package:shop/services/graphql_queries.dart';
 import 'package:shop/services/wallet_service.dart';
 import 'package:shop/services/wishlist_service.dart';
+import 'package:shop/services/cart_service.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -104,12 +105,13 @@ class AuthService {
       await prefs.setBool(_phoneVerifiedKey, phoneVerified);
       await prefs.setString(_lastLoginKey, DateTime.now().toIso8601String());
       
-      // Store userId and set it in wallet/wishlist services
+      // Store userId and set it in wallet/wishlist/cart services
       if (userId != null && userId.isNotEmpty) {
         await prefs.setString(_userIdKey, userId);
-        // Set userId in wallet and wishlist services for GraphQL backend sync
-        await walletService.setUserId(userId);
-        await wishlistService.setUserId(userId);
+        // Set userId in wallet, wishlist, and cart services for GraphQL backend sync
+        walletService.setUserId(userId);
+        wishlistService.setUserId(userId);
+        cartService.setUserId(userId);
       }
     } catch (e) {
       print('Error saving login session: $e');
@@ -140,9 +142,10 @@ class AuthService {
       await prefs.remove(_lastLoginKey);
       await prefs.remove(_userIdKey);
       
-      // Clear wallet and wishlist services on logout
-      await walletService.clear();
-      await wishlistService.clear();
+      // Clear wallet, wishlist, and cart services on logout
+      walletService.clear();
+      wishlistService.clear();
+      cartService.clear();
     } catch (e) {
       print('Error during logout: $e');
     }

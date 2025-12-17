@@ -1,20 +1,76 @@
+import 'dart:convert';
 import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/services/graphql_client.dart';
 import 'package:shop/services/graphql_queries.dart';
 
 class CartService {
-  final GraphQLClient _client = GraphQLService.getClient();
+  static final CartService _instance = CartService._internal();
 
-  // Local cart storage (for now, until user auth is implemented)
-  static final List<CartModel> _localCart = [];
+  factory CartService() {
+    return _instance;
+  }
+
+  CartService._internal();
+
+  final GraphQLClient _client = GraphQLService.getClient();
+  late SharedPreferences _prefs;
+  String? _userId;
+
+  // In-memory cart storage (synced with SharedPreferences)
+  List<CartModel> _localCart = [];
+
+  // Initialize service and load persisted data
+  Future<void> initialize() async {
+    _prefs = await SharedPreferences.getInstance();
+    await _loadFromSharedPreferences();
+  }
+
+  // Load cart from SharedPreferences
+  Future<void> _loadFromSharedPreferences() async {
+    try {
+      final cartJson = _prefs.getString('cart_items');
+      final userIdString = _prefs.getString('user_id');
+
+      _userId = userIdString;
+
+      if (cartJson != null && cartJson.isNotEmpty) {
+        final List<dynamic> decoded = jsonDecode(cartJson);
+        _localCart = decoded
+            .map((item) => CartModel.fromJson(item as Map<String, dynamic>))
+            .toList();
+      } else {
+        _localCart = [];
+      }
+    } catch (e) {
+      _localCart = [];
+    }
+  }
+
+  // Save cart to SharedPreferences
+  Future<void> _saveToSharedPreferences() async {
+    try {
+      final cartJson = jsonEncode(
+        _localCart.map((item) => item.toJson()).toList(),
+      );
+      await _prefs.setString('cart_items', cartJson);
+    } catch (e) {
+      // Silently fail - data still in memory
+    }
+  }
+
+  // Set user ID from auth service
+  void setUserId(String userId) {
+    _userId = userId;
+  }
 
   // Get local cart items
   List<CartModel> getLocalCart() {
     return _localCart;
   }
 
-  // Add item to local cart
+  // Add item to local cart and persist
   void addToLocalCart(ProductModel product, SizeModel? size, int quantity) {
     // Check if product already exists in cart
     final existingIndex = _localCart.indexWhere(
@@ -39,9 +95,12 @@ class CartService {
         size: size,
       ));
     }
+
+    // Persist to SharedPreferences
+    _saveToSharedPreferences();
   }
 
-  // Update cart item quantity
+  // Update cart item quantity and persist
   void updateLocalCartQuantity(String cartItemId, int quantity) {
     final index = _localCart.indexWhere((item) => item.id == cartItemId);
     if (index >= 0) {
@@ -52,17 +111,22 @@ class CartService {
         product: item.product,
         size: item.size,
       );
+
+      // Persist to SharedPreferences
+      _saveToSharedPreferences();
     }
   }
 
-  // Remove item from local cart
+  // Remove item from local cart and persist
   void removeFromLocalCart(String cartItemId) {
     _localCart.removeWhere((item) => item.id == cartItemId);
+    _saveToSharedPreferences();
   }
 
-  // Clear local cart
+  // Clear local cart and persist
   void clearLocalCart() {
     _localCart.clear();
+    _saveToSharedPreferences();
   }
 
   // Calculate total
@@ -78,7 +142,7 @@ class CartService {
     return _localCart.fold(0, (sum, item) => sum + item.quantity);
   }
 
-  // ============ GraphQL Methods (for when user auth is implemented) ============
+  // ============ GraphQL Methods (for backend sync) ============
 
   // Fetch cart items for a user from GraphQL
   Future<List<CartModel>> getCartByUser(String userId) async {
@@ -105,6 +169,21 @@ class CartService {
           .toList();
     } catch (e) {
       throw Exception('Error fetching cart: $e');
+    }
+  }
+
+  // Sync cart with backend (fetch latest from GraphQL)
+  Future<void> syncWithBackend() async {
+    if (_userId == null || _userId!.isEmpty) {
+      return;
+    }
+
+    try {
+      final backendCart = await getCartByUser(_userId!);
+      _localCart = backendCart;
+      await _saveToSharedPreferences();
+    } catch (e) {
+      // Keep existing local cart on error
     }
   }
 
@@ -147,7 +226,7 @@ class CartService {
     }
   }
 
-  // Update cart item quantity
+  // Update cart item quantity via GraphQL
   Future<bool> updateCartQuantity(String cartId, int quantity) async {
     try {
       final QueryResult result = await _client.mutate(
@@ -170,7 +249,7 @@ class CartService {
     }
   }
 
-  // Delete cart item
+  // Delete cart item via GraphQL
   Future<bool> deleteCartItem(String cartId) async {
     try {
       final QueryResult result = await _client.mutate(
@@ -203,7 +282,13 @@ class CartService {
       // Silently fail publish - item is still created
     }
   }
+  // Clear cart on logout
+  void clear() {
+    _userId = null;
+    _localCart = [];
+    _saveToSharedPreferences();
+  }
 }
 
-// Singleton instance for easy access
+// Global instance
 final cartService = CartService();
