@@ -74,6 +74,51 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   }
 
   void _handleRedeemNow() {
+    // Show confirmation dialog
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Order Now'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Do you want to order this product now?'),
+            const SizedBox(height: defaultPadding / 2),
+            Row(
+              children: [
+                SvgPicture.asset(
+                  'assets/icons/coin.svg',
+                  width: 16,
+                  height: 16,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Total: ${totalPrice.toInt()} tokens',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _processRedeemNow();
+            },
+            child: const Text('Yes, Order Now'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _processRedeemNow() {
     final int productPrice = totalPrice.toInt();
 
     if (walletBalance >= productPrice) {
@@ -83,6 +128,12 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
       setState(() {
         walletBalance -= productPrice;
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Order placed! ${productPrice} tokens deducted from wallet'),
+        ),
+      );
     } else {
       // Insufficient balance - show dialog
       final tokensShort = productPrice - walletBalance;
@@ -128,17 +179,17 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                Navigator.of(context).pop();
                 Navigator.pushNamed(
                   context,
                   walletScreenRoute,
                   arguments: {
                     'walletBalance': walletBalance,
                     'shoppingTokens': walletBalance,
+                    'tokensNeeded': tokensShort,
                   },
                 );
               },
-              child: const Text('Add Tokens'),
+              child: const Text('Add Tokens to Wallet'),
             ),
           ],
         ),
@@ -151,11 +202,46 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     final sizeNames = widget.sizes.map((s) => s.sizeName).toList();
 
     return Scaffold(
-      bottomNavigationBar: CartButton(
-        price: totalPrice,
-        title: "Add to Cart",
-        subTitle: "Total tokens",
-        press: _addToCart,
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(defaultPadding),
+          child: Row(
+            children: [
+              // Add to Cart Button
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _addToCart,
+                  icon: const Icon(Icons.shopping_cart),
+                  label: const Text('Add to Cart'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[300],
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(width: defaultPadding),
+              // Redeem Now Button
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _handleRedeemNow,
+                  icon: SvgPicture.asset(
+                    'assets/icons/coin.svg',
+                    width: 18,
+                    height: 18,
+                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  ),
+                  label: const Text('Redeem Now'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
       body: Column(
         children: [
