@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:shop/components/cart_button.dart';
 import 'package:shop/components/custom_modal_bottom_sheet.dart';
 import 'package:shop/components/network_image_with_loader.dart';
 import 'package:shop/models/product_model.dart';
@@ -10,6 +9,7 @@ import 'package:shop/screens/product/views/components/product_list_tile.dart';
 import 'package:shop/screens/product/views/location_permission_store_availability_screen.dart';
 import 'package:shop/screens/product/views/size_guide_screen.dart';
 import 'package:shop/services/cart_service.dart';
+import 'package:shop/services/order_service.dart';
 
 import '../../../constants.dart';
 import 'components/product_quantity.dart';
@@ -73,6 +73,46 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     );
   }
 
+  void _createOrder() {
+    // Create order from product
+    final order = Order(
+      items: [
+        OrderItem(
+          productId: widget.product.id ?? widget.product.title,
+          productTitle: widget.product.title,
+          productImage: widget.product.image.isNotEmpty 
+              ? widget.product.image 
+              : productDemoImg1,
+          quantity: _quantity,
+          pricePerUnit: widget.product.price.toInt(),
+          size: selectedSize,
+        ),
+      ],
+      totalTokens: totalPrice.toInt(),
+      status: 'confirmed',
+    );
+
+    // Add order to service
+    orderService.addOrder(order);
+
+    // Show success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Order created successfully! Order ID: ${order.id.substring(0, 8)}',
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+
+    // Navigate back to home after 1 second
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        Navigator.popUntil(context, (route) => route.isFirst);
+      }
+    });
+  }
+
   void _handleRedeemNow() {
     // Show confirmation dialog
     showDialog(
@@ -122,18 +162,12 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     final int productPrice = totalPrice.toInt();
 
     if (walletBalance >= productPrice) {
-      // Sufficient balance - add to cart and deduct tokens
-      _addToCart();
-
+      // Sufficient balance - create order and deduct tokens
       setState(() {
         walletBalance -= productPrice;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Order placed! ${productPrice} tokens deducted from wallet'),
-        ),
-      );
+      _createOrder();
     } else {
       // Insufficient balance - show dialog
       final tokensShort = productPrice - walletBalance;

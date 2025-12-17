@@ -1,45 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
-import 'package:shop/models/order_model.dart';
-import 'order_tracking_screen.dart';
+import 'package:shop/services/order_service.dart';
 
-class OrdersScreen extends StatelessWidget {
+class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
 
   @override
+  State<OrdersScreen> createState() => _OrdersScreenState();
+}
+
+class _OrdersScreenState extends State<OrdersScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Add sample orders if no orders exist (for demo)
+    if (orderService.getAllOrders().isEmpty) {
+      orderService.addSampleOrders();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final orders = [
-      OrderModel(
-        id: "#123456",
-        date: "Dec 10, 2024",
-        total: 325.50,
-        status: "Delivered",
-        items: ["Nike Air Max", "Blue T-shirt"],
-        shippingId: "SHIP123456",
-        courierName: "DELHIVERY",
-        trackingNumber: "DEL123456",
-      ),
-      OrderModel(
-        id: "#123455",
-        date: "Dec 5, 2024",
-        total: 85.00,
-        status: "In Transit",
-        items: ["Adidas Jacket"],
-        shippingId: "SHIP123455",
-        courierName: "FedEx",
-        trackingNumber: "FDX123455",
-      ),
-      OrderModel(
-        id: "#123454",
-        date: "Nov 28, 2024",
-        total: 150.00,
-        status: "Processing",
-        items: ["Summer Sunglasses", "Black Belt"],
-        shippingId: "SHIP123454",
-        courierName: "Blue Dart",
-        trackingNumber: "BD123454",
-      ),
-    ];
+    final orders = orderService.getAllOrders();
 
     return Scaffold(
       appBar: AppBar(
@@ -60,6 +42,11 @@ class OrdersScreen extends StatelessWidget {
                     "No orders yet",
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
+                  const SizedBox(height: defaultPadding / 2),
+                  Text(
+                    "Start shopping to place your first order!",
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ),
             )
@@ -78,32 +65,38 @@ class OrdersScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              "Order ${order.id}",
-                              style: Theme.of(context).textTheme.titleSmall,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Order ${order.id.substring(0, 8)}",
+                                    style: Theme.of(context).textTheme.titleSmall,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _formatDate(order.orderDate),
+                                    style: Theme.of(context).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
+                                horizontal: 12,
+                                vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: order.status == "Delivered"
-                                    ? Colors.green.shade100
-                                    : order.status == "In Transit"
-                                        ? Colors.blue.shade100
-                                        : Colors.orange.shade100,
+                                color: _getStatusColor(order.status)
+                                    .withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                order.status,
+                                _formatStatus(order.status),
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: order.status == "Delivered"
-                                      ? Colors.green
-                                      : order.status == "In Transit"
-                                          ? Colors.blue
-                                          : Colors.orange,
+                                  fontWeight: FontWeight.w600,
+                                  color: _getStatusColor(order.status),
                                 ),
                               ),
                             ),
@@ -111,40 +104,27 @@ class OrdersScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: defaultPadding / 2),
                         Text(
-                          order.date,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const SizedBox(height: defaultPadding / 2),
-                        Text(
-                          "Items: ${order.items.join(", ")}",
-                          style: Theme.of(context).textTheme.bodySmall,
+                          order.orderSummary,
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const SizedBox(height: defaultPadding / 2),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              "Total: \$${order.total.toStringAsFixed(2)}",
+                              "${order.totalTokens} Tokens",
                               style: Theme.of(context).textTheme.titleSmall,
                             ),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        OrderTrackingScreen(orderId: order.id),
-                                  ),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
+                            if (order.trackingNumber != null)
+                              Chip(
+                                label: Text(
+                                  "Track: ${order.trackingNumber}",
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                                labelPadding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
                                 ),
                               ),
-                              child: const Text("Track"),
-                            ),
                           ],
                         ),
                       ],
@@ -154,5 +134,41 @@ class OrdersScreen extends StatelessWidget {
               },
             ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return "${date.day} ${_getMonth(date.month)} ${date.year}";
+  }
+
+  String _getMonth(int month) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[month - 1];
+  }
+
+  String _formatStatus(String status) {
+    return status.replaceFirst(
+      status[0],
+      status[0].toUpperCase(),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'delivered':
+        return Colors.green;
+      case 'shipped':
+      case 'in transit':
+        return Colors.blue;
+      case 'confirmed':
+      case 'pending':
+        return Colors.orange;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 }
