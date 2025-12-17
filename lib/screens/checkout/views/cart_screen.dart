@@ -127,30 +127,29 @@ class _CartScreenState extends State<CartScreen> {
       );
     }).toList();
 
-    // Create order
-    final order = Order(
+    // Use unified order creation flow from OrderService
+    final order = await orderService.createOrderWithPayment(
       items: orderItems,
       totalTokens: totalTokensNeeded,
-      status: 'confirmed',
+      clearCartAfter: true,
     );
 
-    // Deduct tokens from wallet using WalletService
-    final success = await walletService.deductBalance(totalTokensNeeded.toDouble());
-    if (success) {
+    if (order != null) {
+      // Update wallet balance in UI
       setState(() {
         walletBalance -= totalTokensNeeded;
-        // Clear the cart after successful order
-        cartService.clearLocalCart();
       });
-
-      // Add order to service
-      orderService.addOrder(order);
 
       // Navigate to order confirmation screen
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => OrderConfirmationScreen(order: order),
         ),
+      );
+    } else {
+      // Order creation failed
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to create order')),
       );
     }
   }

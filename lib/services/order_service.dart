@@ -1,5 +1,7 @@
 import 'package:shop/models/product_model.dart';
 import 'package:shop/services/shiprocket_service.dart';
+import 'package:shop/services/wallet_service.dart';
+import 'package:shop/services/cart_service.dart';
 import 'package:uuid/uuid.dart';
 
 class OrderItem {
@@ -193,6 +195,48 @@ class OrderService {
   // Cancel order
   void cancelOrder(String orderId) {
     updateOrderStatus(orderId, 'cancelled');
+  }
+
+  // Unified order creation flow with wallet deduction and cart clearing
+  // Returns the created Order if successful, or null if failed
+  Future<Order?> createOrderWithPayment({
+    required List<OrderItem> items,
+    required int totalTokens,
+    bool clearCartAfter = true,
+  }) async {
+    try {
+      // Verify wallet has sufficient balance
+      final walletBalance = await walletService.getBalance();
+      if (walletBalance < totalTokens) {
+        throw Exception('Insufficient wallet balance');
+      }
+
+      // Deduct tokens from wallet
+      final deductionSuccess = await walletService.deductBalance(totalTokens.toDouble());
+      if (!deductionSuccess) {
+        throw Exception('Failed to deduct tokens from wallet');
+      }
+
+      // Create order
+      final order = Order(
+        items: items,
+        totalTokens: totalTokens,
+        status: 'confirmed',
+      );
+
+      // Add order to service
+      addOrder(order);
+
+      // Clear cart if requested
+      if (clearCartAfter) {
+        cartService.clearLocalCart();
+      }
+
+      return order;
+    } catch (e) {
+      print('Error creating order with payment: $e');
+      return null;
+    }
   }
 
   // Get recent orders (last n orders)

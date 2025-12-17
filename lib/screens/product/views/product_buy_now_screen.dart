@@ -92,53 +92,60 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     );
   }
 
-  void _createOrder() {
-    // Create order from product
-    final order = Order(
-      items: [
-        OrderItem(
-          productId: widget.product.id ?? widget.product.title,
-          productTitle: widget.product.title,
-          productImage: widget.product.image.isNotEmpty 
-              ? widget.product.image 
-              : productDemoImg1,
-          quantity: _quantity,
-          pricePerUnit: widget.product.price.toInt(),
-          size: selectedSize,
-        ),
-      ],
-      totalTokens: totalPrice.toInt(),
-      status: 'confirmed',
-    );
-
-    // Add order to service
-    orderService.addOrder(order);
-
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Order created successfully! Order ID: ${order.id.substring(0, 8)}',
-        ),
-        duration: const Duration(seconds: 2),
+  void _createOrder() async {
+    // Create order items from product
+    final orderItems = [
+      OrderItem(
+        productId: widget.product.id ?? widget.product.title,
+        productTitle: widget.product.title,
+        productImage: widget.product.image.isNotEmpty 
+            ? widget.product.image 
+            : productDemoImg1,
+        quantity: _quantity,
+        pricePerUnit: widget.product.price.toInt(),
+        size: selectedSize,
       ),
+    ];
+
+    // Use unified order creation flow from OrderService
+    final order = await orderService.createOrderWithPayment(
+      items: orderItems,
+      totalTokens: totalPrice.toInt(),
+      clearCartAfter: false, // Don't clear cart for Redeem Now (no cart involved)
     );
 
-    // Deduct tokens from wallet
-    setState(() {
-      walletBalance -= totalPrice.toInt();
-    });
+    if (order != null) {
+      // Update wallet balance in UI
+      setState(() {
+        walletBalance -= totalPrice.toInt();
+      });
 
-    // Navigate to order confirmation screen
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => OrderConfirmationScreen(order: order),
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Order created successfully! Order ID: ${order.id.substring(0, 8)}',
           ),
-        );
-      }
-    });
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // Navigate to order confirmation screen
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => OrderConfirmationScreen(order: order),
+            ),
+          );
+        }
+      });
+    } else {
+      // Order creation failed
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to create order')),
+      );
+    }
   }
 
   void _handleRedeemNow() {
@@ -190,18 +197,8 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     final int productPrice = totalPrice.toInt();
 
     if (walletBalance >= productPrice) {
-      // Sufficient balance - create order and deduct tokens
-      final success = await walletService.deductBalance(productPrice.toDouble());
-      if (success) {
-        setState(() {
-          walletBalance -= productPrice;
-        });
-        _createOrder();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to deduct from wallet')),
-        );
-      }
+      // Sufficient balance - use unified order creation flow
+      _createOrder();
     } else {
       // Insufficient balance - show dialog
       final tokensShort = productPrice - walletBalance.toInt();
