@@ -5,6 +5,8 @@ import 'package:shop/components/network_image_with_loader.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/services/cart_service.dart';
+import 'package:shop/services/user_service.dart';
+import 'package:shop/route/route_constants.dart';
 import 'package:uuid/uuid.dart';
 
 class CartScreen extends StatefulWidget {
@@ -16,6 +18,31 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   int walletBalance = 500; // User's shopping tokens
+  final UserService _userService = userService;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWalletBalance();
+  }
+
+  Future<void> _loadWalletBalance() async {
+    // For now, using default balance
+    // In production, fetch from GraphQL using current user ID
+    final userId = UserService.getCurrentUserId();
+    if (userId != null) {
+      try {
+        final balance = await _userService.getWalletBalance();
+        if (mounted) {
+          setState(() {
+            walletBalance = balance.toInt();
+          });
+        }
+      } catch (e) {
+        // Use default balance if fetch fails
+      }
+    }
+  }
 
   List<CartModel> get cartItems => cartService.getLocalCart();
 
@@ -81,7 +108,28 @@ class _CartScreenState extends State<CartScreen> {
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                Navigator.of(context).pop();
+                // Navigate to wallet screen with required amount
+                Navigator.pushNamed(
+                  context,
+                  walletScreenRoute,
+                  arguments: {
+                    'walletBalance': walletBalance.toDouble(),
+                    'shoppingTokens': walletBalance,
+                    'requiredAmount': tokensShort.toDouble(),
+                    'returnToCart': true,
+                  },
+                ).then((result) {
+                  // Refresh wallet balance when returning from wallet screen
+                  if (result != null && result is Map) {
+                    setState(() {
+                      walletBalance = (result['shoppingTokens'] ?? walletBalance) as int;
+                    });
+                    // If balance is now sufficient, try payment again
+                    if (walletBalance >= totalTokensNeeded) {
+                      _proceedToPayment(context);
+                    }
+                  }
+                });
               },
               child: const Text('Add Top-up'),
             ),
@@ -92,9 +140,22 @@ class _CartScreenState extends State<CartScreen> {
     }
 
     // Deduct tokens from wallet and complete purchase
-    setState(() {
-      walletBalance -= totalTokensNeeded;
-    });
+    final userId = UserService.getCurrentUserId();
+    if (userId != null) {
+      // Update balance in GraphQL
+      _userService.deductWalletBalance(userId, totalTokensNeeded.toDouble()).then((newBalance) {
+        if (newBalance != null && mounted) {
+          setState(() {
+            walletBalance = newBalance.toInt();
+          });
+        }
+      });
+    } else {
+      // Local update if no user ID
+      setState(() {
+        walletBalance -= totalTokensNeeded;
+      });
+    }
 
     // Generate unique order ID
     const uuid = Uuid();

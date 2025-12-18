@@ -123,6 +123,7 @@ class GraphQLQueries {
         firstName
         lastName
         username
+        walletBalance
       }
     }
   ''';
@@ -136,6 +137,7 @@ class GraphQLQueries {
         lastName
         username
         password
+        walletBalance
       }
     }
   ''';
@@ -235,6 +237,45 @@ class GraphQLQueries {
     mutation PublishCart(\$id: ID!) {
       publishCart(where: {id: \$id}) {
         id
+      }
+    }
+  ''';
+
+  // Update user wallet balance
+  static const String updateWalletBalance = '''
+    mutation UpdateWalletBalance(\$userId: ID!, \$walletBalance: Float!) {
+      updateUserDetail(
+        where: {id: \$userId}
+        data: {walletBalance: \$walletBalance}
+      ) {
+        id
+        walletBalance
+      }
+    }
+  ''';
+
+  // Increment wallet balance (add money)
+  static const String addWalletBalance = '''
+    mutation AddWalletBalance(\$userId: ID!, \$amount: Float!) {
+      updateUserDetail(
+        where: {id: \$userId}
+        data: {walletBalance: {increment: \$amount}}
+      ) {
+        id
+        walletBalance
+      }
+    }
+  ''';
+
+  // Decrement wallet balance (deduct money)
+  static const String deductWalletBalance = '''
+    mutation DeductWalletBalance(\$userId: ID!, \$amount: Float!) {
+      updateUserDetail(
+        where: {id: \$userId}
+        data: {walletBalance: {decrement: \$amount}}
+      ) {
+        id
+        walletBalance
       }
     }
   ''';

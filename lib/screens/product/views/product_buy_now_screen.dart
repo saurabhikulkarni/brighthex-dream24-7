@@ -35,10 +35,27 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   int _selectedSizeIndex = 0;
   int walletBalance = 500; // User's shopping tokens
 
+  // Default sizes if none from API
+  static const List<String> _defaultSizes = ["S", "M", "L", "XL", "XXL"];
+
+  List<String> get availableSizes {
+    if (widget.sizes.isNotEmpty) {
+      return widget.sizes.map((s) => s.sizeName).toList();
+    }
+    return _defaultSizes;
+  }
+
   SizeModel? get selectedSize {
     if (widget.sizes.isEmpty) return null;
     if (_selectedSizeIndex >= widget.sizes.length) return null;
     return widget.sizes[_selectedSizeIndex];
+  }
+
+  String get selectedSizeName {
+    if (_selectedSizeIndex < availableSizes.length) {
+      return availableSizes[_selectedSizeIndex];
+    }
+    return "M";
   }
 
   double get totalPrice => widget.product.price * _quantity;
@@ -58,10 +75,20 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   }
 
   void _addToCart() {
+    // Create a size model from selected size name if no API sizes
+    SizeModel? sizeToAdd = selectedSize;
+    if (sizeToAdd == null && availableSizes.isNotEmpty) {
+      sizeToAdd = SizeModel(
+        id: 'local_${selectedSizeName}',
+        sizeName: selectedSizeName,
+        quantity: 100,
+      );
+    }
+
     // Add to local cart
     cartService.addToLocalCart(
       widget.product,
-      selectedSize,
+      sizeToAdd,
       _quantity,
     );
 
@@ -133,10 +160,19 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
                   context,
                   walletScreenRoute,
                   arguments: {
-                    'walletBalance': walletBalance,
+                    'walletBalance': walletBalance.toDouble(),
                     'shoppingTokens': walletBalance,
+                    'requiredAmount': tokensShort.toDouble(),
+                    'returnToCart': false,
                   },
-                );
+                ).then((result) {
+                  // Refresh wallet balance when returning from wallet screen
+                  if (result != null && result is Map && mounted) {
+                    setState(() {
+                      walletBalance = (result['shoppingTokens'] ?? walletBalance) as int;
+                    });
+                  }
+                });
               },
               child: const Text('Add Tokens'),
             ),
@@ -148,8 +184,6 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sizeNames = widget.sizes.map((s) => s.sizeName).toList();
-
     return Scaffold(
       bottomNavigationBar: CartButton(
         price: totalPrice,
@@ -218,28 +252,17 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
                   ),
                 ),
                 const SliverToBoxAdapter(child: Divider()),
-                if (sizeNames.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: SelectedSize(
-                      sizes: sizeNames,
-                      selectedIndex: _selectedSizeIndex,
-                      press: (index) {
-                        setState(() {
-                          _selectedSizeIndex = index;
-                        });
-                      },
-                    ),
+                SliverToBoxAdapter(
+                  child: SelectedSize(
+                    sizes: availableSizes,
+                    selectedIndex: _selectedSizeIndex,
+                    press: (index) {
+                      setState(() {
+                        _selectedSizeIndex = index;
+                      });
+                    },
                   ),
-                if (sizeNames.isEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.all(defaultPadding),
-                      child: Text(
-                        "One size fits all",
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ),
-                  ),
+                ),
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(vertical: defaultPadding),
                   sliver: ProductListTile(
