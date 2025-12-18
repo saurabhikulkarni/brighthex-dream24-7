@@ -98,7 +98,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           ProfileMenuListTile(
             text: "Wishlist",
-            svgSrc: "assets/icons/Like.svg",
+            svgSrc: "assets/icons/Wishlist.svg",
             press: () {
               Navigator.pushNamed(context, wishlistScreenRoute);
             },

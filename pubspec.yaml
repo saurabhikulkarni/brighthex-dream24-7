@@ -73,10 +73,10 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/dream247_icon.png"
-  image_path_android: "assets/images/dream247_icon.png"
-  image_path_ios: "assets/images/dream247_icon.png"
+  image_path: "assets/images/appicon.png"
+  image_path_android: "assets/images/appicon.png"
+  image_path_ios: "assets/images/appicon.png"
   adaptive_icon_background: "#6441A5"
-  adaptive_icon_foreground: "assets/images/dream247_icon.png"
+  adaptive_icon_foreground: "assets/images/appicon.png"
   min_sdk_android: 21
   remove_alpha_ios: true

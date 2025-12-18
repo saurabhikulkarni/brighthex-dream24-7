@@ -246,7 +246,7 @@ class _EntryPointState extends State<EntryPoint> {
                 BottomNavigationBarItem(
                   icon: Stack(
                     children: [
-                      svgIcon("assets/icons/Like.svg"),
+                      svgIcon("assets/icons/Wishlist.svg"),
                       if (_wishlistItemCount > 0)
                         Positioned(
                           right: 0,
@@ -276,7 +276,7 @@ class _EntryPointState extends State<EntryPoint> {
                   ),
                   activeIcon: Stack(
                     children: [
-                      svgIcon("assets/icons/Like.svg", color: Colors.white),
+                      svgIcon("assets/icons/Wishlist.svg", color: Colors.white),
                       if (_wishlistItemCount > 0)
                         Positioned(
                           right: 0,

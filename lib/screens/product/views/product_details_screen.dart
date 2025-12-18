@@ -185,7 +185,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     }
                   },
                   icon: SvgPicture.asset(
-                    "assets/icons/Like.svg",
+                    "assets/icons/Wishlist.svg",
                     color: _isInWishlist
                         ? Colors.red
                         : Theme.of(context).textTheme.bodyLarge!.color,

@@ -101,7 +101,7 @@ class _WishlistScreenState extends State<WishlistScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SvgPicture.asset(
-                    'assets/icons/Like.svg',
+                    'assets/icons/Wishlist.svg',
                     width: 80,
                     height: 80,
                     colorFilter: ColorFilter.mode(

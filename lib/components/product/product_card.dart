@@ -206,7 +206,7 @@ class _ProductCardState extends State<ProductCard> {
                 ),
                 padding: const EdgeInsets.all(8),
                 child: SvgPicture.asset(
-                  'assets/icons/Like.svg',
+                  'assets/icons/Wishlist.svg',
                   width: 16,
                   height: 16,
                   colorFilter: ColorFilter.mode(
