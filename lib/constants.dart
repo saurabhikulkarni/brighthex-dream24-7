@@ -60,6 +60,7 @@ const Color whileColor10 = Color(0xFF191919);
 const Color whileColor5 = Color(0xFF0D0D0D);
 
 const Color greyColor = Color(0xFFB8B5C3);
+const Color appBackgroundColor = Color(0xFFF4F4F4);
 const Color lightGreyColor = Color(0xFFF8F8F9);
 const Color darkGreyColor = Color(0xFF1C1C25);
 // const Color greyColor80 = Color(0xFFC6C4CF);
