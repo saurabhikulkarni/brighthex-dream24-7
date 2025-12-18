@@ -53,13 +53,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   GradientButton(
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-                        // Save login session
-                        await _loginFormState.saveLoginSession();
+                        // Attempt login and navigate only on success
+                        final success = await _loginFormState.saveLoginSession();
                         if (!mounted) return;
-                        Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            entryPointScreenRoute,
-                            ModalRoute.withName(logInScreenRoute));
+                        if (success) {
+                          Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              entryPointScreenRoute,
+                              ModalRoute.withName(logInScreenRoute));
+                        }
                       }
                     },
                     padding: const EdgeInsets.symmetric(vertical: defaultPadding / 1.5),

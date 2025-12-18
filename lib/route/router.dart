@@ -85,10 +85,6 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     //   return MaterialPageRoute(
     //     builder: (context) => const ProfileSetupScreen(),
     //   );
-    case passwordRecoveryScreenRoute:
-      return MaterialPageRoute(
-        builder: (context) => const PasswordRecoveryScreen(),
-      );
     // case verificationMethodScreenRoute:
     //   return MaterialPageRoute(
     //     builder: (context) => const VerificationMethodScreen(),

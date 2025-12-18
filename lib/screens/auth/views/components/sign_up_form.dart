@@ -24,7 +24,8 @@ class SignUpForm extends StatefulWidget {
 }
 
 class _SignUpFormState extends State<SignUpForm> {
-  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
   bool _otpSent = false;
@@ -34,7 +35,8 @@ class _SignUpFormState extends State<SignUpForm> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _phoneController.dispose();
     _otpController.dispose();
     _resendTimer?.cancel();
@@ -111,7 +113,9 @@ class _SignUpFormState extends State<SignUpForm> {
   }
 
   String getUserName() {
-    return _nameController.text.trim();
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
+    return '$firstName $lastName'.trim();
   }
 
   @override
@@ -121,17 +125,31 @@ class _SignUpFormState extends State<SignUpForm> {
       child: Column(
         children: [
           TextFormField(
-            controller: _nameController,
+            controller: _firstNameController,
             decoration: const InputDecoration(
-              hintText: 'Full name',
+              hintText: 'First name',
               prefixIcon: Icon(Icons.person),
             ),
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return 'Please enter your full name';
+                return 'Please enter your first name';
               }
               if (value.length < 2) {
-                return 'Name must be at least 2 characters';
+                return 'First name must be at least 2 characters';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: defaultPadding),
+          TextFormField(
+            controller: _lastNameController,
+            decoration: const InputDecoration(
+              hintText: 'Last name',
+              prefixIcon: Icon(Icons.person),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your last name';
               }
               return null;
             },

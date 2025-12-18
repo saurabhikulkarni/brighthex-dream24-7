@@ -16,6 +16,8 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
   String _displayedText = '';
+  bool _typingDone = false;
+  bool _isHoldingD = false;
 
   @override
   void initState() {
@@ -48,8 +50,11 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _navigateToNextScreen() async {
-    // Wait for animation to complete
-    await Future.delayed(const Duration(seconds: 3));
+    // Wait for typing to complete, then hold a little longer for tagline
+    while (!_typingDone) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
 
@@ -75,17 +80,36 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  void _typeText() {
+  void _typeText() async {
     const String fullText = 'DREAM247';
-    for (int i = 0; i <= fullText.length; i++) {
-      Future.delayed(Duration(milliseconds: 80 * i), () {
-        if (mounted) {
-          setState(() {
-            _displayedText = fullText.substring(0, i);
-          });
-        }
+    const int holdFirstMs = 1200; // longer hold on "D"
+    const int perCharMs = 140; // slower reveal for remaining letters
+
+    // Show D immediately and highlight while holding
+    setState(() {
+      _displayedText = 'D';
+      _isHoldingD = true;
+    });
+    await Future.delayed(const Duration(milliseconds: holdFirstMs));
+
+    if (!mounted) return;
+    setState(() {
+      _isHoldingD = false;
+    });
+
+    // Continue typing the remaining letters
+    for (int i = 1; i < fullText.length; i++) {
+      await Future.delayed(const Duration(milliseconds: perCharMs));
+      if (!mounted) return;
+      setState(() {
+        _displayedText = fullText.substring(0, i + 1);
       });
     }
+
+    if (!mounted) return;
+    setState(() {
+      _typingDone = true;
+    });
   }
 
   @override
@@ -122,64 +146,48 @@ class _SplashScreenState extends State<SplashScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Shopping Bag Icon
-                  const Icon(
-                    Icons.shopping_bag_outlined,
-                    size: 100,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(height: 30),
-                  // DREAM 247 Typing Animation with College Regular Font
-                  Text(
-                    _displayedText,
-                    style: TextStyle(
-                      fontFamily: 'College Regular',
-                      fontSize: 64,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 3.0,
-                      shadows: [
-                        Shadow(
-                          blurRadius: 10,
-                          color: Colors.black.withOpacity(0.3),
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Blinking cursor after typing
-                  if (_displayedText.length < 8)
-                    Container(
-                      width: 4,
-                      height: 64,
-                      margin: const EdgeInsets.only(left: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    )
-                  else
-                    Container(
-                      width: 4,
-                      height: 64,
-                      margin: const EdgeInsets.only(left: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
                   const SizedBox(height: 12),
-                  // Tagline
-                  Text(
-                    'Premium Shopping Experience',
-                    style: TextStyle(
-                      fontFamily: 'Plus Jakarta',
-                      fontSize: 14,
-                      color: Colors.white70,
-                      letterSpacing: 0.5,
+                  // DREAM 247 Typing Animation with Racing Hard font
+                  AnimatedScale(
+                    scale: _isHoldingD ? 1.15 : 1.0,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                    child: Text(
+                      _displayedText,
+                      style: TextStyle(
+                        fontFamily: 'Racing Hard',
+                        fontSize: 64,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 3.0,
+                        shadows: [
+                          Shadow(
+                            blurRadius: _isHoldingD ? 18 : 10,
+                            color: Colors.black.withOpacity(0.35),
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  SizedBox(height: screenSize.height * 0.08),
+                  const SizedBox(height: 4),
+                  // Tagline appears only after typing completes
+                  Visibility(
+                    visible: _typingDone,
+                    maintainState: true,
+                    maintainAnimation: true,
+                    maintainSize: true,
+                    child: Text(
+                      'Premium Shopping Experience',
+                      style: TextStyle(
+                        fontFamily: 'Plus Jakarta',
+                        fontSize: 14,
+                        color: Colors.white70,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   // Loading indicator
                   SizedBox(
                     width: 50,

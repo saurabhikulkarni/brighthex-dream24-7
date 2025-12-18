@@ -6,6 +6,7 @@ import 'package:shop/route/route_constants.dart';
 import 'package:shop/services/auth_service.dart';
 import 'package:shop/services/graphql_client.dart';
 import 'package:shop/services/graphql_queries.dart';
+import 'package:shop/services/user_service.dart';
 
 import '../../../constants.dart';
 
@@ -19,6 +20,7 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   dynamic _signUpFormState;
+  bool _privacyAccepted = false;
 
   @override
   Widget build(BuildContext context) {
@@ -56,8 +58,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   Row(
                     children: [
                       Checkbox(
-                        onChanged: (value) {},
-                        value: false,
+                        onChanged: (value) {
+                          setState(() {
+                            _privacyAccepted = value ?? false;
+                          });
+                        },
+                        value: _privacyAccepted,
                       ),
                       Expanded(
                         child: Text.rich(
@@ -90,6 +96,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     onPressed: () async {
                       if (!_formKey.currentState!.validate()) return;
 
+                      if (!_privacyAccepted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Please accept the terms and privacy policy'),
+                          ),
+                        );
+                        return;
+                      }
+
                       final name = _signUpFormState.getUserName();
                       final phone = _signUpFormState.getVerifiedPhone();
                       
@@ -104,6 +120,35 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       }
 
                       try {
+                        // Check if user already exists with this phone number
+                        print('Checking if user exists with phone: $phone');
+                        final UserService userService = UserService();
+                        final existingUser = await userService.getUserByUsername(phone);
+                        
+                        if (existingUser != null) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                    'Account already exists with this phone number'),
+                                backgroundColor: Colors.orange,
+                                action: SnackBarAction(
+                                  label: 'Login',
+                                  onPressed: () {
+                                    Navigator.pushReplacementNamed(
+                                        context, logInScreenRoute);
+                                  },
+                                ),
+                                duration: const Duration(seconds: 5),
+                              ),
+                            );
+                          }
+                          print('User already exists: ${existingUser.id}');
+                          return;
+                        }
+
+                        print('User does not exist, proceeding with account creation');
+
                         // Extract first and last name from full name
                         final nameParts = name.split(' ');
                         final firstName = nameParts.isNotEmpty ? nameParts[0] : '';
@@ -121,6 +166,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           },
                         );
                         
+                        print('Creating user with phone: $phone, firstName: $firstName, lastName: $lastName');
                         final QueryResult result = await graphQLClient.mutate(options);
                         
                         if (result.hasException) {
@@ -132,13 +178,34 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             );
                           }
+                          print('GraphQL Error: ${result.exception}');
                           return;
                         }
                         
                         // Extract userId from response
                         final userId = result.data?['createUserDetail']?['id'];
+                        print('User created with ID: $userId, Response: ${result.data}');
+
+                        // Immediately publish the new user (Hygraph returns only published content in queries)
+                        if (userId != null && userId.isNotEmpty) {
+                          try {
+                            final publishResult = await graphQLClient.mutate(
+                              MutationOptions(
+                                document: gql(GraphQLQueries.publishUser),
+                                variables: {'id': userId},
+                              ),
+                            );
+                            if (publishResult.hasException) {
+                              print('Warning: publishUser exception: ${publishResult.exception}');
+                            } else {
+                              print('User published: $userId');
+                            }
+                          } catch (e) {
+                            print('Warning: Exception publishing user: $e');
+                          }
+                        }
                         
-                        if (userId != null) {
+                        if (userId != null && userId.isNotEmpty) {
                           // Save login session with userId from Hygraph
                           final authService = AuthService();
                           await authService.saveLoginSession(
@@ -147,6 +214,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             phoneVerified: true,
                             userId: userId,
                           );
+                          
+                          print('Login session saved for user: $userId');
                           
                           if (!mounted) return;
                           Navigator.pushReplacementNamed(
@@ -160,6 +229,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             );
                           }
+                          print('Error: userId is null or empty');
                         }
                       } catch (e) {
                         print('Exception in signup: $e');

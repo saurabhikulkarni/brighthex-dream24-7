@@ -1,11 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:shop/components/gradient_button.dart';
 import 'package:shop/services/auth_service.dart';
-import 'package:shop/services/graphql_client.dart';
-import 'package:shop/services/graphql_queries.dart';
+import 'package:shop/services/user_service.dart';
 import 'package:shop/route/route_constants.dart';
 
 import '../../../../constants.dart';
@@ -101,55 +99,78 @@ class _LogInFormState extends State<LogInForm> {
     return _nameController.text.trim();
   }
 
-  Future<void> saveLoginSession() async {
+  Future<bool> saveLoginSession() async {
     final phone = getVerifiedPhone();
     if (phone != null) {
       final authService = AuthService();
       final name = getUserName();
       
-      // Extract first and last name from full name
-      final nameParts = name.split(' ');
-      final firstName = nameParts.isNotEmpty ? nameParts[0] : '';
-      final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+      print('[LOGIN] Starting login session with phone: $phone');
       
       try {
-        // Call GraphQL mutation to create/get user and get their ID
-        final graphQLClient = GraphQLService.getClient();
-        final MutationOptions options = MutationOptions(
-          document: gql(GraphQLQueries.createUser),
-          variables: {
-            'firstName': firstName,
-            'lastName': lastName,
-            'username': phone,
-            'password': '', // Can be empty for phone-based login
-          },
+        // Step 1: Check if account exists
+        print('[LOGIN] Checking if account exists with phone: $phone');
+        final existingUser = await UserService().getUserByUsername(phone);
+        
+        if (existingUser == null) {
+          // Account does not exist
+          print('[LOGIN] No account found with phone: $phone');
+          if (!mounted) return false;
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'No account exists with this mobile number. Try sign-up to create account and then login.',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: 'Sign Up',
+                textColor: Colors.white,
+                onPressed: () {
+                  Navigator.pushNamed(context, signUpScreenRoute);
+                },
+              ),
+            ),
+          );
+          return false;
+        }
+        
+        // Step 2: Account exists, proceed with login
+        print('[LOGIN] Account found! User ID: ${existingUser.id}');
+        
+        // Extract first and last name from existing user data if available
+        final firstName = existingUser.firstName ?? '';
+        final lastName = existingUser.lastName ?? '';
+        final fullName = '$firstName $lastName'.trim();
+        
+        print('[LOGIN] User name: $fullName, User ID: ${existingUser.id}');
+        
+        // Save login session with userId from Hygraph
+        await authService.saveLoginSession(
+          phone: phone,
+          name: fullName.isNotEmpty ? fullName : name,
+          phoneVerified: true,
+          userId: existingUser.id,
         );
         
-        final QueryResult result = await graphQLClient.mutate(options);
-        
-        if (result.hasException) {
-          print('Error creating user: ${result.exception}');
-          return;
-        }
-        
-        // Extract userId from response
-        final userId = result.data?['createUserDetail']?['id'];
-        
-        if (userId != null) {
-          // Save login session with userId from Hygraph
-          await authService.saveLoginSession(
-            phone: phone,
-            name: name,
-            phoneVerified: true,
-            userId: userId,
-          );
-        } else {
-          print('Error: Could not extract user ID from response');
-        }
+        print('[LOGIN] Login session saved successfully');
+        return true;
       } catch (e) {
-        print('Exception in saveLoginSession: $e');
+        print('[LOGIN] Exception in saveLoginSession: $e');
+        if (!mounted) return false;
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error during login: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return false;
       }
     }
+    return false;
   }
 
   @override
@@ -235,15 +256,6 @@ class _LogInFormState extends State<LogInForm> {
                       ? 'Resend OTP'
                       : 'Resend OTP (${_secondsLeft}s)',
                 ),
-              ),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () {
-                  Navigator.of(context).pushNamed(passwordRecoveryScreenRoute);
-                },
-                child: const Text('Forgot Password?'),
               ),
             ),
           ],
