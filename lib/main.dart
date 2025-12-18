@@ -6,6 +6,7 @@ import 'package:shop/screens/splash/splash_screen.dart';
 import 'package:shop/services/wishlist_service.dart';
 import 'package:shop/services/auth_service.dart';
 import 'package:shop/services/cart_service.dart';
+import 'package:shop/services/search_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,9 @@ void main() async {
   
   // Initialize Cart Service
   await cartService.initialize();
+  
+  // Initialize Search Service
+  await searchService.initialize();
   
   runApp(const MyApp());
 }
