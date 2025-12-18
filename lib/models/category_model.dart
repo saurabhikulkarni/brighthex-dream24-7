@@ -101,7 +101,7 @@ final List<CategoryModel> demoCategories = [
   ),
   CategoryModel(
     title: "Electronics & Gadgets",
-    svgSrc: "assets/icons/Electronics.svg",
+    svgSrc: "assets/icons/USB.svg",
     subCategories: [
       CategoryModel(title: "Chargers"),
       CategoryModel(title: "Wired Headphones"),

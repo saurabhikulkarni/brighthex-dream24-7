@@ -50,21 +50,33 @@ class _EntryPointState extends State<EntryPoint> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        // pinned: true,
-        // floating: true,
-        // snap: true,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        leading: const SizedBox(),
-        leadingWidth: 0,
-        centerTitle: false,
-        title: SvgPicture.asset(
-          "assets/logo/Dream247logo.svg",
-          height: MediaQuery.of(context).size.height * 0.03,
-          width: MediaQuery.of(context).size.width * 0.35,
-          fit: BoxFit.contain,
-        ),
-        actions: [
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: appPrimaryGradient,
+          ),
+          child: AppBar(
+            // pinned: true,
+            // floating: true,
+            // snap: true,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: const SizedBox(),
+            leadingWidth: 0,
+            centerTitle: false,
+            title: SvgPicture.asset(
+              "assets/logo/dream247_logo.svg",
+              height: (MediaQuery.of(context).size.height * 0.035)
+                  .clamp(22.0, 34.0)
+                  .toDouble(),
+              fit: BoxFit.contain,
+              colorFilter: const ColorFilter.mode(
+                Colors.white,
+                BlendMode.srcIn,
+              ),
+            ),
+            actions: [
           IconButton(
             onPressed: () {
               Navigator.pushNamed(context, searchScreenRoute);
@@ -72,8 +84,8 @@ class _EntryPointState extends State<EntryPoint> {
             icon: SvgPicture.asset(
               "assets/icons/Search.svg",
               height: 24,
-              colorFilter: ColorFilter.mode(
-                  Theme.of(context).textTheme.bodyLarge!.color!,
+              colorFilter: const ColorFilter.mode(
+                  Colors.white,
                   BlendMode.srcIn),
             ),
           ),
@@ -86,8 +98,8 @@ class _EntryPointState extends State<EntryPoint> {
                 icon: SvgPicture.asset(
                   "assets/icons/Bag.svg",
                   height: 24,
-                  colorFilter: ColorFilter.mode(
-                      Theme.of(context).textTheme.bodyLarge!.color!,
+                  colorFilter: const ColorFilter.mode(
+                      Colors.white,
                       BlendMode.srcIn),
                 ),
               ),
@@ -129,8 +141,8 @@ class _EntryPointState extends State<EntryPoint> {
             icon: SvgPicture.asset(
               "assets/icons/Wallet.svg",
               height: 24,
-              colorFilter: ColorFilter.mode(
-                  Theme.of(context).textTheme.bodyLarge!.color!,
+              colorFilter: const ColorFilter.mode(
+                  Colors.white,
                   BlendMode.srcIn),
             ),
           ),
@@ -156,6 +168,8 @@ class _EntryPointState extends State<EntryPoint> {
             ),
           ),
         ],
+          ),
+        ),
       ),
       // body: _pages[_currentIndex],
       body: PageTransitionSwitcher(
