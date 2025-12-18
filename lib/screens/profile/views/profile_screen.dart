@@ -3,6 +3,7 @@ import 'package:flutter_svg/svg.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/screen_export.dart';
 import 'package:shop/services/auth_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'components/profile_card.dart';
 import 'components/profile_menu_item_list_tile.dart';
@@ -29,6 +30,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _userName = name ?? 'User';
       });
+    }
+  }
+
+  void _openFAQ() async {
+    const faqUrl = 'https://dream247.in/faq.html';
+    
+    try {
+      if (await canLaunchUrl(Uri.parse(faqUrl))) {
+        await launchUrl(
+          Uri.parse(faqUrl),
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open FAQ')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error opening FAQ')),
+        );
+      }
     }
   }
 
@@ -109,7 +135,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ProfileMenuListTile(
             text: "FAQ",
             svgSrc: "assets/icons/FAQ.svg",
-            press: () {},
+            press: () {
+              _openFAQ();
+            },
             isShowDivider: false,
           ),
           const SizedBox(height: defaultPadding),
