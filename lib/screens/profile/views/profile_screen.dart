@@ -34,7 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _openFAQ() async {
-    const faqUrl = 'https://dream247.in/faq.html';
+    const faqUrl = 'https://calm-shame-7ef.notion.site/Dream247-Frequently-Asked-Questions-FAQ-2cdfae02f0a1800da98ae8b2e447989e';
     
     try {
       if (await canLaunchUrl(Uri.parse(faqUrl))) {
