@@ -241,6 +241,18 @@ class GraphQLQueries {
     }
   ''';
 
+  // ============ Wallet Queries & Mutations ============
+  
+  // Get user wallet balance
+  static const String getUserWallet = '''
+    query GetUserWallet(\$userId: ID!) {
+      userDetail(where: {id: \$userId}) {
+        id
+        walletBalance
+      }
+    }
+  ''';
+
   // Update user wallet balance
   static const String updateWalletBalance = '''
     mutation UpdateWalletBalance(\$userId: ID!, \$walletBalance: Float!) {
@@ -275,6 +287,77 @@ class GraphQLQueries {
         data: {walletBalance: {decrement: \$amount}}
       ) {
         id
+        walletBalance
+      }
+    }
+  ''';
+
+  // ============ Wishlist Queries & Mutations ============
+  
+  // Get user wishlist from separate Wishlist collection
+  static const String getUserWishlist = '''
+    query GetUserWishlist(\$userId: ID!) {
+      wishlists(where: {userDetail: {id: \$userId}}) {
+        id
+        product {
+          id
+          productName
+          slug
+          description
+          price
+          image {
+            url
+          }
+          category {
+            id
+            categoryName
+          }
+        }
+        size {
+          id
+          sizeName
+        }
+      }
+    }
+  ''';
+
+  // Add product to wishlist - creates new Wishlist record
+  static const String addToWishlist = '''
+    mutation AddToWishlist(\$userId: ID!, \$productId: ID!, \$sizeId: ID) {
+      createWishlist(
+        data: {
+          userDetail: {connect: {id: \$userId}}
+          product: {connect: {id: \$productId}}
+          size: {connect: {id: \$sizeId}}
+        }
+      ) {
+        id
+        product {
+          id
+          productName
+          price
+        }
+      }
+    }
+  ''';
+
+  // Remove product from wishlist - deletes Wishlist record
+  static const String removeFromWishlist = '''
+    mutation RemoveFromWishlist(\$wishlistId: ID!) {
+      deleteWishlist(where: {id: \$wishlistId}) {
+        id
+      }
+    }
+  ''';
+
+  // Get full user profile with wallet
+  static const String getUserProfile = '''
+    query GetUserProfile(\$userId: ID!) {
+      userDetail(where: {id: \$userId}) {
+        id
+        firstName
+        lastName
+        username
         walletBalance
       }
     }

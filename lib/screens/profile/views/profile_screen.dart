@@ -2,12 +2,61 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/screen_export.dart';
+import 'package:shop/services/auth_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'components/profile_card.dart';
 import 'components/profile_menu_item_list_tile.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String _userName = 'User';
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+  
+  Future<void> _loadUserName() async {
+    final name = await AuthService().getUserName();
+    if (mounted) {
+      setState(() {
+        _userName = name ?? 'User';
+      });
+    }
+  }
+
+  void _openFAQ() async {
+    const faqUrl = 'https://dream247.in/faq.html';
+    
+    try {
+      if (await canLaunchUrl(Uri.parse(faqUrl))) {
+        await launchUrl(
+          Uri.parse(faqUrl),
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open FAQ')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error opening FAQ')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,8 +64,8 @@ class ProfileScreen extends StatelessWidget {
       body: ListView(
         children: [
           ProfileCard(
-            name: "Sepide",
-            email: "theflutterway@gmail.com",
+            name: _userName,
+            email: "user@shop.com",
             imageSrc: "https://i.imgur.com/IXnwbLk.png",
             // proLableText: "Sliver",
             // isPro: true, if the user is pro
@@ -48,7 +97,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           ProfileMenuListTile(
             text: "Wishlist",
-            svgSrc: "assets/icons/Wishlist.svg",
+            svgSrc: "assets/icons/Like.svg",
             press: () {
               Navigator.pushNamed(context, wishlistScreenRoute);
             },
@@ -86,7 +135,9 @@ class ProfileScreen extends StatelessWidget {
           ProfileMenuListTile(
             text: "FAQ",
             svgSrc: "assets/icons/FAQ.svg",
-            press: () {},
+            press: () {
+              _openFAQ();
+            },
             isShowDivider: false,
           ),
           const SizedBox(height: defaultPadding),
@@ -105,7 +156,10 @@ class ProfileScreen extends StatelessWidget {
                       child: const Text("Cancel"),
                     ),
                     TextButton(
-                      onPressed: () {
+                      onPressed: () async {
+                        // Clear session from AuthService
+                        await AuthService().logout();
+                        if (!context.mounted) return;
                         Navigator.pop(context);
                         Navigator.pushNamedAndRemoveUntil(
                           context,

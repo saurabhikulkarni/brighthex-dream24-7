@@ -1,20 +1,35 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:shop/components/gradient_button.dart';
+import 'package:shop/services/auth_service.dart';
+import 'package:shop/services/graphql_client.dart';
+import 'package:shop/services/graphql_queries.dart';
+import 'package:shop/route/route_constants.dart';
 
 import '../../../../constants.dart';
 
 
 class LogInForm extends StatefulWidget {
-  const LogInForm({super.key, required this.formKey});
+  const LogInForm({
+    super.key,
+    required this.formKey,
+    this.onFormCreated,
+  });
   final GlobalKey<FormState> formKey;
+  final Function(_LogInFormState)? onFormCreated;
 
   @override
-  State<LogInForm> createState() => _LogInFormState();
+  State<LogInForm> createState() {
+    final state = _LogInFormState();
+    onFormCreated?.call(state);
+    return state;
+  }
 }
 
 class _LogInFormState extends State<LogInForm> {
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _otpController = TextEditingController();
   bool _otpSent = false;
@@ -24,6 +39,7 @@ class _LogInFormState extends State<LogInForm> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _phoneController.dispose();
     _otpController.dispose();
     _resendTimer?.cancel();
@@ -74,12 +90,91 @@ class _LogInFormState extends State<LogInForm> {
     );
   }
 
+  String? getVerifiedPhone() {
+    if (_otpSent && _otpController.text.isNotEmpty && _otpController.text.length >= 4) {
+      return _phoneController.text.replaceAll(RegExp(r'[^\d]'), '');
+    }
+    return null;
+  }
+
+  String getUserName() {
+    return _nameController.text.trim();
+  }
+
+  Future<void> saveLoginSession() async {
+    final phone = getVerifiedPhone();
+    if (phone != null) {
+      final authService = AuthService();
+      final name = getUserName();
+      
+      // Extract first and last name from full name
+      final nameParts = name.split(' ');
+      final firstName = nameParts.isNotEmpty ? nameParts[0] : '';
+      final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+      
+      try {
+        // Call GraphQL mutation to create/get user and get their ID
+        final graphQLClient = GraphQLService.getClient();
+        final MutationOptions options = MutationOptions(
+          document: gql(GraphQLQueries.createUser),
+          variables: {
+            'firstName': firstName,
+            'lastName': lastName,
+            'username': phone,
+            'password': '', // Can be empty for phone-based login
+          },
+        );
+        
+        final QueryResult result = await graphQLClient.mutate(options);
+        
+        if (result.hasException) {
+          print('Error creating user: ${result.exception}');
+          return;
+        }
+        
+        // Extract userId from response
+        final userId = result.data?['createUserDetail']?['id'];
+        
+        if (userId != null) {
+          // Save login session with userId from Hygraph
+          await authService.saveLoginSession(
+            phone: phone,
+            name: name,
+            phoneVerified: true,
+            userId: userId,
+          );
+        } else {
+          print('Error: Could not extract user ID from response');
+        }
+      } catch (e) {
+        print('Exception in saveLoginSession: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
       key: widget.formKey,
       child: Column(
         children: [
+          TextFormField(
+            controller: _nameController,
+            decoration: const InputDecoration(
+              hintText: 'Full name',
+              prefixIcon: Icon(Icons.person),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Please enter your full name';
+              }
+              if (value.length < 2) {
+                return 'Name must be at least 2 characters';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: defaultPadding),
           TextFormField(
             controller: _phoneController,
             keyboardType: TextInputType.phone,
@@ -140,6 +235,15 @@ class _LogInFormState extends State<LogInForm> {
                       ? 'Resend OTP'
                       : 'Resend OTP (${_secondsLeft}s)',
                 ),
+              ),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamed(passwordRecoveryScreenRoute);
+                },
+                child: const Text('Forgot Password?'),
               ),
             ),
           ],

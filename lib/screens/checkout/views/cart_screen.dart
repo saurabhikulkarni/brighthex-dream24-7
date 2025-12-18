@@ -8,6 +8,9 @@ import 'package:shop/services/cart_service.dart';
 import 'package:shop/services/user_service.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:uuid/uuid.dart';
+import 'package:shop/services/order_service.dart';
+import 'package:shop/services/wallet_service.dart';
+import 'package:shop/screens/checkout/views/order_confirmation_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -17,7 +20,7 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-  int walletBalance = 500; // User's shopping tokens
+  double walletBalance = 0.0; // User's shopping tokens
   final UserService _userService = userService;
 
   @override
@@ -50,6 +53,23 @@ class _CartScreenState extends State<CartScreen> {
   double get tax => subtotal * 0.1;
   double get total => subtotal + tax;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadWalletBalance();
+  }
+
+  Future<void> _loadWalletBalance() async {
+    try {
+      final balance = await walletService.getBalance();
+      setState(() {
+        walletBalance = balance;
+      });
+    } catch (e) {
+      print('Error loading wallet balance: $e');
+    }
+  }
+
   void _removeItem(String cartItemId) {
     setState(() {
       cartService.removeFromLocalCart(cartItemId);
@@ -63,7 +83,7 @@ class _CartScreenState extends State<CartScreen> {
     });
   }
 
-  void _proceedToPayment(BuildContext context) {
+  void _proceedToPayment(BuildContext context) async {
     if (cartItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Your cart is empty')),
@@ -75,7 +95,7 @@ class _CartScreenState extends State<CartScreen> {
 
     // Check if wallet has enough tokens
     if (walletBalance < totalTokensNeeded) {
-      final tokensShort = totalTokensNeeded - walletBalance;
+      final tokensShort = totalTokensNeeded - walletBalance.toInt();
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -87,7 +107,7 @@ class _CartScreenState extends State<CartScreen> {
               Text('You need $totalTokensNeeded tokens to complete this purchase.'),
               const SizedBox(height: defaultPadding / 2),
               Text(
-                'Your wallet has: $walletBalance tokens',
+                'Your wallet has: ${walletBalance.toStringAsFixed(2)} tokens',
                 style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: defaultPadding / 2),
@@ -166,70 +186,48 @@ class _CartScreenState extends State<CartScreen> {
       'paymentId': 'TOKEN_${uuid.v4().substring(0, 8).toUpperCase()}',
       'tokensDeducted': totalTokensNeeded,
     });
+    // Sufficient tokens - create order
+    _createOrderFromCart(totalTokensNeeded);
   }
 
-  void _handlePaymentSuccess(Map<dynamic, dynamic> paymentResult) {
-    final tokensDeducted = paymentResult['tokensDeducted'] ?? 0;
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Order Placed Successfully'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Thank you for your purchase!'),
-            const SizedBox(height: defaultPadding),
-            Text(
-              'Order ID: ${paymentResult['orderId']}',
-              style: const TextStyle(fontSize: 12),
-            ),
-            const SizedBox(height: defaultPadding / 2),
-            Row(
-              children: [
-                SvgPicture.asset(
-                  'assets/icons/coin.svg',
-                  width: 16,
-                  height: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Tokens Deducted: $tokensDeducted',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-            const SizedBox(height: defaultPadding / 2),
-            Row(
-              children: [
-                SvgPicture.asset(
-                  'assets/icons/coin.svg',
-                  width: 16,
-                  height: 16,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Remaining Balance: $walletBalance',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() {
-                cartService.clearLocalCart();
-              });
-            },
-            child: const Text('Continue Shopping'),
-          ),
-        ],
-      ),
+  void _createOrderFromCart(int totalTokensNeeded) async {
+    // Convert cart items to order items
+    final orderItems = cartItems.map((cartItem) {
+      return OrderItem(
+        productId: cartItem.product?.id ?? cartItem.id ?? 'unknown',
+        productTitle: cartItem.product?.title ?? 'Product',
+        productImage: cartItem.product?.image ?? '',
+        quantity: cartItem.quantity,
+        pricePerUnit: (cartItem.product?.price ?? 0).toInt(),
+        size: cartItem.size,
+      );
+    }).toList();
+
+    // Use unified order creation flow from OrderService
+    final order = await orderService.createOrderWithPayment(
+      items: orderItems,
+      totalTokens: totalTokensNeeded,
+      clearCartAfter: true,
     );
+
+    if (order != null) {
+      // Update wallet balance in UI
+      setState(() {
+        walletBalance -= totalTokensNeeded;
+      });
+
+      // Navigate to order confirmation screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => OrderConfirmationScreen(order: order),
+        ),
+      );
+    } else {
+      // Order creation failed
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to create order')),
+      );
+    }
   }
 
   @override

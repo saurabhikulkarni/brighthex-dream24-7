@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shop/entry_point.dart';
+import 'package:shop/services/order_service.dart';
 
 import 'screen_export.dart';
 
@@ -198,10 +199,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => const ProfileScreen(),
       );
-    // case getHelpScreenRoute:
-    //   return MaterialPageRoute(
-    //     builder: (context) => const GetHelpScreen(),
-    //   );
+    case getHelpScreenRoute:
+      return MaterialPageRoute(
+        builder: (context) => const GetHelpScreen(),
+      );
     // case chatScreenRoute:
     //   return MaterialPageRoute(
     //     builder: (context) => const ChatScreen(),
@@ -254,6 +255,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => const OrdersScreen(),
       );
+    case orderConfirmationScreenRoute:
+      final order = settings.arguments as Order;
+      return MaterialPageRoute(
+        builder: (context) => OrderConfirmationScreen(order: order),
+      );
     // case orderProcessingScreenRoute:
     //   return MaterialPageRoute(
     //     builder: (context) => const OrderProcessingScreen(),
@@ -291,6 +297,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
         builder: (context) => const WalletScreen(),
       );
     case cartScreenRoute:
+      return MaterialPageRoute(
+        builder: (context) => const CartScreen(),
+      );
+    case checkoutScreenRoute:
       return MaterialPageRoute(
         builder: (context) => const CartScreen(),
       );

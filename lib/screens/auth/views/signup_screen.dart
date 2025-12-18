@@ -1,7 +1,11 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:shop/screens/auth/views/components/sign_up_form.dart';
 import 'package:shop/route/route_constants.dart';
+import 'package:shop/services/auth_service.dart';
+import 'package:shop/services/graphql_client.dart';
+import 'package:shop/services/graphql_queries.dart';
 
 import '../../../constants.dart';
 
@@ -14,6 +18,7 @@ class SignUpScreen extends StatefulWidget {
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
+  dynamic _signUpFormState;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +46,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     "Please enter your valid data in order to create an account.",
                   ),
                   const SizedBox(height: defaultPadding),
-                  SignUpForm(formKey: _formKey),
+                  SignUpForm(
+                    formKey: _formKey,
+                    onFormCreated: (form) {
+                      _signUpFormState = form;
+                    },
+                  ),
                   const SizedBox(height: defaultPadding),
                   Row(
                     children: [
@@ -77,11 +87,91 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   const SizedBox(height: defaultPadding * 2),
                   ElevatedButton(
-                    onPressed: () {
-                      // There is 2 more screens while user complete their profile
-                      // afre sign up, it's available on the pro version get it now
-                      // 🔗 https://theflutterway.gumroad.com/l/fluttershop
-                      Navigator.pushNamed(context, entryPointScreenRoute);
+                    onPressed: () async {
+                      if (!_formKey.currentState!.validate()) return;
+
+                      final name = _signUpFormState.getUserName();
+                      final phone = _signUpFormState.getVerifiedPhone();
+                      
+                      if (phone == null || phone.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                                'Please verify your phone number with OTP'),
+                          ),
+                        );
+                        return;
+                      }
+
+                      try {
+                        // Extract first and last name from full name
+                        final nameParts = name.split(' ');
+                        final firstName = nameParts.isNotEmpty ? nameParts[0] : '';
+                        final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+                        
+                        // Call GraphQL mutation to create user and get their ID
+                        final graphQLClient = GraphQLService.getClient();
+                        final MutationOptions options = MutationOptions(
+                          document: gql(GraphQLQueries.createUser),
+                          variables: {
+                            'firstName': firstName,
+                            'lastName': lastName,
+                            'username': phone,
+                            'password': '', // Can be empty for phone-based signup
+                          },
+                        );
+                        
+                        final QueryResult result = await graphQLClient.mutate(options);
+                        
+                        if (result.hasException) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: ${result.exception}'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                          return;
+                        }
+                        
+                        // Extract userId from response
+                        final userId = result.data?['createUserDetail']?['id'];
+                        
+                        if (userId != null) {
+                          // Save login session with userId from Hygraph
+                          final authService = AuthService();
+                          await authService.saveLoginSession(
+                            phone: phone,
+                            name: name,
+                            phoneVerified: true,
+                            userId: userId,
+                          );
+                          
+                          if (!mounted) return;
+                          Navigator.pushReplacementNamed(
+                              context, entryPointScreenRoute);
+                        } else {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Error: Could not create user account'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      } catch (e) {
+                        print('Exception in signup: $e');
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
                     },
                     child: const Text("Continue"),
                   ),

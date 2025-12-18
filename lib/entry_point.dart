@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/screen_export.dart';
+import 'package:shop/services/cart_service.dart';
+import 'package:shop/services/wishlist_service.dart';
 
 class EntryPoint extends StatefulWidget {
   const EntryPoint({super.key});
@@ -20,10 +22,18 @@ class _EntryPointState extends State<EntryPoint> {
     const HomeScreen(),
     const DiscoverScreen(),
     const WishlistScreen(),
-    // EmptyCartScreen(), // if Cart is empty
-    const CartScreen(),
     const ProfileScreen(),
   ];
+
+  int get _cartItemCount => cartService.getLocalCart().length;
+
+  int get _wishlistItemCount => wishlistService.getWishlistCount();
+
+  @override
+  void initState() {
+    super.initState();
+    // Refresh UI whenever page is visited
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +76,42 @@ class _EntryPointState extends State<EntryPoint> {
                   Theme.of(context).textTheme.bodyLarge!.color!,
                   BlendMode.srcIn),
             ),
+          ),
+          Stack(
+            children: [
+              IconButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, checkoutScreenRoute);
+                },
+                icon: SvgPicture.asset(
+                  "assets/icons/Bag.svg",
+                  height: 24,
+                  colorFilter: ColorFilter.mode(
+                      Theme.of(context).textTheme.bodyLarge!.color!,
+                      BlendMode.srcIn),
+                ),
+              ),
+              if (_cartItemCount > 0)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFF4444),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      _cartItemCount.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           IconButton(
             onPressed: () async {
@@ -174,15 +220,67 @@ class _EntryPointState extends State<EntryPoint> {
                   label: "Discover",
                 ),
                 BottomNavigationBarItem(
-                  icon: svgIcon("assets/icons/Wishlist.svg"),
-                  activeIcon:
-                      svgIcon("assets/icons/Wishlist.svg", color: Colors.white),
+                  icon: Stack(
+                    children: [
+                      svgIcon("assets/icons/Like.svg"),
+                      if (_wishlistItemCount > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            child: Text(
+                              _wishlistItemCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  activeIcon: Stack(
+                    children: [
+                      svgIcon("assets/icons/Like.svg", color: Colors.white),
+                      if (_wishlistItemCount > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            child: Text(
+                              _wishlistItemCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                   label: "Wishlist",
-                ),
-                BottomNavigationBarItem(
-                  icon: svgIcon("assets/icons/Bag.svg"),
-                  activeIcon: svgIcon("assets/icons/Bag.svg", color: Colors.white),
-                  label: "Cart",
                 ),
                 BottomNavigationBarItem(
                   icon: svgIcon("assets/icons/Profile.svg"),

@@ -14,6 +14,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  dynamic _loginFormState;
 
   @override
   Widget build(BuildContext context) {
@@ -42,11 +43,19 @@ class _LoginScreenState extends State<LoginScreen> {
                     "Log in with your mobile number and OTP.",
                   ),
                   const SizedBox(height: defaultPadding),
-                  LogInForm(formKey: _formKey),
+                  LogInForm(
+                    formKey: _formKey,
+                    onFormCreated: (form) {
+                      _loginFormState = form;
+                    },
+                  ),
                   const SizedBox(height: defaultPadding),
                   GradientButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (_formKey.currentState!.validate()) {
+                        // Save login session
+                        await _loginFormState.saveLoginSession();
+                        if (!mounted) return;
                         Navigator.pushNamedAndRemoveUntil(
                             context,
                             entryPointScreenRoute,

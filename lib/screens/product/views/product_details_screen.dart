@@ -6,6 +6,7 @@ import 'package:shop/components/product/product_card.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/services/product_service.dart';
+import 'package:shop/services/wishlist_service.dart';
 import 'package:shop/screens/product/views/product_returns_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart' as svg;
 import 'package:shop/route/screen_export.dart';
@@ -39,12 +40,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   List<SizeModel> _sizes = [];
   List<ProductModel> _relatedProducts = [];
   bool _isLoading = true;
+  bool _isInWishlist = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.product != null) {
       _product = widget.product;
+      _checkWishlistStatus();
       _isLoading = false;
       _fetchSizes();
       _fetchRelatedProducts();
@@ -52,6 +55,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       _fetchProductDetails();
     } else {
       _isLoading = false;
+    }
+  }
+
+  void _checkWishlistStatus() {
+    if (_product?.id != null) {
+      setState(() {
+        _isInWishlist = wishlistService.isInWishlist(_product!.id!);
+      });
     }
   }
 
@@ -155,9 +166,32 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               ),
               actions: [
                 IconButton(
-                  onPressed: () {},
-                  icon: SvgPicture.asset("assets/icons/Bookmark.svg",
-                      color: Theme.of(context).textTheme.bodyLarge!.color),
+                  onPressed: () async {
+                    if (_product != null) {
+                      final newState = await wishlistService.toggleWishlist(_product!);
+                      setState(() {
+                        _isInWishlist = newState;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            _isInWishlist
+                                ? '${_product!.title} added to wishlist'
+                                : '${_product!.title} removed from wishlist',
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                  icon: SvgPicture.asset(
+                    "assets/icons/Like.svg",
+                    color: _isInWishlist
+                        ? Colors.red
+                        : Theme.of(context).textTheme.bodyLarge!.color,
+                    width: 24,
+                    height: 24,
+                  ),
                 ),
               ],
             ),
@@ -354,6 +388,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             title: _relatedProducts[index].title,
                             brandName: _relatedProducts[index].brandName,
                             price: _relatedProducts[index].price,
+                            product: _relatedProducts[index],
                             press: () {
                               Navigator.push(
                                 context,

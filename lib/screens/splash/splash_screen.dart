@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shop/screens/auth/views/login_screen.dart';
+import 'package:shop/services/auth_service.dart';
+import 'package:shop/route/route_constants.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -41,14 +43,36 @@ class _SplashScreenState extends State<SplashScreen>
     // Typing animation for DREAM 247
     _typeText();
 
-    // Navigate to login after 3 seconds
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+    // Check for existing session and navigate accordingly
+    _navigateToNextScreen();
+  }
+
+  Future<void> _navigateToNextScreen() async {
+    // Wait for animation to complete
+    await Future.delayed(const Duration(seconds: 3));
+
+    if (!mounted) return;
+
+    // Check if user is already logged in
+    final isLoggedIn = await authService.isLoggedIn();
+
+    if (isLoggedIn) {
+      // Check if phone is verified
+      final isPhoneVerified = await authService.isPhoneVerified();
+
+      if (isPhoneVerified) {
+        // User is logged in and phone is verified - go to home
+        Navigator.of(context).pushReplacementNamed(entryPointScreenRoute);
+      } else {
+        // Phone not verified - take to verification
+        Navigator.of(context).pushReplacementNamed(signUpVerificationScreenRoute);
       }
-    });
+    } else {
+      // Not logged in - go to login
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
   }
 
   void _typeText() {

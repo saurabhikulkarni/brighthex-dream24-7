@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/components/product/product_card.dart';
 import 'package:shop/models/product_model.dart';
-import 'package:shop/services/product_service.dart';
+import 'package:shop/services/wishlist_service.dart';
 import 'package:shop/route/route_constants.dart';
 
 import '../../../constants.dart';
@@ -14,34 +15,36 @@ class WishlistScreen extends StatefulWidget {
 }
 
 class _WishlistScreenState extends State<WishlistScreen> {
-  final ProductService _productService = ProductService();
-  List<ProductModel> _products = [];
-  bool _isLoading = true;
-  String? _error;
+  late List<ProductModel> _wishlistItems;
 
   @override
   void initState() {
     super.initState();
-    _fetchProducts();
+    _loadWishlist();
   }
 
-  Future<void> _fetchProducts() async {
-    try {
-      final products = await _productService.getAllProducts();
-      if (mounted) {
-        setState(() {
-          _products = products;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e.toString();
-          _isLoading = false;
-        });
-      }
-    }
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh wishlist when screen comes back to focus
+    _loadWishlist();
+  }
+
+  void _loadWishlist() {
+    setState(() {
+      _wishlistItems = wishlistService.getWishlist();
+    });
+  }
+
+  void _removeFromWishlist(String productId) {
+    wishlistService.removeFromWishlist(productId);
+    _loadWishlist();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Item removed from wishlist'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -54,49 +57,148 @@ class _WishlistScreenState extends State<WishlistScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(child: Text('Error loading wishlist'))
-              : _products.isEmpty
-                  ? const Center(child: Text('Your wishlist is empty'))
-                  : CustomScrollView(
-                      slivers: [
-                        SliverPadding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: defaultPadding,
-                              vertical: defaultPadding),
-                          sliver: SliverGrid(
-                            gridDelegate:
-                                const SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 200.0,
-                              mainAxisSpacing: defaultPadding,
-                              crossAxisSpacing: defaultPadding,
-                              childAspectRatio: 0.66,
+        actions: [
+          if (_wishlistItems.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep),
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Clear Wishlist?'),
+                    content: const Text(
+                        'Are you sure you want to clear your entire wishlist?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          wishlistService.clearWishlist();
+                          setState(() {
+                            _loadWishlist();
+                          });
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Wishlist cleared'),
                             ),
-                            delegate: SliverChildBuilderDelegate(
-                              (BuildContext context, int index) {
-                                return ProductCard(
-                                  image: _products[index].image,
-                                  brandName: _products[index].brandName,
-                                  title: _products[index].title,
-                                  price: _products[index].price,
-                                  priceAfetDiscount:
-                                      _products[index].priceAfetDiscount,
-                                  press: () {
-                                    Navigator.pushNamed(
-                                        context, productDetailsScreenRoute,
-                                        arguments: {'product': _products[index]});
-                                  },
+                          );
+                        },
+                        child: const Text('Clear'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+      body: _wishlistItems.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    'assets/icons/Like.svg',
+                    width: 80,
+                    height: 80,
+                    colorFilter: ColorFilter.mode(
+                      Colors.grey.shade400,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                  const SizedBox(height: defaultPadding),
+                  Text(
+                    'Your wishlist is empty',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: defaultPadding / 2),
+                  Text(
+                    'Add products you love to your wishlist',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: defaultPadding),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Continue Shopping'),
+                  ),
+                ],
+              ),
+            )
+          : CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(defaultPadding),
+                  sliver: SliverGrid(
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 200.0,
+                      mainAxisSpacing: defaultPadding,
+                      crossAxisSpacing: defaultPadding,
+                      childAspectRatio: 0.66,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (BuildContext context, int index) {
+                        final product = _wishlistItems[index];
+                        return Stack(
+                          children: [
+                            ProductCard(
+                              image: product.image,
+                              brandName: product.brandName,
+                              title: product.title,
+                              price: product.price,
+                              priceAfetDiscount:
+                                  product.priceAfetDiscount,
+                              product: product,
+                              press: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  productDetailsScreenRoute,
+                                  arguments: {'product': product},
                                 );
                               },
-                              childCount: _products.length,
                             ),
-                          ),
-                        ),
-                      ],
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 8,
+                                    ),
+                                  ],
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.close,
+                                    size: 18,
+                                  ),
+                                  onPressed: () {
+                                    _removeFromWishlist(product.id!);
+                                  },
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(
+                                    minWidth: 36,
+                                    minHeight: 36,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                      childCount: _wishlistItems.length,
                     ),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 }

@@ -111,6 +111,7 @@ class _KidsScreenState extends State<KidsScreen> {
                           price: _products[index].price,
                           priceAfetDiscount:
                               _products[index].priceAfetDiscount,
+                          product: _products[index],
                           press: () {
                             Navigator.pushNamed(
                                 context, productDetailsScreenRoute,

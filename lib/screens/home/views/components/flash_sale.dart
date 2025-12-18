@@ -95,6 +95,7 @@ class _FlashSaleState extends State<FlashSale> {
                   title: _products[index].title,
                   price: _products[index].price,
                   priceAfetDiscount: _products[index].priceAfetDiscount,
+                  product: _products[index],
                   press: () {
                     Navigator.pushNamed(context, productDetailsScreenRoute,
                         arguments: {'product': _products[index]});

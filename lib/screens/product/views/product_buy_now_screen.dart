@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:shop/components/cart_button.dart';
 import 'package:shop/components/custom_modal_bottom_sheet.dart';
 import 'package:shop/components/network_image_with_loader.dart';
 import 'package:shop/models/product_model.dart';
@@ -9,7 +8,10 @@ import 'package:shop/screens/product/views/added_to_cart_message_screen.dart';
 import 'package:shop/screens/product/views/components/product_list_tile.dart';
 import 'package:shop/screens/product/views/location_permission_store_availability_screen.dart';
 import 'package:shop/screens/product/views/size_guide_screen.dart';
+import 'package:shop/screens/checkout/views/order_confirmation_screen.dart';
 import 'package:shop/services/cart_service.dart';
+import 'package:shop/services/order_service.dart';
+import 'package:shop/services/wallet_service.dart';
 
 import '../../../constants.dart';
 import 'components/product_quantity.dart';
@@ -33,7 +35,7 @@ class ProductBuyNowScreen extends StatefulWidget {
 class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   int _quantity = 1;
   int _selectedSizeIndex = 0;
-  int walletBalance = 500; // User's shopping tokens
+  double walletBalance = 0.0; // User's shopping tokens
 
   // Default sizes if none from API
   static const List<String> _defaultSizes = ["S", "M", "L", "XL", "XXL"];
@@ -59,6 +61,23 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   }
 
   double get totalPrice => widget.product.price * _quantity;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWalletBalance();
+  }
+
+  Future<void> _loadWalletBalance() async {
+    try {
+      final balance = await walletService.getBalance();
+      setState(() {
+        walletBalance = balance;
+      });
+    } catch (e) {
+      print('Error loading wallet balance: $e');
+    }
+  }
 
   void _incrementQuantity() {
     setState(() {
@@ -100,19 +119,116 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     );
   }
 
+  void _createOrder() async {
+    // Create order items from product
+    final orderItems = [
+      OrderItem(
+        productId: widget.product.id ?? widget.product.title,
+        productTitle: widget.product.title,
+        productImage: widget.product.image.isNotEmpty 
+            ? widget.product.image 
+            : productDemoImg1,
+        quantity: _quantity,
+        pricePerUnit: widget.product.price.toInt(),
+        size: selectedSize,
+      ),
+    ];
+
+    // Use unified order creation flow from OrderService
+    final order = await orderService.createOrderWithPayment(
+      items: orderItems,
+      totalTokens: totalPrice.toInt(),
+      clearCartAfter: false, // Don't clear cart for Redeem Now (no cart involved)
+    );
+
+    if (order != null) {
+      // Update wallet balance in UI
+      setState(() {
+        walletBalance -= totalPrice.toInt();
+      });
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Order created successfully! Order ID: ${order.id.substring(0, 8)}',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // Navigate to order confirmation screen
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => OrderConfirmationScreen(order: order),
+            ),
+          );
+        }
+      });
+    } else {
+      // Order creation failed
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to create order')),
+      );
+    }
+  }
+
   void _handleRedeemNow() {
+    // Show confirmation dialog
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Order Now'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Do you want to order this product now?'),
+            const SizedBox(height: defaultPadding / 2),
+            Row(
+              children: [
+                SvgPicture.asset(
+                  'assets/icons/coin.svg',
+                  width: 16,
+                  height: 16,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Total: ${totalPrice.toInt()} tokens',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _processRedeemNow();
+            },
+            child: const Text('Yes, Order Now'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _processRedeemNow() async {
     final int productPrice = totalPrice.toInt();
 
     if (walletBalance >= productPrice) {
-      // Sufficient balance - add to cart and deduct tokens
-      _addToCart();
-
-      setState(() {
-        walletBalance -= productPrice;
-      });
+      // Sufficient balance - use unified order creation flow
+      _createOrder();
     } else {
       // Insufficient balance - show dialog
-      final tokensShort = productPrice - walletBalance;
+      final tokensShort = productPrice - walletBalance.toInt();
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -124,7 +240,7 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
               Text('This product costs $productPrice tokens.'),
               const SizedBox(height: defaultPadding / 2),
               Text(
-                'Your wallet has: $walletBalance tokens',
+                'Your wallet has: ${walletBalance.toStringAsFixed(2)} tokens',
                 style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: defaultPadding / 2),
@@ -155,7 +271,6 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
             TextButton(
               onPressed: () {
                 Navigator.pop(context);
-                Navigator.of(context).pop();
                 Navigator.pushNamed(
                   context,
                   walletScreenRoute,
@@ -164,6 +279,7 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
                     'shoppingTokens': walletBalance,
                     'requiredAmount': tokensShort.toDouble(),
                     'returnToCart': false,
+                    'tokensNeeded': tokensShort,
                   },
                 ).then((result) {
                   // Refresh wallet balance when returning from wallet screen
@@ -174,7 +290,7 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
                   }
                 });
               },
-              child: const Text('Add Tokens'),
+              child: const Text('Add Tokens to Wallet'),
             ),
           ],
         ),
@@ -185,11 +301,46 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: CartButton(
-        price: totalPrice,
-        title: "Add to Cart",
-        subTitle: "Total tokens",
-        press: _addToCart,
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(defaultPadding),
+          child: Row(
+            children: [
+              // Add to Cart Button
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _addToCart,
+                  icon: const Icon(Icons.shopping_cart),
+                  label: const Text('Add to Cart'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[300],
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(width: defaultPadding),
+              // Redeem Now Button
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _handleRedeemNow,
+                  icon: SvgPicture.asset(
+                    'assets/icons/coin.svg',
+                    width: 18,
+                    height: 18,
+                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  ),
+                  label: const Text('Redeem Now'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
       body: Column(
         children: [

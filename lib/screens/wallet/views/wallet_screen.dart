@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
-import 'package:shop/models/product_model.dart';
 import 'package:shop/services/razorpay_service.dart';
 import 'package:shop/services/user_service.dart';
 import 'package:uuid/uuid.dart';
@@ -26,8 +25,14 @@ class _WalletScreenState extends State<WalletScreen> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // Get arguments passed from navigation
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
     if (args != null && args.isNotEmpty) {
       setState(() {
@@ -90,12 +95,14 @@ class _WalletScreenState extends State<WalletScreen> {
         }
       } catch (e) {
         // If GraphQL update fails, update locally
-        setState(() {
-          walletBalance += amount;
-          shoppingTokens += amount.toInt();
-          _selectedTopUpAmount = 0;
-          _amountController.clear();
-        });
+        if (mounted) {
+          setState(() {
+            walletBalance += amount;
+            shoppingTokens += amount.toInt();
+            _selectedTopUpAmount = 0;
+            _amountController.clear();
+          });
+        }
       }
     } else {
       // Local update if no user ID
@@ -355,61 +362,61 @@ class _WalletScreenState extends State<WalletScreen> {
                           ),
                         ),
                       ),
-                SliverPadding(
-                  padding: const EdgeInsets.only(top: defaultPadding / 2),
-                  sliver: SliverToBoxAdapter(
-                    child: Text(
-                      "Transaction History",
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                  ),
-                ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final transactions = [
-                        {
-                          'type': 'Top-up',
-                          'date': '28-09-2025',
-                          'amount': 150.0,
-                          'isIncome': true,
-                        },
-                        {
-                          'type': 'Purchase',
-                          'date': '25-09-2025',
-                          'amount': 200.0,
-                          'isIncome': false,
-                        },
-                        {
-                          'type': 'Purchase',
-                          'date': '22-09-2025',
-                          'amount': 50.0,
-                          'isIncome': false,
-                        },
-                        {
-                          'type': 'Top-up',
-                          'date': '20-09-2025',
-                          'amount': 100.0,
-                          'isIncome': true,
-                        },
-                      ];
-
-                      final transaction = transactions[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(top: defaultPadding),
-                        child: TransactionHistoryCard(
-                          transactionType: transaction['type'] as String,
-                          date: transaction['date'] as String,
-                          amount: transaction['amount'] as double,
-                          isIncome: transaction['isIncome'] as bool,
+                      SliverPadding(
+                        padding: const EdgeInsets.only(top: defaultPadding / 2),
+                        sliver: SliverToBoxAdapter(
+                          child: Text(
+                            "Transaction History",
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
                         ),
-                      );
-                    },
-                    childCount: 4,
+                      ),
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final transactions = [
+                              {
+                                'type': 'Top-up',
+                                'date': '28-09-2025',
+                                'amount': 150.0,
+                                'isIncome': true,
+                              },
+                              {
+                                'type': 'Purchase',
+                                'date': '25-09-2025',
+                                'amount': 200.0,
+                                'isIncome': false,
+                              },
+                              {
+                                'type': 'Purchase',
+                                'date': '22-09-2025',
+                                'amount': 50.0,
+                                'isIncome': false,
+                              },
+                              {
+                                'type': 'Top-up',
+                                'date': '20-09-2025',
+                                'amount': 100.0,
+                                'isIncome': true,
+                              },
+                            ];
+
+                            final transaction = transactions[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(top: defaultPadding),
+                              child: TransactionHistoryCard(
+                                transactionType: transaction['type'] as String,
+                                date: transaction['date'] as String,
+                                amount: transaction['amount'] as double,
+                                isIncome: transaction['isIncome'] as bool,
+                              ),
+                            );
+                          },
+                          childCount: 4,
+                        ),
+                      )
+                    ],
                   ),
-                )
-              ],
-            ),
           ),
         ),
       ),
