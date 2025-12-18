@@ -177,21 +177,31 @@ class _EntryPointState extends State<EntryPoint> {
         child: Stack(
           children: [
             // Gradient background for active tab
-            Positioned(
-              left: (_currentIndex * (MediaQuery.of(context).size.width / 5)).toDouble(),
-              right: ((4 - _currentIndex) * (MediaQuery.of(context).size.width / 5)).toDouble(),
-              bottom: 0,
-              child: Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: appPrimaryGradient,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
+            Builder(builder: (context) {
+              final width = MediaQuery.of(context).size.width;
+              // We have 4 items in the bar
+              const itemCount = 4;
+              final itemWidth = width / itemCount;
+              const horizontalInset = 6.0; // add some side breathing room
+              final left = (_currentIndex * itemWidth) + horizontalInset;
+              final highlightWidth = itemWidth - (horizontalInset * 2);
+
+              return Positioned(
+                left: left,
+                bottom: 0,
+                child: Container(
+                  width: highlightWidth,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: appPrimaryGradient,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                    ),
                   ),
                 ),
-              ),
-            ),
+              );
+            }),
             // Navigation bar on top
             BottomNavigationBar(
               currentIndex: _currentIndex,
@@ -206,7 +216,7 @@ class _EntryPointState extends State<EntryPoint> {
               type: BottomNavigationBarType.fixed,
               selectedFontSize: 12,
               selectedItemColor: Colors.white,
-              unselectedItemColor: Colors.transparent,
+              unselectedItemColor: Colors.black87,
               items: [
                 BottomNavigationBarItem(
                   icon: svgIcon("assets/icons/Shop.svg"),

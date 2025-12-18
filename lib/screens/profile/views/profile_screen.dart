@@ -66,7 +66,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ProfileCard(
             name: _userName,
             email: "user@shop.com",
-            imageSrc: "https://i.imgur.com/IXnwbLk.png",
+            // No default image after login
+            imageSrc: null,
             // proLableText: "Sliver",
             // isPro: true, if the user is pro
             press: () {
