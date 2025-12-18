@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/services/shiprocket_service.dart';
+import 'package:shop/config/shiprocket_config.dart';
 import '../components/delivery_partner_card.dart';
 import '../components/tracking_timeline.dart';
 
@@ -26,10 +27,35 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   Future<ShiprocketOrderData?> _fetchTrackingData() async {
-    // For demo purposes, using mock data
-    // In production, replace with: ShiprocketService.getOrderTracking(widget.orderId)
-    await Future.delayed(const Duration(seconds: 1));
-    return ShiprocketService.getMockOrderTracking(widget.orderId);
+    try {
+      // Check if credentials are configured
+      final isConfigured = ShiprocketConfig.email != 'YOUR_SHIPROCKET_EMAIL';
+      
+      if (isConfigured) {
+        // Try to fetch real tracking data from Shiprocket by Order ID
+        var trackingData = await ShiprocketService.getOrderTracking(widget.orderId);
+        
+        // If order ID tracking fails, try AWB code (if available in orderId)
+        if (trackingData == null && widget.orderId.length >= 10) {
+          // Might be an AWB code, try tracking by AWB
+          trackingData = await ShiprocketService.getTrackingByAWB(widget.orderId);
+        }
+        
+        if (trackingData != null) {
+          return trackingData;
+        }
+        
+        // API configured but tracking failed - return null to show error
+        return null;
+      } else {
+        // Credentials not configured, use mock data for development
+        return ShiprocketService.getMockOrderTracking(widget.orderId);
+      }
+    } catch (e) {
+      print('Error fetching tracking data: $e');
+      // Fall back to mock data if API fails
+      return ShiprocketService.getMockOrderTracking(widget.orderId);
+    }
   }
 
   @override

@@ -118,12 +118,14 @@ class UserDetailModel {
   final String firstName;
   final String lastName;
   final String username;
+  final double walletBalance;
 
   UserDetailModel({
     this.id,
     required this.firstName,
     required this.lastName,
     required this.username,
+    this.walletBalance = 0.0,
   });
 
   factory UserDetailModel.fromJson(Map<String, dynamic> json) {
@@ -132,6 +134,7 @@ class UserDetailModel {
       firstName: json['firstName'] ?? json['first_name'] ?? '',
       lastName: json['lastName'] ?? json['last_name'] ?? '',
       username: json['username'] ?? '',
+      walletBalance: (json['walletBalance'] ?? json['wallet_balance'] ?? 0).toDouble(),
     );
   }
 
@@ -141,6 +144,7 @@ class UserDetailModel {
       'firstName': firstName,
       'lastName': lastName,
       'username': username,
+      'walletBalance': walletBalance,
     };
   }
 

@@ -123,6 +123,7 @@ class GraphQLQueries {
         firstName
         lastName
         username
+        walletBalance
       }
     }
   ''';
@@ -136,6 +137,7 @@ class GraphQLQueries {
         lastName
         username
         password
+        walletBalance
       }
     }
   ''';
@@ -238,7 +240,9 @@ class GraphQLQueries {
       }
     }
   ''';
-  // ============ Wallet Queries ============
+
+  // ============ Wallet Queries & Mutations ============
+  
   // Get user wallet balance
   static const String getUserWallet = '''
     query GetUserWallet(\$userId: ID!) {
@@ -249,9 +253,9 @@ class GraphQLQueries {
     }
   ''';
 
-  // Update user wallet balance (shopping tokens)
-  static const String updateUserWallet = '''
-    mutation UpdateUserWallet(\$userId: ID!, \$walletBalance: Int!) {
+  // Update user wallet balance
+  static const String updateWalletBalance = '''
+    mutation UpdateWalletBalance(\$userId: ID!, \$walletBalance: Float!) {
       updateUserDetail(
         where: {id: \$userId}
         data: {walletBalance: \$walletBalance}
@@ -262,7 +266,34 @@ class GraphQLQueries {
     }
   ''';
 
-  // ============ Wishlist Queries ============
+  // Increment wallet balance (add money)
+  static const String addWalletBalance = '''
+    mutation AddWalletBalance(\$userId: ID!, \$amount: Float!) {
+      updateUserDetail(
+        where: {id: \$userId}
+        data: {walletBalance: {increment: \$amount}}
+      ) {
+        id
+        walletBalance
+      }
+    }
+  ''';
+
+  // Decrement wallet balance (deduct money)
+  static const String deductWalletBalance = '''
+    mutation DeductWalletBalance(\$userId: ID!, \$amount: Float!) {
+      updateUserDetail(
+        where: {id: \$userId}
+        data: {walletBalance: {decrement: \$amount}}
+      ) {
+        id
+        walletBalance
+      }
+    }
+  ''';
+
+  // ============ Wishlist Queries & Mutations ============
+  
   // Get user wishlist from separate Wishlist collection
   static const String getUserWishlist = '''
     query GetUserWishlist(\$userId: ID!) {
@@ -270,19 +301,21 @@ class GraphQLQueries {
         id
         product {
           id
-          title
+          productName
           slug
+          description
           price
-          discountPercent
-          rating
-          isInStock
-          productImage {
+          image {
             url
+          }
+          category {
+            id
+            categoryName
           }
         }
         size {
           id
-          sizeType
+          sizeName
         }
       }
     }
@@ -301,7 +334,7 @@ class GraphQLQueries {
         id
         product {
           id
-          title
+          productName
           price
         }
       }
@@ -325,9 +358,8 @@ class GraphQLQueries {
         firstName
         lastName
         username
-        email
-        phone
         walletBalance
       }
     }
-  ''';}
+  ''';
+}

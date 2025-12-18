@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shop/config/shiprocket_config.dart';
 
 class ShiprocketOrderData {
   final String orderId;
@@ -24,20 +25,32 @@ class ShiprocketOrderData {
 
   factory ShiprocketOrderData.fromJson(Map<String, dynamic> json) {
     return ShiprocketOrderData(
-      orderId: json['order_id']?.toString() ?? '',
-      orderStatus: json['status'] ?? 'Unknown',
-      courierName: json['courier_name'],
-      trackingNumber: json['tracking_number'],
-      estimatedDeliveryDate: json['estimated_delivery_date'],
-      trackingHistory: (json['tracking_history'] as List?)
+      orderId: json['order_id']?.toString() ?? json['shipment_id']?.toString() ?? '',
+      orderStatus: _mapStatus(json['status'] ?? json['current_status'] ?? 'Unknown'),
+      courierName: json['courier_name'] ?? json['carrier_name'],
+      trackingNumber: json['awb_code'] ?? json['tracking_number'] ?? json['tracking_id'],
+      estimatedDeliveryDate: json['estimated_delivery_date'] ?? json['edd'],
+      trackingHistory: (json['tracking_data'] as List?)
               ?.map((e) => TrackingEvent.fromJson(e))
               .toList() ??
           [],
       deliveryPartner: json['delivery_partner'] != null
           ? DeliveryPartner.fromJson(json['delivery_partner'])
           : null,
-      currentLocation: json['current_location'],
+      currentLocation: json['current_location'] ?? json['location'],
     );
+  }
+
+  static String _mapStatus(String status) {
+    // Map Shiprocket statuses to user-friendly statuses
+    final statusLower = status.toLowerCase();
+    if (statusLower.contains('delivered')) return 'Delivered';
+    if (statusLower.contains('out for delivery') || statusLower.contains('ofd')) return 'Out for Delivery';
+    if (statusLower.contains('in transit') || statusLower.contains('transit')) return 'In Transit';
+    if (statusLower.contains('picked up') || statusLower.contains('pickup')) return 'Picked Up';
+    if (statusLower.contains('processing') || statusLower.contains('processed')) return 'Processing';
+    if (statusLower.contains('cancelled') || statusLower.contains('cancel')) return 'Cancelled';
+    return status;
   }
 }
 
@@ -56,10 +69,10 @@ class TrackingEvent {
 
   factory TrackingEvent.fromJson(Map<String, dynamic> json) {
     return TrackingEvent(
-      timestamp: json['timestamp'] ?? '',
-      status: json['status'] ?? '',
-      location: json['location'],
-      remarks: json['remarks'],
+      timestamp: json['timestamp'] ?? json['created_at'] ?? DateTime.now().toString(),
+      status: json['status'] ?? json['current_status'] ?? '',
+      location: json['location'] ?? json['city'] ?? json['hub'],
+      remarks: json['remarks'] ?? json['comment'] ?? json['message'],
     );
   }
 }
@@ -85,10 +98,10 @@ class DeliveryPartner {
 
   factory DeliveryPartner.fromJson(Map<String, dynamic> json) {
     return DeliveryPartner(
-      name: json['name'] ?? 'Delivery Partner',
-      phone: json['phone'] ?? '',
+      name: json['name'] ?? json['delivery_boy_name'] ?? 'Delivery Partner',
+      phone: json['phone'] ?? json['delivery_boy_phone'] ?? '',
       email: json['email'],
-      vehicleInfo: json['vehicle_info'],
+      vehicleInfo: json['vehicle_info'] ?? json['vehicle_number'],
       latitude: json['latitude']?.toDouble(),
       longitude: json['longitude']?.toDouble(),
       profileImage: json['profile_image'],
@@ -97,21 +110,70 @@ class DeliveryPartner {
 }
 
 class ShiprocketService {
-  // Replace with your actual Shiprocket API credentials
-  static const String _baseUrl = 'https://apiv2.shiprocket.in/v1/external';
-  static const String _apiKey = 'YOUR_SHIPROCKET_API_KEY';
-  
-  // For demo purposes - in production, use proper authentication
-  static const String _authToken = 'Bearer $_apiKey';
+  static const String _baseUrl = ShiprocketConfig.baseUrl;
+  static String? _authToken;
+  static DateTime? _tokenExpiry;
 
-  /// Get order tracking details
-  static Future<ShiprocketOrderData?> getOrderTracking(String orderId) async {
+  /// Authenticate with Shiprocket and get access token
+  static Future<String?> authenticate() async {
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/orders/$orderId/track'),
+      final response = await http.post(
+        Uri.parse('$_baseUrl/auth/login'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': _authToken,
+        },
+        body: jsonEncode({
+          'email': ShiprocketConfig.email,
+          'password': ShiprocketConfig.password,
+        }),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _authToken = data['token'];
+        // Token typically expires in 24 hours
+        _tokenExpiry = DateTime.now().add(const Duration(hours: 23));
+        return _authToken;
+      } else {
+        print('Shiprocket Auth Error: ${response.statusCode} - ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Exception in authenticate: $e');
+      return null;
+    }
+  }
+
+  /// Get valid auth token (authenticates if needed)
+  static Future<String?> _getAuthToken() async {
+    // Check if token exists and is not expired
+    if (_authToken != null && 
+        _tokenExpiry != null && 
+        DateTime.now().isBefore(_tokenExpiry!)) {
+      return _authToken;
+    }
+
+    // Authenticate to get new token
+    return await authenticate();
+  }
+
+  /// Get order tracking details by Shiprocket Order ID
+  static Future<ShiprocketOrderData?> getOrderTracking(String orderId) async {
+    try {
+      final token = await _getAuthToken();
+      if (token == null) {
+        print('Failed to authenticate with Shiprocket');
+        return null;
+      }
+
+      // Remove # if present in order ID
+      final cleanOrderId = orderId.replaceAll('#', '');
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/orders/show/$cleanOrderId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 10));
 
@@ -128,26 +190,32 @@ class ShiprocketService {
     }
   }
 
-  /// Get delivery partner details for an order
-  static Future<DeliveryPartner?> getDeliveryPartner(String orderId) async {
+  /// Get tracking details by AWB (Airway Bill) code
+  static Future<ShiprocketOrderData?> getTrackingByAWB(String awbCode) async {
     try {
+      final token = await _getAuthToken();
+      if (token == null) {
+        print('Failed to authenticate with Shiprocket');
+        return null;
+      }
+
       final response = await http.get(
-        Uri.parse('$_baseUrl/orders/$orderId/partner'),
+        Uri.parse('$_baseUrl/courier/track/awb/$awbCode'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': _authToken,
+          'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return DeliveryPartner.fromJson(data['data'] ?? data);
+        return ShiprocketOrderData.fromJson(data['data'] ?? data);
       } else {
         print('Error: ${response.statusCode} - ${response.body}');
         return null;
       }
     } catch (e) {
-      print('Exception in getDeliveryPartner: $e');
+      print('Exception in getTrackingByAWB: $e');
       return null;
     }
   }
@@ -155,17 +223,26 @@ class ShiprocketService {
   /// Get tracking history for an order
   static Future<List<TrackingEvent>> getTrackingHistory(String orderId) async {
     try {
+      final token = await _getAuthToken();
+      if (token == null) {
+        print('Failed to authenticate with Shiprocket');
+        return [];
+      }
+
+      final cleanOrderId = orderId.replaceAll('#', '');
+
       final response = await http.get(
-        Uri.parse('$_baseUrl/orders/$orderId/tracking'),
+        Uri.parse('$_baseUrl/orders/show/$cleanOrderId'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': _authToken,
+          'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final trackingList = data['data']['tracking_data'] ?? [];
+        final orderData = data['data'] ?? data;
+        final trackingList = orderData['tracking_data'] ?? [];
         return (trackingList as List)
             .map((event) => TrackingEvent.fromJson(event))
             .toList();
@@ -179,7 +256,56 @@ class ShiprocketService {
     }
   }
 
-  /// Mock data for development and testing
+  /// Get delivery partner details for an order
+  static Future<DeliveryPartner?> getDeliveryPartner(String orderId) async {
+    try {
+      final token = await _getAuthToken();
+      if (token == null) {
+        print('Failed to authenticate with Shiprocket');
+        return null;
+      }
+
+      final cleanOrderId = orderId.replaceAll('#', '');
+
+      final response = await http.get(
+        Uri.parse('$_baseUrl/orders/show/$cleanOrderId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final orderData = data['data'] ?? data;
+        
+        // Extract delivery partner info if available
+        if (orderData['delivery_partner'] != null) {
+          return DeliveryPartner.fromJson(orderData['delivery_partner']);
+        }
+        
+        // Try alternative fields
+        if (orderData['delivery_boy_name'] != null) {
+          return DeliveryPartner(
+            name: orderData['delivery_boy_name'] ?? 'Delivery Partner',
+            phone: orderData['delivery_boy_phone'] ?? '',
+            email: orderData['delivery_boy_email'],
+            vehicleInfo: orderData['vehicle_number'],
+          );
+        }
+        
+        return null;
+      } else {
+        print('Error: ${response.statusCode} - ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Exception in getDeliveryPartner: $e');
+      return null;
+    }
+  }
+
+  /// Mock data for development and testing (when API is not configured)
   static ShiprocketOrderData getMockOrderTracking(String orderId) {
     return ShiprocketOrderData(
       orderId: orderId,
@@ -226,20 +352,13 @@ class ShiprocketService {
     );
   }
 
-  /// Verify Shiprocket API key
-  static Future<bool> verifyApiKey(String apiKey) async {
+  /// Verify Shiprocket API credentials
+  static Future<bool> verifyCredentials() async {
     try {
-      final response = await http.get(
-        Uri.parse('$_baseUrl/account/me'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
-      ).timeout(const Duration(seconds: 10));
-
-      return response.statusCode == 200;
+      final token = await authenticate();
+      return token != null;
     } catch (e) {
-      print('Exception in verifyApiKey: $e');
+      print('Exception in verifyCredentials: $e');
       return false;
     }
   }
