@@ -65,10 +65,10 @@ class WalletService {
 
       // Update via GraphQL mutation (convert to int for Hygraph)
       final MutationOptions options = MutationOptions(
-        document: gql(GraphQLQueries.updateUserWallet),
+        document: gql(GraphQLQueries.updateWalletBalance),
         variables: {
           'userId': userId,
-          'walletBalance': newBalance.toInt(),
+          'walletBalance': newBalance,
         },
       );
 
@@ -108,10 +108,10 @@ class WalletService {
 
       // Update via GraphQL mutation (convert to int for Hygraph)
       final MutationOptions options = MutationOptions(
-        document: gql(GraphQLQueries.updateUserWallet),
+        document: gql(GraphQLQueries.updateWalletBalance),
         variables: {
           'userId': userId,
-          'walletBalance': newBalance.toInt(),
+          'walletBalance': newBalance,
         },
       );
 
@@ -199,10 +199,10 @@ class WalletService {
 
       // Update wallet via GraphQL mutation (convert to int for Hygraph)
       final MutationOptions options = MutationOptions(
-        document: gql(GraphQLQueries.updateUserWallet),
+        document: gql(GraphQLQueries.updateWalletBalance),
         variables: {
           'userId': userId,
-          'walletBalance': newBalance.toInt(),
+          'walletBalance': newBalance,
         },
       );
 
@@ -248,10 +248,10 @@ class WalletService {
 
       // Update wallet via GraphQL mutation (convert to int for Hygraph)
       final MutationOptions options = MutationOptions(
-        document: gql(GraphQLQueries.updateUserWallet),
+        document: gql(GraphQLQueries.updateWalletBalance),
         variables: {
           'userId': userId,
-          'walletBalance': newBalance.toInt(),
+          'walletBalance': newBalance,
         },
       );
 

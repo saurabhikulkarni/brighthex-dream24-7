@@ -285,7 +285,8 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
                   // Refresh wallet balance when returning from wallet screen
                   if (result != null && result is Map && mounted) {
                     setState(() {
-                      walletBalance = (result['shoppingTokens'] ?? walletBalance) as int;
+                      final num updated = (result['shoppingTokens'] ?? walletBalance) as num;
+                      walletBalance = updated.toDouble();
                     });
                   }
                 });
