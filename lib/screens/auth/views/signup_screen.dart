@@ -28,13 +28,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Image.asset(
-              "assets/images/welcome.jpg",
-              height: MediaQuery.of(context).size.height * 0.35,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              cacheHeight: 600,
-              cacheWidth: 400,
+            // Top hero image: render within SafeArea and avoid fixed cache sizes
+            SafeArea(
+              bottom: false,
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.35,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage("assets/images/welcome.jpg"),
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                  ),
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.all(defaultPadding),
