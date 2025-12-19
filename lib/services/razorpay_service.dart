@@ -2,6 +2,7 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:shop/config/razorpay_config.dart';
+import 'package:shop/config/razorpay_backend_config.dart';
 import 'package:shop/models/payment_model.dart';
 import 'package:http/http.dart' as http;
 
@@ -135,15 +136,28 @@ class RazorpayService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return RazorpayOrderModel.fromJson(data['data']);
+        if (data['success'] == true && data['order'] != null) {
+          return RazorpayOrderModel.fromJson(data['order']);
+        }
+        print('Error: Backend returned success but no order data');
+        return null;
       } else {
-        print('Error creating order: ${response.body}');
+        final errorData = jsonDecode(response.body);
+        print('Error creating order: ${errorData['message'] ?? response.body}');
         return null;
       }
     } catch (e) {
       print('Exception in createOrder: $e');
       return null;
     }
+  }
+
+  /// Get backend config
+  Map<String, String> _getBackendConfig() {
+    return {
+      'createOrderEndpoint': RazorpayBackendConfig.createOrderEndpoint,
+      'verifySignatureEndpoint': RazorpayBackendConfig.verifySignatureEndpoint,
+    };
   }
 
   /// Verify payment signature
@@ -158,19 +172,24 @@ class RazorpayService {
         Uri.parse(RazorpayConfig.verifySignatureEndpoint),
         headers: {
           'Content-Type': 'application/json',
-        },
         body: jsonEncode({
-          'razorpay_payment_id': paymentId,
-          'razorpay_order_id': orderId,
-          'razorpay_signature': signature,
+          'orderId': orderId,
+          'paymentId': paymentId,
+          'signature': signature,
         }),
       ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['verified'] ?? false;
+        return data['success'] == true && data['verified
+        },'] == true;
       } else {
-        print('Error verifying signature: ${response.body}');
+        try {
+          final errorData = jsonDecode(response.body);
+          print('Error verifying signature: ${errorData['message'] ?? response.body}');
+        } catch (e) {
+          print('Error verifying signature: ${response.body}');
+        }
         return false;
       }
     } catch (e) {
