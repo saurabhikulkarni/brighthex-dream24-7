@@ -204,7 +204,29 @@ If you want to learn how to build ecommerce template on Flutter [watch the playl
 
 Visit FlutterLibrary.com to Download the [Flutter e-commerce app template](https://www.flutterlibrary.com/templates/e-commerce-app) & other templates, and components.
 
+## Building the App
 
+### Prerequisites
+- Flutter SDK (3.24.3 or later)
+- Android SDK  
+- Java JDK 17 or later
+
+### Quick Build
+```bash
+# Install dependencies
+flutter pub get
+
+# Build debug APK
+flutter build apk --debug
+```
+
+The APK will be generated at: `build/app/outputs/flutter-apk/app-debug.apk`
+
+### Alternative Build Methods
+- **Using Docker**: Run `./build-apk.sh` (requires Docker)
+- **Using GitHub Actions**: Push to the repository and the workflow will automatically build the APK
+
+For detailed build instructions, troubleshooting, and more options, see [BUILD.md](BUILD.md).
 
 </br >
 </br >
