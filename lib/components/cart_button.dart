@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../constants.dart';
 
@@ -6,8 +7,8 @@ class CartButton extends StatelessWidget {
   const CartButton({
     super.key,
     required this.price,
-    this.title = "Buy Now",
-    this.subTitle = "Unit price",
+    this.title = "Redeem Now",
+    this.subTitle = "Shopping tokens",
     required this.press,
   });
 
@@ -44,12 +45,22 @@ class CartButton extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "\$${price.toStringAsFixed(2)}",
-                            style: Theme.of(context)
-                                .textTheme
+                          Row(
+                            children: [
+                              SvgPicture.asset(
+                                'assets/icons/coin.svg',
+                                width: 16,
+                                height: 16,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                "${price.toInt()}",
+                                style: Theme.of(context)
+                                    .textTheme
                                 .titleSmall!
                                 .copyWith(color: Colors.white),
+                              ),
+                            ],
                           ),
                           Text(
                             subTitle,

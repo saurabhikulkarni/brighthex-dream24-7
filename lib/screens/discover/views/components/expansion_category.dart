@@ -10,9 +10,11 @@ class ExpansionCategory extends StatelessWidget {
     required this.title,
     required this.subCategory,
     required this.svgSrc,
+    this.categoryId,
   });
 
   final String title, svgSrc;
+  final String? categoryId;
   final List subCategory;
 
   @override
@@ -41,7 +43,16 @@ class ExpansionCategory extends StatelessWidget {
           children: [
             ListTile(
               onTap: () {
-                Navigator.pushNamed(context, onSaleScreenRoute);
+                // Navigate to category products screen with category name
+                // Products will be fetched from GraphQL in the CategoryProductsScreen
+                Navigator.pushNamed(
+                  context,
+                  categoryProductsScreenRoute,
+                  arguments: {
+                    'categoryName': subCategory[index].title,
+                    'categoryId': categoryId,
+                  },
+                );
               },
               title: Text(
                 subCategory[index].title,

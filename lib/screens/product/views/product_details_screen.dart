@@ -4,8 +4,11 @@ import 'package:shop/components/cart_button.dart';
 import 'package:shop/components/custom_modal_bottom_sheet.dart';
 import 'package:shop/components/product/product_card.dart';
 import 'package:shop/constants.dart';
+import 'package:shop/models/product_model.dart';
+import 'package:shop/services/product_service.dart';
+import 'package:shop/services/wishlist_service.dart';
 import 'package:shop/screens/product/views/product_returns_screen.dart';
-
+import 'package:flutter_svg/flutter_svg.dart' as svg;
 import 'package:shop/route/screen_export.dart';
 
 import 'components/notify_me_card.dart';
@@ -15,29 +18,139 @@ import 'components/product_list_tile.dart';
 import '../../../components/review_card.dart';
 import 'product_buy_now_screen.dart';
 
-class ProductDetailsScreen extends StatelessWidget {
-  const ProductDetailsScreen({super.key, this.isProductAvailable = true});
+class ProductDetailsScreen extends StatefulWidget {
+  const ProductDetailsScreen({
+    super.key,
+    this.isProductAvailable = true,
+    this.productId,
+    this.product,
+  });
 
   final bool isProductAvailable;
+  final String? productId;
+  final ProductModel? product;
+
+  @override
+  State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
+}
+
+class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
+  final ProductService _productService = ProductService();
+  ProductModel? _product;
+  List<SizeModel> _sizes = [];
+  List<ProductModel> _relatedProducts = [];
+  bool _isLoading = true;
+  bool _isInWishlist = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.product != null) {
+      _product = widget.product;
+      _checkWishlistStatus();
+      _isLoading = false;
+      _fetchSizes();
+      _fetchRelatedProducts();
+    } else if (widget.productId != null) {
+      _fetchProductDetails();
+    } else {
+      _isLoading = false;
+    }
+  }
+
+  void _checkWishlistStatus() {
+    if (_product?.id != null) {
+      setState(() {
+        _isInWishlist = wishlistService.isInWishlist(_product!.id!);
+      });
+    }
+  }
+
+  Future<void> _fetchProductDetails() async {
+    try {
+      final product = await _productService.getProductById(widget.productId!);
+      if (mounted) {
+        setState(() {
+          _product = product;
+          _isLoading = false;
+        });
+        _fetchSizes();
+        _fetchRelatedProducts();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchSizes() async {
+    if (_product?.id == null) return;
+    try {
+      final sizes = await _productService.getSizesByProduct(_product!.id!);
+      if (mounted) {
+        setState(() {
+          _sizes = sizes;
+        });
+      }
+    } catch (e) {
+      // Sizes not available
+    }
+  }
+
+  Future<void> _fetchRelatedProducts() async {
+    try {
+      final products = await _productService.getAllProducts();
+      if (mounted) {
+        setState(() {
+          // Filter out current product and take first 5
+          _relatedProducts = products
+              .where((p) => p.id != _product?.id)
+              .take(5)
+              .toList();
+        });
+      }
+    } catch (e) {
+      // Related products not available
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_product == null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: Text('Product not found')),
+      );
+    }
+
+    final bool isAvailable = widget.isProductAvailable;
+
     return Scaffold(
-      bottomNavigationBar: isProductAvailable
+      bottomNavigationBar: isAvailable
           ? CartButton(
-              price: 140,
+              price: _product!.price,
               press: () {
                 customModalBottomSheet(
                   context,
                   height: MediaQuery.of(context).size.height * 0.92,
-                  child: const ProductBuyNowScreen(),
+                  child: ProductBuyNowScreen(
+                    product: _product!,
+                    sizes: _sizes,
+                  ),
                 );
               },
             )
-          :
-
-          /// If profuct is not available then show [NotifyMeCard]
-          NotifyMeCard(
+          : NotifyMeCard(
               isNotify: false,
               onChanged: (value) {},
             ),
@@ -47,23 +160,52 @@ class ProductDetailsScreen extends StatelessWidget {
             SliverAppBar(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               floating: true,
+              leading: IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back),
+              ),
               actions: [
                 IconButton(
-                  onPressed: () {},
-                  icon: SvgPicture.asset("assets/icons/Bookmark.svg",
-                      color: Theme.of(context).textTheme.bodyLarge!.color),
+                  onPressed: () async {
+                    if (_product != null) {
+                      final newState = await wishlistService.toggleWishlist(_product!);
+                      setState(() {
+                        _isInWishlist = newState;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            _isInWishlist
+                                ? '${_product!.title} added to wishlist'
+                                : '${_product!.title} removed from wishlist',
+                          ),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                  icon: SvgPicture.asset(
+                    "assets/icons/Wishlist.svg",
+                    color: _isInWishlist
+                        ? Colors.red
+                        : Theme.of(context).textTheme.bodyLarge!.color,
+                    width: 24,
+                    height: 24,
+                  ),
                 ),
               ],
             ),
-            const ProductImages(
-              images: [productDemoImg1, productDemoImg2, productDemoImg3],
+            ProductImages(
+              images: _product!.image.isNotEmpty
+                  ? [_product!.image]
+                  : [productDemoImg1, productDemoImg2, productDemoImg3],
             ),
             ProductInfo(
-              brand: "LIPSY LONDON",
-              title: "Sleeveless Ruffle",
-              isAvailable: isProductAvailable,
-              description:
-                  "A cool gray cap in soft corduroy. Watch me.' By buying cotton products from Lindex, you’re supporting more responsibly...",
+              brand: _product!.brandName,
+              title: _product!.title,
+              isAvailable: isAvailable,
+              description: _product!.description ?? 
+                  "A premium quality product with excellent durability. Made from sustainable materials with attention to detail.",
               rating: 4.4,
               numOfReviews: 126,
             ),
@@ -88,23 +230,30 @@ class ProductDetailsScreen extends StatelessWidget {
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            "Premium quality product with excellent durability. Made from sustainable materials with attention to detail. Perfect for everyday use.",
+                          Text(
+                            _product!.description ?? "Premium quality product with excellent durability.",
                           ),
                           const SizedBox(height: defaultPadding),
+                          if (_sizes.isNotEmpty) ...[
+                            Text(
+                              "Available Sizes",
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              children: _sizes.map((size) => Chip(
+                                label: Text(size.sizeName),
+                              )).toList(),
+                            ),
+                            const SizedBox(height: defaultPadding),
+                          ],
                           Text(
                             "Features",
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           const Text("• High quality materials\n• Comfortable design\n• Durable construction\n• Easy to maintain"),
-                          const SizedBox(height: defaultPadding),
-                          Text(
-                            "Care Instructions",
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          const Text("Wash in cold water. Do not bleach. Tumble dry low."),
                         ],
                       ),
                     ),
@@ -137,7 +286,18 @@ class ProductDetailsScreen extends StatelessWidget {
                             child: ListTile(
                               title: const Text("Standard Shipping"),
                               subtitle: const Text("5-7 business days"),
-                              trailing: const Text("\$0"),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  svg.SvgPicture.asset(
+                                    'assets/icons/coin.svg',
+                                    width: 14,
+                                    height: 14,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  const Text("0"),
+                                ],
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -145,24 +305,20 @@ class ProductDetailsScreen extends StatelessWidget {
                             child: ListTile(
                               title: const Text("Express Shipping"),
                               subtitle: const Text("2-3 business days"),
-                              trailing: const Text("\$10"),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  svg.SvgPicture.asset(
+                                    'assets/icons/coin.svg',
+                                    width: 14,
+                                    height: 14,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  const Text("50"),
+                                ],
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Card(
-                            child: ListTile(
-                              title: const Text("Overnight"),
-                              subtitle: const Text("Next business day"),
-                              trailing: const Text("\$25"),
-                            ),
-                          ),
-                          const SizedBox(height: defaultPadding),
-                          Text(
-                            "Delivery Info",
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          const Text("Orders are processed within 1-2 business days. Tracking information will be provided via email once your order ships."),
                         ],
                       ),
                     ),
@@ -216,24 +372,36 @@ class ProductDetailsScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: SizedBox(
                 height: 220,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 5,
-                  itemBuilder: (context, index) => Padding(
-                    padding: EdgeInsets.only(
-                        left: defaultPadding,
-                        right: index == 4 ? defaultPadding : 0),
-                    child: ProductCard(
-                      image: productDemoImg2,
-                      title: "Sleeveless Tiered Dobby Swing Dress",
-                      brandName: "LIPSY LONDON",
-                      price: 24.65,
-                      priceAfetDiscount: index.isEven ? 20.99 : null,
-                      dicountpercent: index.isEven ? 25 : null,
-                      press: () {},
-                    ),
-                  ),
-                ),
+                child: _relatedProducts.isEmpty
+                    ? const Center(child: Text("No related products"))
+                    : ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _relatedProducts.length,
+                        itemBuilder: (context, index) => Padding(
+                          padding: EdgeInsets.only(
+                              left: defaultPadding,
+                              right: index == _relatedProducts.length - 1
+                                  ? defaultPadding
+                                  : 0),
+                          child: ProductCard(
+                            image: _relatedProducts[index].image,
+                            title: _relatedProducts[index].title,
+                            brandName: _relatedProducts[index].brandName,
+                            price: _relatedProducts[index].price,
+                            product: _relatedProducts[index],
+                            press: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ProductDetailsScreen(
+                                    product: _relatedProducts[index],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
               ),
             ),
             const SliverToBoxAdapter(

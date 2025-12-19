@@ -1,9 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:shop/route/route_constants.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:shop/route/router.dart' as router;
 import 'package:shop/theme/app_theme.dart';
+import 'package:shop/screens/splash/splash_screen.dart';
+import 'package:shop/services/wishlist_service.dart';
+import 'package:shop/services/auth_service.dart';
+import 'package:shop/services/cart_service.dart';
+import 'package:shop/services/search_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Hive for GraphQL caching
+  await initHiveForFlutter();
+  
+  // Initialize Auth Service for session persistence
+  await authService.initialize();
+  
+  // Initialize Wishlist Service
+  await wishlistService.initialize();
+  
+  // Initialize Cart Service
+  await cartService.initialize();
+  
+  // Initialize Search Service
+  await searchService.initialize();
+  
   runApp(const MyApp());
 }
 
@@ -18,12 +40,11 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Shop Template by The Flutter Way',
+      title: 'DREAM 247 - Shopping App',
       theme: AppTheme.lightTheme(context),
-      // Dark theme is inclided in the Full template
       themeMode: ThemeMode.light,
       onGenerateRoute: router.generateRoute,
-      initialRoute: onbordingScreenRoute,
+      home: const SplashScreen(),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../constants.dart';
 import '../network_image_with_loader.dart';
@@ -11,14 +12,12 @@ class SecondaryProductCard extends StatelessWidget {
     required this.title,
     required this.price,
     this.priceAfetDiscount,
-    this.dicountpercent,
     this.press,
     this.style,
   });
   final String image, brandName, title;
   final double price;
   final double? priceAfetDiscount;
-  final int? dicountpercent;
   final VoidCallback? press;
 
   final ButtonStyle? style;
@@ -39,28 +38,6 @@ class SecondaryProductCard extends StatelessWidget {
             child: Stack(
               children: [
                 NetworkImageWithLoader(image, radius: defaultBorderRadious),
-                if (dicountpercent != null)
-                  Positioned(
-                    right: defaultPadding / 2,
-                    top: defaultPadding / 2,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: defaultPadding / 2),
-                      height: 16,
-                      decoration: const BoxDecoration(
-                        color: errorColor,
-                        borderRadius: BorderRadius.all(
-                            Radius.circular(defaultBorderRadious)),
-                      ),
-                      child: Text(
-                        "$dicountpercent% off",
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  )
               ],
             ),
           ),
@@ -92,8 +69,14 @@ class SecondaryProductCard extends StatelessWidget {
                   priceAfetDiscount != null
                       ? Row(
                           children: [
+                            SvgPicture.asset(
+                              'assets/icons/coin.svg',
+                              width: 14,
+                              height: 14,
+                            ),
+                            const SizedBox(width: 2),
                             Text(
-                              "\$$priceAfetDiscount",
+                              "${priceAfetDiscount!.toInt()}",
                               style: const TextStyle(
                                 color: Color(0xFF31B0D8),
                                 fontWeight: FontWeight.w500,
@@ -101,8 +84,17 @@ class SecondaryProductCard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: defaultPadding / 4),
+                              Opacity(
+                                opacity: 0.5,
+                                child: SvgPicture.asset(
+                                  'assets/icons/coin.svg',
+                                  width: 12,
+                                  height: 12,
+                                ),
+                            ),
+                            const SizedBox(width: 2),
                             Text(
-                              "\$$price",
+                              "${price.toInt()}",
                               style: TextStyle(
                                 color: Theme.of(context)
                                     .textTheme
@@ -114,13 +106,23 @@ class SecondaryProductCard extends StatelessWidget {
                             ),
                           ],
                         )
-                      : Text(
-                          "\$$price",
-                          style: const TextStyle(
-                            color: Color(0xFF31B0D8),
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                          ),
+                      : Row(
+                          children: [
+                            SvgPicture.asset(
+                              'assets/icons/coin.svg',
+                              width: 14,
+                              height: 14,
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              "${price.toInt()}",
+                              style: const TextStyle(
+                                color: Color(0xFF31B0D8),
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
                         ),
                 ],
               ),

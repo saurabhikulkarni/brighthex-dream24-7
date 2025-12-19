@@ -1,15 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:shop/components/list_tile/divider_list_tile.dart';
-import 'package:shop/components/network_image_with_loader.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/screen_export.dart';
+import 'package:shop/services/auth_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'components/profile_card.dart';
 import 'components/profile_menu_item_list_tile.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String _userName = 'User';
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
+  
+  Future<void> _loadUserName() async {
+    final name = await AuthService().getUserName();
+    if (mounted) {
+      setState(() {
+        _userName = name ?? 'User';
+      });
+    }
+  }
+
+  void _openFAQ() async {
+    const faqUrl = 'https://calm-shame-7ef.notion.site/Dream247-Frequently-Asked-Questions-FAQ-2cdfae02f0a1800da98ae8b2e447989e';
+    
+    try {
+      if (await canLaunchUrl(Uri.parse(faqUrl))) {
+        await launchUrl(
+          Uri.parse(faqUrl),
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Could not open FAQ')),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error opening FAQ')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,9 +64,10 @@ class ProfileScreen extends StatelessWidget {
       body: ListView(
         children: [
           ProfileCard(
-            name: "Sepide",
-            email: "theflutterway@gmail.com",
-            imageSrc: "https://i.imgur.com/IXnwbLk.png",
+            name: _userName,
+            email: "user@shop.com",
+            // No default image after login
+            imageSrc: null,
             // proLableText: "Sliver",
             // isPro: true, if the user is pro
             press: () {
@@ -27,20 +75,7 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: defaultPadding, vertical: defaultPadding * 1.5),
-            child: GestureDetector(
-              onTap: () {},
-              child: const AspectRatio(
-                aspectRatio: 1.8,
-                child:
-                    NetworkImageWithLoader("https://i.imgur.com/dz0BBom.png"),
-              ),
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
+            padding: const EdgeInsets.symmetric(horizontal: defaultPadding, vertical: defaultPadding),
             child: Text(
               "Account",
               style: Theme.of(context).textTheme.titleSmall,
@@ -57,12 +92,16 @@ class ProfileScreen extends StatelessWidget {
           ProfileMenuListTile(
             text: "Returns",
             svgSrc: "assets/icons/Return.svg",
-            press: () {},
+            press: () {
+              Navigator.pushNamed(context, returnsScreenRoute);
+            },
           ),
           ProfileMenuListTile(
             text: "Wishlist",
             svgSrc: "assets/icons/Wishlist.svg",
-            press: () {},
+            press: () {
+              Navigator.pushNamed(context, wishlistScreenRoute);
+            },
           ),
           ProfileMenuListTile(
             text: "Addresses",
@@ -72,63 +111,11 @@ class ProfileScreen extends StatelessWidget {
             },
           ),
           ProfileMenuListTile(
-            text: "Payment",
-            svgSrc: "assets/icons/card.svg",
-            press: () {
-              Navigator.pushNamed(context, emptyPaymentScreenRoute);
-            },
-          ),
-          ProfileMenuListTile(
             text: "Wallet",
             svgSrc: "assets/icons/Wallet.svg",
             press: () {
               Navigator.pushNamed(context, walletScreenRoute);
             },
-          ),
-          const SizedBox(height: defaultPadding),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: defaultPadding, vertical: defaultPadding / 2),
-            child: Text(
-              "Personalization",
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-          ),
-          DividerListTileWithTrilingText(
-            svgSrc: "assets/icons/Notification.svg",
-            title: "Notification",
-            trilingText: "Off",
-            press: () {
-              Navigator.pushNamed(context, enableNotificationScreenRoute);
-            },
-          ),
-          ProfileMenuListTile(
-            text: "Preferences",
-            svgSrc: "assets/icons/Preferences.svg",
-            press: () {
-              Navigator.pushNamed(context, preferencesScreenRoute);
-            },
-          ),
-          const SizedBox(height: defaultPadding),
-          Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: defaultPadding, vertical: defaultPadding / 2),
-            child: Text(
-              "Settings",
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-          ),
-          ProfileMenuListTile(
-            text: "Language",
-            svgSrc: "assets/icons/Language.svg",
-            press: () {
-              Navigator.pushNamed(context, selectLanguageScreenRoute);
-            },
-          ),
-          ProfileMenuListTile(
-            text: "Location",
-            svgSrc: "assets/icons/Location.svg",
-            press: () {},
           ),
           const SizedBox(height: defaultPadding),
           Padding(
@@ -149,14 +136,47 @@ class ProfileScreen extends StatelessWidget {
           ProfileMenuListTile(
             text: "FAQ",
             svgSrc: "assets/icons/FAQ.svg",
-            press: () {},
+            press: () {
+              _openFAQ();
+            },
             isShowDivider: false,
           ),
           const SizedBox(height: defaultPadding),
 
           // Log Out
           ListTile(
-            onTap: () {},
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text("Log Out"),
+                  content: const Text("Are you sure you want to log out?"),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Cancel"),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        // Clear session from AuthService
+                        await AuthService().logout();
+                        if (!context.mounted) return;
+                        Navigator.pop(context);
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          logInScreenRoute,
+                          (route) => false,
+                        );
+                      },
+                      child: const Text(
+                        "Log Out",
+                        style: TextStyle(color: errorColor),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
             minLeadingWidth: 24,
             leading: SvgPicture.asset(
               "assets/icons/Logout.svg",

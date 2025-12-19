@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/constants.dart';
 
 class OnSaleScreen extends StatelessWidget {
@@ -75,20 +76,43 @@ class OnSaleScreen extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Text(
-                            "\$${product['price']}",
-                            style: const TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Row(
+                            children: [
+                              SvgPicture.asset(
+                                'assets/icons/coin.svg',
+                                width: 14,
+                                height: 14,
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                "${(product['price'] as num).toInt()}",
+                                style: const TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            "\$${product['originalPrice']}",
-                            style: TextStyle(
-                              decoration: TextDecoration.lineThrough,
-                              color: Colors.grey,
-                            ),
+                          Row(
+                            children: [
+                              Opacity(
+                                opacity: 0.5,
+                                child: SvgPicture.asset(
+                                  'assets/icons/coin.svg',
+                                  width: 12,
+                                  height: 12,
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                "${(product['originalPrice'] as num).toInt()}",
+                                style: const TextStyle(
+                                  decoration: TextDecoration.lineThrough,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),

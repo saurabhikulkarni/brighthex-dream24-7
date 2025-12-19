@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
+import 'package:shop/models/product_model.dart';
+import 'package:shop/services/search_service.dart';
+import 'package:shop/components/network_image_with_loader.dart';
+import 'package:shop/route/screen_export.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -10,8 +14,8 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   late TextEditingController _searchController;
-  List<String> _recentSearches = ["Nike Shoes", "Adidas Jacket", "Blue T-shirt"];
-  List<String> _searchResults = [];
+  List<ProductModel> _searchResults = [];
+  bool _isSearching = false;
 
   @override
   void initState() {
@@ -25,33 +29,30 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  void _performSearch(String query) {
+  void _performSearch(String query) async {
     if (query.isEmpty) {
       setState(() {
         _searchResults = [];
+        _isSearching = false;
       });
       return;
     }
-    
-    // Mock search results
-    final mockProducts = [
-      "Nike Air Max Shoes",
-      "Adidas Running Shoes",
-      "Blue Denim Jacket",
-      "White Cotton T-shirt",
-      "Black Leather Belt",
-      "Summer Sunglasses",
-    ];
-    
+
     setState(() {
-      _searchResults = mockProducts
-          .where((item) => item.toLowerCase().contains(query.toLowerCase()))
-          .toList();
+      _isSearching = true;
+    });
+
+    final results = await searchService.searchProducts(query);
+    setState(() {
+      _searchResults = results;
+      _isSearching = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final recentSearches = searchService.getSearchHistory();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Search"),
@@ -82,49 +83,89 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
           Expanded(
-            child: _searchResults.isEmpty && _searchController.text.isEmpty
-                ? ListView(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(defaultPadding),
-                        child: Text(
-                          "Recent Searches",
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-                      ..._recentSearches.map((search) => ListTile(
-                            leading: const Icon(Icons.history),
-                            title: Text(search),
-                            onTap: () {
-                              _searchController.text = search;
-                              _performSearch(search);
-                            },
-                          )),
-                    ],
+            child: _isSearching
+                ? const Center(
+                    child: CircularProgressIndicator(),
                   )
-                : _searchResults.isEmpty
-                    ? Center(
-                        child: Text(
-                          "No products found",
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
+                : _searchResults.isEmpty && _searchController.text.isEmpty
+                    ? ListView(
+                        children: [
+                          if (recentSearches.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.all(defaultPadding),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "Recent Searches",
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        searchService.clearSearchHistory();
+                                      });
+                                    },
+                                    child: const Text("Clear All"),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ...recentSearches.map((search) => ListTile(
+                                leading: const Icon(Icons.history),
+                                title: Text(search),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.close, size: 18),
+                                  onPressed: () {
+                                    setState(() {
+                                      searchService.removeFromSearchHistory(search);
+                                    });
+                                  },
+                                ),
+                                onTap: () {
+                                  _searchController.text = search;
+                                  _performSearch(search);
+                                },
+                              )),
+                        ],
                       )
-                    : ListView.builder(
-                        itemCount: _searchResults.length,
-                        itemBuilder: (context, index) {
-                          return ListTile(
-                            leading: const Icon(Icons.shopping_bag),
-                            title: Text(_searchResults[index]),
-                            subtitle: const Text("View details"),
-                            onTap: () {
-                              // Navigate to product details
+                    : _searchResults.isEmpty
+                        ? Center(
+                            child: Text(
+                              "No products found",
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          )
+                        : ListView.builder(
+                            itemCount: _searchResults.length,
+                            itemBuilder: (context, index) {
+                              final product = _searchResults[index];
+                              return ListTile(
+                                leading: SizedBox(
+                                  width: 50,
+                                  height: 50,
+                                  child: NetworkImageWithLoader(
+                                    product.image,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                title: Text(product.title),
+                                subtitle: Text("${product.price.toInt()} tokens"),
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          ProductDetailsScreen(product: product),
+                                    ),
+                                  );
+                                },
+                              );
                             },
-                          );
-                        },
-                      ),
+                          ),
           ),
         ],
       ),
     );
   }
 }
+

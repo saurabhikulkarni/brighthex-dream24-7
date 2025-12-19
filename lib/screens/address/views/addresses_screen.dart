@@ -1,22 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
+import 'package:shop/route/screen_export.dart';
 
 class Address {
   final String id;
-  final String name;
-  final String address;
+  final String fullName;
+  final String email;
+  final String phone;
+  final String houseNumber;
+  final String roadName;
+  final String landmark;
+  final String pincode;
   final String city;
-  final String zipCode;
-  final bool isDefault;
+  final String state;
+  bool isDefault;
 
   Address({
     required this.id,
-    required this.name,
-    required this.address,
+    required this.fullName,
+    this.email = '',
+    this.phone = '',
+    this.houseNumber = '',
+    this.roadName = '',
+    this.landmark = '',
+    required this.pincode,
     required this.city,
-    required this.zipCode,
-    required this.isDefault,
+    this.state = '',
+    this.isDefault = false,
   });
+
+  // For backward compatibility with old Address constructor
+  Address.simple({
+    required String id,
+    required String name,
+    required String address,
+    required String city,
+    required String zipCode,
+    required bool isDefault,
+  })  : id = id,
+        fullName = name,
+        email = '',
+        phone = '',
+        houseNumber = address,
+        roadName = '',
+        landmark = '',
+        pincode = zipCode,
+        city = city,
+        state = '',
+        isDefault = isDefault;
 }
 
 class AddressesScreen extends StatefulWidget {
@@ -28,41 +59,79 @@ class AddressesScreen extends StatefulWidget {
 
 class _AddressesScreenState extends State<AddressesScreen> {
   late List<Address> addresses;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _loadAddresses();
+  }
+
+  void _loadAddresses() {
+    setState(() {
+      _isLoading = true;
+    });
+    // Load addresses from GraphQL or local mock data
     addresses = [
       Address(
         id: "1",
-        name: "Home",
-        address: "123 Main Street, Apt 4B",
-        city: "New York, NY 10001",
-        zipCode: "10001",
+        fullName: "John Doe",
+        email: "john@example.com",
+        phone: "+1 (555) 123-4567",
+        houseNumber: "123",
+        roadName: "Main Street, Apt 4B",
+        landmark: "Near Central Park",
+        pincode: "10001",
+        city: "New York",
+        state: "NY",
         isDefault: true,
       ),
       Address(
         id: "2",
-        name: "Work",
-        address: "456 Business Ave, Suite 200",
-        city: "New York, NY 10002",
-        zipCode: "10002",
+        fullName: "John Doe",
+        email: "john@example.com",
+        phone: "+1 (555) 123-4567",
+        houseNumber: "456",
+        roadName: "Business Ave, Suite 200",
+        landmark: "Business District",
+        pincode: "10002",
+        city: "New York",
+        state: "NY",
         isDefault: false,
       ),
       Address(
         id: "3",
-        name: "Family",
-        address: "789 Oak Road",
-        city: "Boston, MA 02101",
-        zipCode: "02101",
+        fullName: "John Doe",
+        email: "john@example.com",
+        phone: "+1 (555) 123-4567",
+        houseNumber: "789",
+        roadName: "Oak Road",
+        landmark: "Residential Area",
+        pincode: "02101",
+        city: "Boston",
+        state: "MA",
         isDefault: false,
       ),
     ];
+    setState(() {
+      _isLoading = false;
+    });
   }
 
-  void _deleteAddress(int index) {
+  void _setDefaultAddress(String addressId) {
     setState(() {
-      addresses.removeAt(index);
+      for (var address in addresses) {
+        address.isDefault = address.id == addressId;
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Default address updated")),
+    );
+  }
+
+  void _deleteAddress(String addressId) {
+    setState(() {
+      addresses.removeWhere((address) => address.id == addressId);
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Address deleted")),
@@ -78,36 +147,40 @@ class _AddressesScreenState extends State<AddressesScreen> {
           IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Add new address")),
-              );
+              Navigator.pushNamed(context, addAddressScreenRoute).then((result) {
+                if (result != null && result is Map && result['success'] == true) {
+                  _loadAddresses(); // Reload addresses from GraphQL
+                }
+              });
             },
           ),
         ],
       ),
-      body: addresses.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.location_off_outlined,
-                    size: 80,
-                    color: Colors.grey.shade400,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : addresses.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.location_off_outlined,
+                        size: 80,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: defaultPadding),
+                      Text(
+                        "No addresses saved",
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: defaultPadding),
-                  Text(
-                    "No addresses saved",
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(defaultPadding),
-              itemCount: addresses.length,
-              itemBuilder: (context, index) {
-                final address = addresses[index];
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(defaultPadding),
+                  itemCount: addresses.length,
+                  itemBuilder: (context, index) {
+                    final address = addresses[index];
                 return Card(
                   margin: const EdgeInsets.only(bottom: defaultPadding),
                   child: Padding(
@@ -119,7 +192,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              address.name,
+                              address.fullName,
                               style: Theme.of(context).textTheme.titleSmall,
                             ),
                             if (address.isDefault)
@@ -132,7 +205,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                   color: primaryColor.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: Text(
+                                child: const Text(
                                   "Default",
                                   style: TextStyle(
                                     fontSize: 12,
@@ -144,20 +217,56 @@ class _AddressesScreenState extends State<AddressesScreen> {
                         ),
                         const SizedBox(height: defaultPadding / 2),
                         Text(
-                          address.address,
+                          '${address.houseNumber}, ${address.roadName}, ${address.city}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "${address.city} ${address.zipCode}",
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
+                        if (address.phone.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              'Phone: ${address.phone}',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey[600],
+                                    fontSize: 12,
+                                  ),
+                            ),
+                          ),
                         const SizedBox(height: defaultPadding / 2),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
+                            if (!address.isDefault)
+                              ElevatedButton(
+                                onPressed: () => _setDefaultAddress(address.id),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                child: const Text("Set as Default"),
+                              ),
                             ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                  context,
+                                  addAddressScreenRoute,
+                                  arguments: {
+                                    'addressId': address.id,
+                                    'fullName': address.fullName,
+                                    'phoneNumber': address.phone,
+                                    'houseNumber': address.houseNumber,
+                                    'roadName': address.roadName,
+                                    'pincode': address.pincode,
+                                    'city': address.city,
+                                    'state': address.state,
+                                  },
+                                ).then((result) {
+                                  if (result != null && result is Map && result['success'] == true) {
+                                    _loadAddresses(); // Reload addresses
+                                  }
+                                });
+                              },
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
@@ -167,7 +276,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                               child: const Text("Edit"),
                             ),
                             ElevatedButton(
-                              onPressed: () => _deleteAddress(index),
+                              onPressed: () => _deleteAddress(address.id),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,
                                 padding: const EdgeInsets.symmetric(

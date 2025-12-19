@@ -15,21 +15,33 @@ const grandisExtendedFont = "Grandis Extended";
 
 // On color 80, 60.... those means opacity
 
-const Color primaryColor = Color(0xFF7B61FF);
+// App primary palette updated to gradient: #6441A5, #472575, #2A0845
+const Color primaryColor = Color(0xFF6441A5);
 
 const MaterialColor primaryMaterialColor =
-    MaterialColor(0xFF9581FF, <int, Color>{
-  50: Color(0xFFEFECFF),
-  100: Color(0xFFD7D0FF),
-  200: Color(0xFFBDB0FF),
-  300: Color(0xFFA390FF),
-  400: Color(0xFF8F79FF),
-  500: Color(0xFF7B61FF),
-  600: Color(0xFF7359FF),
-  700: Color(0xFF684FFF),
-  800: Color(0xFF5E45FF),
-  900: Color(0xFF6C56DD),
+    MaterialColor(0xFF6441A5, <int, Color>{
+  50: Color(0xFFEDE8F7),
+  100: Color(0xFFD6CBEF),
+  200: Color(0xFFB9A9E4),
+  300: Color(0xFF9C87D9),
+  400: Color(0xFF836CCF),
+  500: Color(0xFF6441A5),
+  600: Color(0xFF5A3996),
+  700: Color(0xFF4E3187),
+  800: Color(0xFF432A78),
+  900: Color(0xFF2A0845),
 });
+
+// Primary gradient for brand surfaces
+const LinearGradient appPrimaryGradient = LinearGradient(
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
+  colors: [
+    Color(0xFF6441A5),
+    Color(0xFF472575),
+    Color(0xFF2A0845),
+  ],
+);
 
 const Color blackColor = Color(0xFF16161E);
 const Color blackColor80 = Color(0xFF45454B);
@@ -48,6 +60,7 @@ const Color whileColor10 = Color(0xFF191919);
 const Color whileColor5 = Color(0xFF0D0D0D);
 
 const Color greyColor = Color(0xFFB8B5C3);
+const Color appBackgroundColor = Color(0xFFF4F4F4);
 const Color lightGreyColor = Color(0xFFF8F8F9);
 const Color darkGreyColor = Color(0xFF1C1C25);
 // const Color greyColor80 = Color(0xFFC6C4CF);

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/route_constants.dart';
+import 'package:shop/components/gradient_button.dart';
 
 import 'components/login_form.dart';
 
@@ -13,17 +14,16 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  dynamic _loginFormState;
 
   @override
   Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
-
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           children: [
             Image.asset(
-              "assets/images/login_dark.png",
+              "assets/images/welcome.jpg",
               fit: BoxFit.cover,
             ),
             Padding(
@@ -32,38 +32,44 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Welcome back!",
-                    style: Theme.of(context).textTheme.headlineSmall,
+                    "Welcome",
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                   const SizedBox(height: defaultPadding / 2),
                   const Text(
-                    "Log in with your data that you intered during your registration.",
+                    "Log in with your mobile number and OTP.",
                   ),
                   const SizedBox(height: defaultPadding),
-                  LogInForm(formKey: _formKey),
-                  Align(
-                    child: TextButton(
-                      child: const Text("Forgot password"),
-                      onPressed: () {
-                        Navigator.pushNamed(
-                            context, passwordRecoveryScreenRoute);
-                      },
-                    ),
+                  LogInForm(
+                    formKey: _formKey,
+                    onFormCreated: (form) {
+                      _loginFormState = form;
+                    },
                   ),
-                  SizedBox(
-                    height: size.height > 700
-                        ? size.height * 0.1
-                        : defaultPadding,
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
+                  const SizedBox(height: defaultPadding),
+                  GradientButton(
+                    onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-                        Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            entryPointScreenRoute,
-                            ModalRoute.withName(logInScreenRoute));
+                        // First verify OTP
+                        final otpVerified = await _loginFormState.verifyOtp();
+                        if (!mounted) return;
+                        
+                        if (otpVerified) {
+                          // If OTP verified, save login session
+                          await _loginFormState.saveLoginSession();
+                          if (!mounted) return;
+                          
+                          Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              entryPointScreenRoute,
+                              ModalRoute.withName(logInScreenRoute));
+                        }
                       }
                     },
+                    padding: const EdgeInsets.symmetric(vertical: defaultPadding / 1.5),
                     child: const Text("Log in"),
                   ),
                   Row(

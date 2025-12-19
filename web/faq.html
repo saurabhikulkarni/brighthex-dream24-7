@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dream247 - FAQ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px 20px;
+        }
+        
+        .faq-section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            color: #667eea;
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .faq-item {
+            margin-bottom: 25px;
+            border-left: 4px solid #667eea;
+            padding-left: 20px;
+        }
+        
+        .faq-question {
+            color: #333;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: color 0.3s ease;
+        }
+        
+        .faq-question:hover {
+            color: #667eea;
+        }
+        
+        .faq-question::before {
+            content: "Q: ";
+            color: #667eea;
+            font-weight: 700;
+            margin-right: 8px;
+        }
+        
+        .faq-answer {
+            color: #555;
+            font-size: 1em;
+            line-height: 1.6;
+            margin-top: 10px;
+        }
+        
+        .faq-answer::before {
+            content: "A: ";
+            color: #764ba2;
+            font-weight: 700;
+            margin-right: 5px;
+        }
+        
+        ul {
+            margin-left: 20px;
+            margin-top: 10px;
+            color: #555;
+        }
+        
+        li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+        }
+        
+        .highlight {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+            border-top: 1px solid #eee;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .section-title {
+                font-size: 1.3em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Dream247</h1>
+            <p>Frequently Asked Questions (FAQ)</p>
+        </div>
+        
+        <div class="content">
+            <!-- Section 1: About Dream247 -->
+            <div class="faq-section">
+                <h2 class="section-title">1. About Dream247</h2>
+                
+                <div class="faq-item">
+                    <div class="faq-question">What is Dream247?</div>
+                    <div class="faq-answer">
+                        Dream247 is a token-based e-commerce shopping platform designed to make shopping more rewarding and engaging. Users add money to their Dream247 Shopping Wallet and receive equivalent Shopping Credits (Tokens) which can be used to shop for products and participate in loyalty-based activities on the platform.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">How is Dream247 different from other shopping apps?</div>
+                    <div class="faq-answer">
+                        Unlike traditional discount-based platforms, Dream247 uses a token and loyalty system. Users receive Shopping Credits equal to the amount they add, with no expiry, encouraging long-term engagement and smarter shopping.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 2: Shopping Credits -->
+            <div class="faq-section">
+                <h2 class="section-title">2. Shopping Credits (Tokens)</h2>
+                
+                <div class="faq-item">
+                    <div class="faq-question">What are Dream247 Shopping Credits / Tokens?</div>
+                    <div class="faq-answer">
+                        Shopping Credits (also called Tokens) are digital credits issued by Dream247. These credits are used exclusively within the Dream247 platform for shopping and loyalty benefits.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">How do I get Shopping Credits?</div>
+                    <div class="faq-answer">
+                        When you add money to your Dream247 Shopping Wallet:
+                        <div class="highlight">
+                            <ul>
+                                <li>₹100 added = 100 Shopping Credits</li>
+                                <li>Credits are issued at a 1:1 value</li>
+                                <li>Credits have no expiry</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">Do Shopping Credits expire?</div>
+                    <div class="faq-answer">
+                        No. Dream247 Shopping Credits never expire and remain valid as long as your account is active.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">Can I convert Shopping Credits back to cash?</div>
+                    <div class="faq-answer">
+                        No. Shopping Credits are non-withdrawable and cannot be converted into cash or transferred to a bank account.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 3: Usage -->
+            <div class="faq-section">
+                <h2 class="section-title">3. Usage of Shopping Credits</h2>
+                
+                <div class="faq-item">
+                    <div class="faq-question">Where can I use Shopping Credits?</div>
+                    <div class="faq-answer">
+                        Shopping Credits can be used only on the Dream247 platform for:
+                        <ul>
+                            <li>Purchasing products</li>
+                            <li>Loyalty-based benefits</li>
+                            <li>Platform-specific offers and engagement activities</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">Can Shopping Credits be transferred to another user?</div>
+                    <div class="faq-answer">
+                        No. Shopping Credits are non-transferable and can only be used by the account holder.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 4: Wallet & Payments -->
+            <div class="faq-section">
+                <h2 class="section-title">4. Wallet & Payments</h2>
+                
+                <div class="faq-item">
+                    <div class="faq-question">What is the Dream247 Shopping Wallet?</div>
+                    <div class="faq-answer">
+                        The Dream247 Shopping Wallet is a closed-loop wallet where users add money and receive equivalent Shopping Credits for use on the platform.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">Is my wallet balance refundable?</div>
+                    <div class="faq-answer">
+                        No. Once money is added to the wallet and converted into Shopping Credits, it becomes non-refundable, except in rare and exceptional cases (see Refund Policy below).
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 5: Cancellation & Refund -->
+            <div class="faq-section">
+                <h2 class="section-title">5. Cancellation, Return & Refund Policy</h2>
+                
+                <div class="faq-item">
+                    <div class="faq-question">Can I cancel an order?</div>
+                    <div class="faq-answer">
+                        Order cancellation is not guaranteed once an order is placed. Cancellation may still not be allowed if the order has not been processed or shipped, subject to Dream247's discretion.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">Does Dream247 offer returns?</div>
+                    <div class="faq-answer">
+                        No. Dream247 follows a No Return Policy. All purchases are considered final unless explicitly mentioned otherwise.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">Does Dream247 provide refunds?</div>
+                    <div class="faq-answer">
+                        Dream247 follows a No Refund Policy.
+                        <div class="highlight">
+                            Refunds are provided only in rare and exceptional cases, and strictly at the discretion of the Dream247 team, after:
+                            <ul>
+                                <li>Internal verification</li>
+                                <li>Order review</li>
+                                <li>Compliance and fraud checks</li>
+                            </ul>
+                            The decision made by Dream247 in such cases is final and binding.
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">In what cases can a refund be considered?</div>
+                    <div class="faq-answer">
+                        Refunds may be considered only in exceptional scenarios such as:
+                        <ul>
+                            <li>Duplicate payment due to technical failure</li>
+                            <li>Proven transaction errors verified by Dream247</li>
+                        </ul>
+                        Refunds are not guaranteed and may be denied even after review.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 6: Loyalty -->
+            <div class="faq-section">
+                <h2 class="section-title">6. Loyalty & Engagement System</h2>
+                
+                <div class="faq-item">
+                    <div class="faq-question">How does the loyalty system work?</div>
+                    <div class="faq-answer">
+                        Dream247 uses Shopping Credits as a loyalty mechanism. Users are rewarded for shopping and engaging with the platform, encouraging long-term usage without expiration pressure.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">Is Dream247 a money gaming or gambling app?</div>
+                    <div class="faq-answer">
+                        No. Dream247 is a shopping and loyalty engagement platform. It does not offer money withdrawal, real-money gaming, or gambling services.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 7: Account & Compliance -->
+            <div class="faq-section">
+                <h2 class="section-title">7. Account & Compliance</h2>
+                
+                <div class="faq-item">
+                    <div class="faq-question">What happens if my account is inactive?</div>
+                    <div class="faq-answer">
+                        If an account remains inactive for an extended period, Dream247 reserves the right to suspend or close the account as per platform policies. Any remaining Shopping Credits will be handled according to applicable terms.
+                    </div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">Can Dream247 change these policies?</div>
+                    <div class="faq-answer">
+                        Yes. Dream247 reserves the right to update or modify its policies, FAQs, and terms at any time. Changes will be communicated through the app or website.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 8: Support -->
+            <div class="faq-section">
+                <h2 class="section-title">8. Support & Contact</h2>
+                
+                <div class="faq-item">
+                    <div class="faq-question">How can I contact Dream247 support?</div>
+                    <div class="faq-answer">
+                        You can reach our support team through:
+                        <ul>
+                            <li>In-app support</li>
+                            <li>Official email or contact page on the Dream247 website</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2025 Dream247. All rights reserved. Last updated: December 2025</p>
+        </div>
+    </div>
+</body>
+</html>

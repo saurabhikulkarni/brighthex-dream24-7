@@ -18,10 +18,7 @@ class CategoryModel {
 
 List<CategoryModel> demoCategories = [
   CategoryModel(name: "All Categories"),
-  CategoryModel(
-      name: "On Sale",
-      svgSrc: "assets/icons/Sale.svg",
-      route: onSaleScreenRoute),
+  // Removed "On Sale" category and route
   CategoryModel(name: "Man's", svgSrc: "assets/icons/Man.svg"),
   CategoryModel(name: "Woman’s", svgSrc: "assets/icons/Woman.svg"),
   CategoryModel(
@@ -52,9 +49,7 @@ class Categories extends StatelessWidget {
                 svgSrc: demoCategories[index].svgSrc,
                 isActive: index == 0,
                 press: () {
-                  if (demoCategories[index].route != null) {
-                    Navigator.pushNamed(context, demoCategories[index].route!);
-                  }
+                  // Removed navigation to sale route
                 },
               ),
             ),

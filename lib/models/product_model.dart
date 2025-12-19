@@ -1,161 +1,199 @@
-// For demo only
-import 'package:shop/constants.dart';
-
+/// ProductModel represents a shopping product
 class ProductModel {
-  final String image, brandName, title;
+  final String? id;
+  final String productName;
+  final String? slug;
+  final String? description;
   final double price;
-  final double? priceAfetDiscount;
-  final int? dicountpercent;
+  final CategoryModel? category;
+  final String image; // Image URL with default empty string
 
   ProductModel({
-    required this.image,
-    required this.brandName,
-    required this.title,
+    this.id,
+    required this.productName,
+    this.slug,
+    this.description,
     required this.price,
-    this.priceAfetDiscount,
-    this.dicountpercent,
+    this.category,
+    this.image = '',
   });
+
+  // For backward compatibility with existing UI
+  String get title => productName;
+  String get brandName => category?.categoryName ?? '';
+  double? get priceAfetDiscount => null; // Add if you have discount field
+
+  /// Factory constructor to create ProductModel from GraphQL JSON response
+  factory ProductModel.fromJson(Map<String, dynamic> json) {
+    return ProductModel(
+      id: json['id']?.toString(),
+      productName: json['productName'] ?? json['product_name'] ?? '',
+      slug: json['slug'],
+      description: json['description'],
+      price: (json['price'] ?? 0).toDouble(),
+      category: json['category'] != null
+          ? CategoryModel.fromJson(json['category'] as Map<String, dynamic>)
+          : null,
+      image: json['image']?['url'] ?? json['imageUrl'] ?? '',
+    );
+  }
+
+  /// Convert ProductModel to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'productName': productName,
+      'slug': slug,
+      'description': description,
+      'price': price,
+      'category': category?.toJson(),
+    };
+  }
 }
 
-List<ProductModel> demoPopularProducts = [
-  ProductModel(
-    image: productDemoImg1,
-    title: "Mountain Warehouse for Women",
-    brandName: "Lipsy london",
-    price: 540,
-    priceAfetDiscount: 420,
-    dicountpercent: 20,
-  ),
-  ProductModel(
-    image: productDemoImg4,
-    title: "Mountain Beta Warehouse",
-    brandName: "Lipsy london",
-    price: 800,
-  ),
-  ProductModel(
-    image: productDemoImg5,
-    title: "FS - Nike Air Max 270 Really React",
-    brandName: "Lipsy london",
-    price: 650.62,
-    priceAfetDiscount: 390.36,
-    dicountpercent: 40,
-  ),
-  ProductModel(
-    image: productDemoImg6,
-    title: "Green Poplin Ruched Front",
-    brandName: "Lipsy london",
-    price: 1264,
-    priceAfetDiscount: 1200.8,
-    dicountpercent: 5,
-  ),
-  ProductModel(
-    image: "https://i.imgur.com/tXyOMMG.png",
-    title: "Green Poplin Ruched Front",
-    brandName: "Lipsy london",
-    price: 650.62,
-    priceAfetDiscount: 390.36,
-    dicountpercent: 40,
-  ),
-  ProductModel(
-    image: "https://i.imgur.com/h2LqppX.png",
-    title: "white satin corset top",
-    brandName: "Lipsy london",
-    price: 1264,
-    priceAfetDiscount: 1200.8,
-    dicountpercent: 5,
-  ),
-];
-List<ProductModel> demoFlashSaleProducts = [
-  ProductModel(
-    image: productDemoImg5,
-    title: "FS - Nike Air Max 270 Really React",
-    brandName: "Lipsy london",
-    price: 650.62,
-    priceAfetDiscount: 390.36,
-    dicountpercent: 40,
-  ),
-  ProductModel(
-    image: productDemoImg6,
-    title: "Green Poplin Ruched Front",
-    brandName: "Lipsy london",
-    price: 1264,
-    priceAfetDiscount: 1200.8,
-    dicountpercent: 5,
-  ),
-  ProductModel(
-    image: productDemoImg4,
-    title: "Mountain Beta Warehouse",
-    brandName: "Lipsy london",
-    price: 800,
-    priceAfetDiscount: 680,
-    dicountpercent: 15,
-  ),
-];
-List<ProductModel> demoBestSellersProducts = [
-  ProductModel(
-    image: "https://i.imgur.com/tXyOMMG.png",
-    title: "Green Poplin Ruched Front",
-    brandName: "Lipsy london",
-    price: 650.62,
-    priceAfetDiscount: 390.36,
-    dicountpercent: 40,
-  ),
-  ProductModel(
-    image: "https://i.imgur.com/h2LqppX.png",
-    title: "white satin corset top",
-    brandName: "Lipsy london",
-    price: 1264,
-    priceAfetDiscount: 1200.8,
-    dicountpercent: 5,
-  ),
-  ProductModel(
-    image: productDemoImg4,
-    title: "Mountain Beta Warehouse",
-    brandName: "Lipsy london",
-    price: 800,
-    priceAfetDiscount: 680,
-    dicountpercent: 15,
-  ),
-];
-List<ProductModel> kidsProducts = [
-  ProductModel(
-    image: "https://i.imgur.com/dbbT6PA.png",
-    title: "Green Poplin Ruched Front",
-    brandName: "Lipsy london",
-    price: 650.62,
-    priceAfetDiscount: 590.36,
-    dicountpercent: 24,
-  ),
-  ProductModel(
-    image: "https://i.imgur.com/7fSxC7k.png",
-    title: "Printed Sleeveless Tiered Swing Dress",
-    brandName: "Lipsy london",
-    price: 650.62,
-  ),
-  ProductModel(
-    image: "https://i.imgur.com/pXnYE9Q.png",
-    title: "Ruffle-Sleeve Ponte-Knit Sheath ",
-    brandName: "Lipsy london",
-    price: 400,
-  ),
-  ProductModel(
-    image: "https://i.imgur.com/V1MXgfa.png",
-    title: "Green Mountain Beta Warehouse",
-    brandName: "Lipsy london",
-    price: 400,
-    priceAfetDiscount: 360,
-    dicountpercent: 20,
-  ),
-  ProductModel(
-    image: "https://i.imgur.com/8gvE5Ss.png",
-    title: "Printed Sleeveless Tiered Swing Dress",
-    brandName: "Lipsy london",
-    price: 654,
-  ),
-  ProductModel(
-    image: "https://i.imgur.com/cBvB5YB.png",
-    title: "Mountain Beta Warehouse",
-    brandName: "Lipsy london",
-    price: 250,
-  ),
-];
+/// CategoryModel represents a product category
+class CategoryModel {
+  final String? id;
+  final String categoryName;
+  final String? slug;
+
+  CategoryModel({
+    this.id,
+    required this.categoryName,
+    this.slug,
+  });
+
+  factory CategoryModel.fromJson(Map<String, dynamic> json) {
+    return CategoryModel(
+      id: json['id']?.toString(),
+      categoryName: json['categoryName'] ?? json['category_name'] ?? '',
+      slug: json['slug'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'categoryName': categoryName,
+      'slug': slug,
+    };
+  }
+}
+
+/// SizeModel represents product sizes
+class SizeModel {
+  final String? id;
+  final String sizeName;
+  final int quantity;
+  final String? productId;
+
+  SizeModel({
+    this.id,
+    required this.sizeName,
+    required this.quantity,
+    this.productId,
+  });
+
+  factory SizeModel.fromJson(Map<String, dynamic> json) {
+    return SizeModel(
+      id: json['id']?.toString(),
+      sizeName: json['sizeName'] ?? json['size_name'] ?? '',
+      quantity: json['quantity'] ?? 0,
+      productId: json['product']?['id']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'sizeName': sizeName,
+      'quantity': quantity,
+    };
+  }
+}
+
+/// UserDetailModel represents user information
+class UserDetailModel {
+  final String? id;
+  final String firstName;
+  final String lastName;
+  final String username;
+  final String mobileNumber;
+  final double walletBalance;
+
+  UserDetailModel({
+    this.id,
+    required this.firstName,
+    required this.lastName,
+    required this.username,
+    required this.mobileNumber,
+    this.walletBalance = 0.0,
+  });
+
+  factory UserDetailModel.fromJson(Map<String, dynamic> json) {
+    return UserDetailModel(
+      id: json['id']?.toString(),
+      firstName: json['firstName'] ?? json['first_name'] ?? '',
+      lastName: json['lastName'] ?? json['last_name'] ?? '',
+      username: json['username'] ?? '',
+      mobileNumber: json['mobileNumber'] ?? json['mobile_number'] ?? json['phone'] ?? '',
+      walletBalance: (json['walletBalance'] ?? json['wallet_balance'] ?? 0).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'firstName': firstName,
+      'lastName': lastName,
+      'username': username,
+      'mobileNumber': mobileNumber,
+      'walletBalance': walletBalance,
+    };
+  }
+
+  String get fullName => '$firstName $lastName';
+}
+
+/// CartModel represents cart items
+class CartModel {
+  final String? id;
+  final int quantity;
+  final UserDetailModel? userDetail;
+  final ProductModel? product;
+  final SizeModel? size;
+
+  CartModel({
+    this.id,
+    required this.quantity,
+    this.userDetail,
+    this.product,
+    this.size,
+  });
+
+  factory CartModel.fromJson(Map<String, dynamic> json) {
+    return CartModel(
+      id: json['id']?.toString(),
+      quantity: json['quantity'] ?? 1,
+      userDetail: json['userDetail'] != null
+          ? UserDetailModel.fromJson(json['userDetail'] as Map<String, dynamic>)
+          : null,
+      product: json['product'] != null
+          ? ProductModel.fromJson(json['product'] as Map<String, dynamic>)
+          : null,
+      size: json['size'] != null
+          ? SizeModel.fromJson(json['size'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'quantity': quantity,
+      'userDetail': userDetail?.toJson(),
+      'product': product?.toJson(),
+      'size': size?.toJson(),
+    };
+  }
+}

@@ -84,10 +84,6 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     //   return MaterialPageRoute(
     //     builder: (context) => const ProfileSetupScreen(),
     //   );
-    case passwordRecoveryScreenRoute:
-      return MaterialPageRoute(
-        builder: (context) => const PasswordRecoveryScreen(),
-      );
     // case verificationMethodScreenRoute:
     //   return MaterialPageRoute(
     //     builder: (context) => const VerificationMethodScreen(),
@@ -131,8 +127,18 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case productDetailsScreenRoute:
       return MaterialPageRoute(
         builder: (context) {
-          bool isProductAvailable = settings.arguments as bool? ?? true;
-          return ProductDetailsScreen(isProductAvailable: isProductAvailable);
+          final args = settings.arguments;
+          // Handle different argument types
+          if (args is Map<String, dynamic>) {
+            return ProductDetailsScreen(
+              product: args['product'],
+              productId: args['productId'],
+              isProductAvailable: args['isProductAvailable'] ?? true,
+            );
+          } else if (args is bool) {
+            return ProductDetailsScreen(isProductAvailable: args);
+          }
+          return const ProductDetailsScreen();
         },
       );
     case productReviewsScreenRoute:
@@ -163,10 +169,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => const DiscoverScreen(),
       );
-    case onSaleScreenRoute:
-      return MaterialPageRoute(
-        builder: (context) => const OnSaleScreen(),
-      );
+    // Removed onSaleScreenRoute: sale screen deprecated
     case kidsScreenRoute:
       return MaterialPageRoute(
         builder: (context) => const KidsScreen(),
@@ -179,9 +182,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     //   return MaterialPageRoute(
     //     builder: (context) => const SearchHistoryScreen(),
     //   );
-    case bookmarkScreenRoute:
+    case wishlistScreenRoute:
       return MaterialPageRoute(
-        builder: (context) => const BookmarkScreen(),
+        builder: (context) => const WishlistScreen(),
       );
     case entryPointScreenRoute:
       return MaterialPageRoute(
@@ -191,10 +194,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => const ProfileScreen(),
       );
-    // case getHelpScreenRoute:
-    //   return MaterialPageRoute(
-    //     builder: (context) => const GetHelpScreen(),
-    //   );
+    case getHelpScreenRoute:
+      return MaterialPageRoute(
+        builder: (context) => const GetHelpScreen(),
+      );
+
     // case chatScreenRoute:
     //   return MaterialPageRoute(
     //     builder: (context) => const ChatScreen(),
@@ -247,6 +251,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => const OrdersScreen(),
       );
+    case orderConfirmationScreenRoute:
+      return MaterialPageRoute(
+        builder: (context) => const OrderConfirmationScreen(order: null),
+      );
     // case orderProcessingScreenRoute:
     //   return MaterialPageRoute(
     //     builder: (context) => const OrderProcessingScreen(),
@@ -286,6 +294,38 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case cartScreenRoute:
       return MaterialPageRoute(
         builder: (context) => const CartScreen(),
+      );
+    case checkoutScreenRoute:
+      return MaterialPageRoute(
+        builder: (context) => const CartScreen(),
+      );
+    case categoryProductsScreenRoute:
+      final args = settings.arguments as Map<String, dynamic>?;
+      return MaterialPageRoute(
+        builder: (context) => CategoryProductsScreen(
+          categoryName: args?['categoryName'] ?? 'Products',
+          categoryId: args?['categoryId'],
+        ),
+      );
+    case addAddressScreenRoute:
+      final args = settings.arguments as Map<String, dynamic>?;
+      return MaterialPageRoute(
+        builder: (context) => AddAddressScreen(
+          addressId: args?['addressId'],
+          fullName: args?['fullName'],
+          emailId: args?['emailId'],
+          phoneNumber: args?['phoneNumber'],
+          houseNumber: args?['houseNumber'],
+          roadName: args?['roadName'],
+          landmark: args?['landmark'],
+          pincode: args?['pincode'],
+          city: args?['city'],
+          state: args?['state'],
+        ),
+      );
+    case returnsScreenRoute:
+      return MaterialPageRoute(
+        builder: (context) => const ReturnsScreen(),
       );
     // case paymentMethodScreenRoute:
     //   return MaterialPageRoute(
