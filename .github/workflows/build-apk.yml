@@ -1,0 +1,61 @@
+name: Build Debug APK
+
+on:
+  push:
+    branches: [ main, master, copilot/build-debug-apk-file ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.3'
+          channel: 'stable'
+          cache: true
+      
+      - name: Verify Flutter installation
+        run: |
+          flutter --version
+          flutter doctor -v
+      
+      - name: Get Flutter dependencies
+        run: flutter pub get
+      
+      - name: Clean build
+        run: flutter clean
+      
+      - name: Build Debug APK
+        run: flutter build apk --debug --verbose
+      
+      - name: Verify APK was created
+        run: |
+          if [ -f "build/app/outputs/flutter-apk/app-debug.apk" ]; then
+            echo "✓ APK built successfully"
+            ls -lh build/app/outputs/flutter-apk/app-debug.apk
+          else
+            echo "✗ APK not found!"
+            exit 1
+          fi
+      
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 30
+          if-no-files-found: error
