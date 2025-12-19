@@ -1,6 +1,6 @@
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:shop/models/order_models.dart';
-import 'package:shop/models/product_model.dart';
+import 'package:shop/models/address_model.dart';
 import 'package:shop/services/graphql_client.dart';
 import 'package:shop/services/graphql_queries.dart';
 import 'package:shop/services/user_service.dart';
@@ -170,8 +170,11 @@ class OrderServiceGraphQL {
       await _publishOrder(orderId);
 
       // Return full order by fetching it
-      return await getOrderById(orderId) ?? 
-          throw Exception('Failed to retrieve created order');
+      final order = await getOrderById(orderId);
+      if (order == null) {
+        throw Exception('Failed to retrieve created order');
+      }
+      return order;
     } catch (e) {
       throw Exception('Error creating order: $e');
     }
@@ -195,8 +198,11 @@ class OrderServiceGraphQL {
       }
 
       // Get updated order
-      return await getOrderById(orderId) ?? 
-          throw Exception('Order not found after update');
+      final order = await getOrderById(orderId);
+      if (order == null) {
+        throw Exception('Order not found after update');
+      }
+      return order;
     } catch (e) {
       throw Exception('Error updating order status: $e');
     }
@@ -227,8 +233,11 @@ class OrderServiceGraphQL {
       }
 
       // Get updated order
-      return await getOrderById(orderId) ?? 
-          throw Exception('Order not found after update');
+      final updatedOrder = await getOrderById(orderId);
+      if (updatedOrder == null) {
+        throw Exception('Order not found after update');
+      }
+      return updatedOrder;
     } catch (e) {
       throw Exception('Error updating order tracking: $e');
     }
@@ -249,8 +258,11 @@ class OrderServiceGraphQL {
       }
 
       // Get updated order
-      return await getOrderById(orderId) ?? 
-          throw Exception('Order not found after cancellation');
+      final cancelledOrder = await getOrderById(orderId);
+      if (cancelledOrder == null) {
+        throw Exception('Order not found after cancellation');
+      }
+      return cancelledOrder;
     } catch (e) {
       throw Exception('Error cancelling order: $e');
     }

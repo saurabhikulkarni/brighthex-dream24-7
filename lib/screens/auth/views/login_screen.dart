@@ -53,12 +53,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   GradientButton(
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
-<<<<<<< Updated upstream
-                        // Attempt login and navigate only on success
-                        final success = await _loginFormState.saveLoginSession();
-                        if (!mounted) return;
-                        if (success) {
-=======
                         // First verify OTP
                         final otpVerified = await _loginFormState.verifyOtp();
                         if (!mounted) return;
@@ -68,7 +62,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           await _loginFormState.saveLoginSession();
                           if (!mounted) return;
                           
->>>>>>> Stashed changes
                           Navigator.pushNamedAndRemoveUntil(
                               context,
                               entryPointScreenRoute,

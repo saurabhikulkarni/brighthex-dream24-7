@@ -96,7 +96,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     onPressed: () async {
                       if (!_formKey.currentState!.validate()) return;
 
-<<<<<<< Updated upstream
                       if (!_privacyAccepted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -105,14 +104,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         );
                         return;
-=======
+                      }
+
                       // First verify OTP
                       final otpVerified = await _signUpFormState.verifyOtp();
                       if (!mounted) return;
                       
                       if (!otpVerified) {
                         return; // Error message already shown in verifyOtp
->>>>>>> Stashed changes
                       }
 
                       final name = _signUpFormState.getUserName();
@@ -200,33 +199,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         }
                         
                         // Extract userId from response
-<<<<<<< Updated upstream
-                        final userId = result.data?['createUserDetail']?['id'];
+                        final userId = result.data?['createUserDetail']?['id']?.toString();
                         print('User created with ID: $userId, Response: ${result.data}');
 
-                        // Immediately publish the new user (Hygraph returns only published content in queries)
-                        if (userId != null && userId.isNotEmpty) {
-                          try {
-                            final publishResult = await graphQLClient.mutate(
-                              MutationOptions(
-                                document: gql(GraphQLQueries.publishUser),
-                                variables: {'id': userId},
-                              ),
-                            );
-                            if (publishResult.hasException) {
-                              print('Warning: publishUser exception: ${publishResult.exception}');
-                            } else {
-                              print('User published: $userId');
-                            }
-                          } catch (e) {
-                            print('Warning: Exception publishing user: $e');
-                          }
-                        }
-                        
-                        if (userId != null && userId.isNotEmpty) {
-=======
-                        final userId = result.data?['createUserDetail']?['id']?.toString();
-                        
                         if (userId != null && userId.isNotEmpty) {
                           // Publish user (required for Hygraph)
                           try {
@@ -235,11 +210,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               variables: {'id': userId},
                             );
                             await graphQLClient.mutate(publishOptions);
+                            print('User published: $userId');
                           } catch (e) {
                             print('Error publishing user: $e');
                           }
-                          
->>>>>>> Stashed changes
                           // Save login session with userId from Hygraph
                           final authService = AuthService();
                           await authService.saveLoginSession(

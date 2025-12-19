@@ -208,8 +208,11 @@ class PaymentService {
       }
 
       // Get full payment to return
-      return await getPaymentById(paymentId) ?? 
-          throw Exception('Payment not found after update');
+      final payment = await getPaymentById(paymentId);
+      if (payment == null) {
+        throw Exception('Payment not found after update');
+      }
+      return payment;
     } catch (e) {
       throw Exception('Error updating payment status: $e');
     }
@@ -243,8 +246,11 @@ class PaymentService {
       }
 
       // Get full payment to return
-      return await getPaymentById(paymentId) ?? 
-          throw Exception('Payment not found after update');
+      final paymentAfterUpdate = await getPaymentById(paymentId);
+      if (paymentAfterUpdate == null) {
+        throw Exception('Payment not found after update');
+      }
+      return paymentAfterUpdate;
     } catch (e) {
       throw Exception('Error updating payment: $e');
     }
