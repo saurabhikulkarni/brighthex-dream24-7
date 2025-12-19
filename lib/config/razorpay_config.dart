@@ -12,12 +12,12 @@ class RazorpayConfig {
   static const String keySecret = 'STORED_ON_BACKEND_SERVER';
 
   // Backend API base URL for Razorpay operations
-  static const String backendBaseUrl = 'https://brighthex-dream-24-7-backend-psi.vercel.app';
+  static const String backendBaseUrl = 'https://brighthex-dream-24-7-backend-psi.vercel.app/api';
   
   // Backend API endpoints
-  static const String createOrderEndpoint = '$backendBaseUrl/api/payments/create-order';
-  static const String verifySignatureEndpoint = '$backendBaseUrl/api/payments/verify-signature';
-  static const String getPaymentEndpoint = '$backendBaseUrl/api/payments';
+  static const String createOrderEndpoint = '$backendBaseUrl/payments/create-order';
+  static const String verifySignatureEndpoint = '$backendBaseUrl/payments/verify-signature';
+  static const String getPaymentEndpoint = '$backendBaseUrl/payments';
 
   // Merchant Name/App Name
   static const String merchantName = 'Dream247';
@@ -80,7 +80,7 @@ class RazorpayConfig {
 
   /// Validate configuration
   static bool isConfigured() {
-    return keyId != 'YOUR_RAZORPAY_KEY_ID' &&
-        keySecret != 'YOUR_RAZORPAY_KEY_SECRET';
+    return keyId != 'rzp_test_RqEBl9COpBTyyz' &&
+        keySecret != 'STORED_ON_BACKEND_SERVER';
   }
 }
