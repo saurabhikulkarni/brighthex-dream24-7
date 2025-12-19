@@ -98,7 +98,7 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     SizeModel? sizeToAdd = selectedSize;
     if (sizeToAdd == null && availableSizes.isNotEmpty) {
       sizeToAdd = SizeModel(
-        id: 'local_${selectedSizeName}',
+        id: 'local_$selectedSizeName',
         sizeName: selectedSizeName,
         quantity: 100,
       );
@@ -162,7 +162,7 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
         if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => OrderConfirmationScreen(order: null),
+              builder: (context) => const OrderConfirmationScreen(order: null),
             ),
           );
         }

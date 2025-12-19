@@ -10,15 +10,15 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return const Scaffold(
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
             // Category Banners Carousel at Top
-            const SliverToBoxAdapter(child: CategoryBannersCarousel()),
-            const SliverToBoxAdapter(child: PopularProducts()),
-            const SliverToBoxAdapter(child: BestSellers()),
-            const SliverToBoxAdapter(child: MostPopular()),
+            SliverToBoxAdapter(child: CategoryBannersCarousel()),
+            SliverToBoxAdapter(child: PopularProducts()),
+            SliverToBoxAdapter(child: BestSellers()),
+            SliverToBoxAdapter(child: MostPopular()),
           ],
         ),
       ),

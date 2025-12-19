@@ -8,12 +8,12 @@ class GradientButton extends StatelessWidget {
   final Size minimumSize;
 
   const GradientButton({
-    Key? key,
+    super.key,
     required this.onPressed,
     required this.child,
     this.padding = const EdgeInsets.all(defaultPadding),
     this.minimumSize = const Size(double.infinity, 56),
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

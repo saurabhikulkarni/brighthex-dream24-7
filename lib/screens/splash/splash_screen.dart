@@ -175,7 +175,7 @@ class _SplashScreenState extends State<SplashScreen>
                     maintainState: true,
                     maintainAnimation: true,
                     maintainSize: true,
-                    child: Text(
+                    child: const Text(
                       'Premium Shopping Experience',
                       style: TextStyle(
                         fontFamily: 'Plus Jakarta',
@@ -187,11 +187,11 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   const SizedBox(height: 24),
                   // Loading indicator
-                  SizedBox(
+                  const SizedBox(
                     width: 50,
                     height: 50,
                     child: CircularProgressIndicator(
-                      valueColor: const AlwaysStoppedAnimation<Color>(
+                      valueColor: AlwaysStoppedAnimation<Color>(
                         Colors.white,
                       ),
                       strokeWidth: 3,

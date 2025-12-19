@@ -38,7 +38,7 @@ class OrderServiceGraphQL {
 
   // Generate unique order number
   String _generateOrderNumber() {
-    final uuid = const Uuid();
+    const uuid = Uuid();
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     return 'ORD${timestamp.toString().substring(7)}${uuid.v4().substring(0, 6).toUpperCase()}';
   }

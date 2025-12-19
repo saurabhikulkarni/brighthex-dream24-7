@@ -8,6 +8,7 @@
 /// - POST /api/auth/verify-otp - Verify OTP
 /// 
 /// See MSG91_BACKEND_SETUP.md for backend implementation details.
+library;
 
 class Msg91Config {
   // Backend API base URL - Update this with your backend server URL
