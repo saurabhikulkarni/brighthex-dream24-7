@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shop/services/auth_service.dart';
+import 'package:shop/services/msg91_service.dart';
 
 import '../../../../constants.dart';
 
@@ -67,42 +68,107 @@ class _SignUpFormState extends State<SignUpForm> {
     });
   }
 
-  void _sendOtp() {
+  String? _sessionId; // Store session ID from OTP send response
+
+  Future<void> _sendOtp() async {
     if (!widget.formKey.currentState!.validate()) return;
 
-    setState(() {
-      _otpSent = true;
-    });
+    final phone = _phoneController.text.replaceAll(RegExp(r'[^\d]'), '');
 
-    _startResendTimer();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('OTP sent to your mobile number.')),
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
+
+    // Send OTP via MSG91 service (backend API)
+    final result = await msg91Service.sendOtp(phone);
+    
+    // Hide loading indicator
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+
+    if (result['success'] == true) {
+      setState(() {
+        _otpSent = true;
+        _sessionId = result['sessionId'];
+        _otpController.clear(); // Clear previous OTP if any
+      });
+      _startResendTimer();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'OTP sent to your mobile number.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Failed to send OTP. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
-  Future<void> verifyPhoneAndGetNumber() async {
+  Future<bool> verifyOtp() async {
     if (!_otpSent) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please send OTP first'),
+          backgroundColor: Colors.red,
         ),
       );
-      return;
+      return false;
     }
 
-    if (_otpController.text.isEmpty || _otpController.text.length < 4) {
+    final phone = _phoneController.text.replaceAll(RegExp(r'[^\d]'), '');
+    final otp = _otpController.text.trim();
+
+    if (otp.isEmpty || otp.length < 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a valid OTP'),
+          backgroundColor: Colors.red,
         ),
       );
-      return;
+      return false;
     }
 
-    // Mark phone as verified in AuthService
-    final phone = _phoneController.text.replaceAll(RegExp(r'[^\d]'), '');
-    await AuthService().markPhoneVerified(phone);
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    // Verify OTP via MSG91 service (backend API)
+    final result = await msg91Service.verifyOtp(
+      mobileNumber: phone,
+      otp: otp,
+      sessionId: _sessionId,
+    );
+
+    // Hide loading indicator
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+
+    if (result['success'] == true) {
+      // Mark phone as verified in AuthService
+      await AuthService().markPhoneVerified(phone);
+      return true;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Invalid OTP. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
+    }
   }
 
   String? getVerifiedPhone() {
@@ -177,7 +243,9 @@ class _SignUpFormState extends State<SignUpForm> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _sendOtp,
+                onPressed: () async {
+                  await _sendOtp();
+                },
                 child: const Text('Send OTP'),
               ),
             ),
@@ -203,7 +271,9 @@ class _SignUpFormState extends State<SignUpForm> {
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
-                onPressed: _secondsLeft == 0 ? _sendOtp : null,
+                onPressed: _secondsLeft == 0 ? () async {
+                  await _sendOtp();
+                } : null,
                 child: Text(
                   _secondsLeft == 0
                       ? 'Resend OTP'

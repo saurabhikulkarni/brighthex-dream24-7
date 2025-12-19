@@ -45,7 +45,37 @@ class UserService {
     }
   }
 
-  // Fetch user by username (for login)
+  // Fetch user by mobile number (for login with OTP)
+  Future<UserDetailModel?> getUserByMobileNumber(String mobileNumber) async {
+    try {
+      final QueryResult result = await _client.query(
+        QueryOptions(
+          document: gql(GraphQLQueries.getUserByMobileNumber),
+          variables: {'mobileNumber': mobileNumber},
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      if (result.hasException) {
+        throw Exception(result.exception.toString());
+      }
+
+      if (result.data == null || 
+          result.data!['userDetails'] == null || 
+          (result.data!['userDetails'] as List).isEmpty) {
+        return null;
+      }
+
+      final users = result.data!['userDetails'] as List;
+      if (users.isEmpty) return null;
+
+      return UserDetailModel.fromJson(users[0] as Map<String, dynamic>);
+    } catch (e) {
+      throw Exception('Error fetching user: $e');
+    }
+  }
+
+  // Fetch user by username (for backward compatibility)
   Future<UserDetailModel?> getUserByUsername(String username) async {
     try {
       final QueryResult result = await _client.query(

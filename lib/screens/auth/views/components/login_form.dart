@@ -3,7 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shop/components/gradient_button.dart';
 import 'package:shop/services/auth_service.dart';
+<<<<<<< Updated upstream
 import 'package:shop/services/user_service.dart';
+=======
+import 'package:shop/services/graphql_client.dart';
+import 'package:shop/services/graphql_queries.dart';
+import 'package:shop/services/msg91_service.dart';
+>>>>>>> Stashed changes
 import 'package:shop/route/route_constants.dart';
 
 import '../../../../constants.dart';
@@ -63,7 +69,9 @@ class _LogInFormState extends State<LogInForm> {
     });
   }
 
-  void _sendOtp() {
+  String? _sessionId; // Store session ID from OTP send response
+
+  Future<void> _sendOtp() async {
     // Validate Indian mobile number before sending OTP
     String phone = _phoneController.text.replaceAll(RegExp(r'[^\d]'), '');
     
@@ -77,15 +85,43 @@ class _LogInFormState extends State<LogInForm> {
       );
       return;
     }
-    
-    // Simulate sending OTP
-    setState(() {
-      _otpSent = true;
-    });
-    _startResendTimer();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('OTP sent to your mobile number.')),
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
+
+    // Send OTP via MSG91 service (backend API)
+    final result = await msg91Service.sendOtp(phone);
+    
+    // Hide loading indicator
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+
+    if (result['success'] == true) {
+      setState(() {
+        _otpSent = true;
+        _sessionId = result['sessionId'];
+        _otpController.clear(); // Clear previous OTP if any
+      });
+      _startResendTimer();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'OTP sent to your mobile number.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Failed to send OTP. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   String? getVerifiedPhone() {
@@ -99,7 +135,57 @@ class _LogInFormState extends State<LogInForm> {
     return _nameController.text.trim();
   }
 
+<<<<<<< Updated upstream
   Future<bool> saveLoginSession() async {
+=======
+  Future<bool> verifyOtp() async {
+    final phone = _phoneController.text.replaceAll(RegExp(r'[^\d]'), '');
+    final otp = _otpController.text.trim();
+
+    if (otp.isEmpty || otp.length < 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid OTP'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
+    }
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    // Verify OTP via MSG91 service (backend API)
+    final result = await msg91Service.verifyOtp(
+      mobileNumber: phone,
+      otp: otp,
+      sessionId: _sessionId,
+    );
+
+    // Hide loading indicator
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+
+    if (result['success'] == true) {
+      return true;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Invalid OTP. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
+    }
+  }
+
+  Future<void> saveLoginSession() async {
+>>>>>>> Stashed changes
     final phone = getVerifiedPhone();
     if (phone != null) {
       final authService = AuthService();
@@ -108,6 +194,7 @@ class _LogInFormState extends State<LogInForm> {
       print('[LOGIN] Starting login session with phone: $phone');
       
       try {
+<<<<<<< Updated upstream
         // Step 1: Check if account exists
         print('[LOGIN] Checking if account exists with phone: $phone');
         final existingUser = await UserService().getUserByUsername(phone);
@@ -168,6 +255,99 @@ class _LogInFormState extends State<LogInForm> {
           ),
         );
         return false;
+=======
+        // First, try to find existing user by mobile number
+        final graphQLClient = GraphQLService.getClient();
+        
+        // Query for existing user
+        final QueryOptions queryOptions = QueryOptions(
+          document: gql(GraphQLQueries.getUserByMobileNumber),
+          variables: {'mobileNumber': phone},
+        );
+        
+        QueryResult queryResult = await graphQLClient.query(queryOptions);
+        String? userId;
+
+        if (!queryResult.hasException && queryResult.data != null) {
+          final users = queryResult.data?['userDetails'] as List?;
+          if (users != null && users.isNotEmpty) {
+            userId = users[0]?['id']?.toString();
+          }
+        }
+
+        // If user doesn't exist, create new user
+        if (userId == null) {
+          final MutationOptions options = MutationOptions(
+            document: gql(GraphQLQueries.createUser),
+            variables: {
+              'firstName': firstName,
+              'lastName': lastName,
+              'username': phone, // Use phone as username
+              'mobileNumber': phone,
+            },
+          );
+          
+          final QueryResult result = await graphQLClient.mutate(options);
+          
+          if (result.hasException) {
+            print('Error creating user: ${result.exception}');
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Error creating account. Please try again.'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            return;
+          }
+          
+          userId = result.data?['createUserDetail']?['id']?.toString();
+          
+          // Publish user (required for Hygraph)
+          if (userId != null) {
+            try {
+              final publishOptions = MutationOptions(
+                document: gql(GraphQLQueries.publishUser),
+                variables: {'id': userId},
+              );
+              await graphQLClient.mutate(publishOptions);
+            } catch (e) {
+              print('Error publishing user: $e');
+            }
+          }
+        }
+        
+        if (userId != null && userId.isNotEmpty) {
+          // Save login session with userId from Hygraph
+          await authService.saveLoginSession(
+            phone: phone,
+            name: name,
+            phoneVerified: true,
+            userId: userId,
+          );
+        } else {
+          print('Error: Could not extract user ID from response');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Error during login. Please try again.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        print('Exception in saveLoginSession: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+>>>>>>> Stashed changes
       }
     }
     return false;
@@ -220,9 +400,9 @@ class _LogInFormState extends State<LogInForm> {
           const SizedBox(height: defaultPadding),
           if (!_otpSent)
             GradientButton(
-              onPressed: () {
+              onPressed: () async {
                 if (widget.formKey.currentState!.validate()) {
-                  _sendOtp();
+                  await _sendOtp();
                 }
               },
               padding: const EdgeInsets.symmetric(vertical: defaultPadding / 1.5),
@@ -250,7 +430,9 @@ class _LogInFormState extends State<LogInForm> {
             Align(
               alignment: Alignment.centerRight,
               child: TextButton(
-                onPressed: _secondsLeft == 0 ? _sendOtp : null,
+                onPressed: _secondsLeft == 0 ? () async {
+                  await _sendOtp();
+                } : null,
                 child: Text(
                   _secondsLeft == 0
                       ? 'Resend OTP'

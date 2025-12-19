@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/route_constants.dart';
-import 'package:shop/services/order_service.dart';
+import 'package:shop/models/order_models.dart';
 
 class OrderConfirmationScreen extends StatelessWidget {
-  final Order order;
+  final String orderId;
+  final double totalAmount;
+  final OrderModel? order;
 
   const OrderConfirmationScreen({
     super.key,
-    required this.order,
+    this.orderId = '',
+    this.totalAmount = 0.0,
+    this.order,
   });
 
   @override
@@ -76,7 +80,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            order.id.substring(0, 8).toUpperCase(),
+                            (order?.orderNumber ?? orderId).toUpperCase(),
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -142,109 +146,116 @@ class OrderConfirmationScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: defaultPadding * 2),
                 // Items List
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Order Items (${order.items.length})',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                if (order != null && order!.items.isNotEmpty) ...[
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Order Items (${order!.items.length})',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: defaultPadding),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: order.items.length,
-                  itemBuilder: (context, index) {
-                    final item = order.items[index];
-                    return Container(
-                      padding: const EdgeInsets.all(defaultPadding / 2),
-                      margin: const EdgeInsets.only(bottom: defaultPadding / 2),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade200),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          // Product Image
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: SizedBox(
-                              width: 60,
-                              height: 60,
-                              child: Image.network(
-                                item.productImage,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Container(
-                                  color: Colors.grey.shade200,
-                                  child: const Icon(Icons.image),
-                                ),
+                  const SizedBox(height: defaultPadding),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: order!.items.length,
+                    itemBuilder: (context, index) {
+                      final item = order!.items[index];
+                      return Container(
+                        padding: const EdgeInsets.all(defaultPadding / 2),
+                        margin: const EdgeInsets.only(bottom: defaultPadding / 2),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade200),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            // Product Image
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: SizedBox(
+                                width: 60,
+                                height: 60,
+                                child: item.product?.image.isNotEmpty == true
+                                    ? Image.network(
+                                        item.product!.image,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            Container(
+                                          color: Colors.grey.shade200,
+                                          child: const Icon(Icons.image),
+                                        ),
+                                      )
+                                    : Container(
+                                        color: Colors.grey.shade200,
+                                        child: const Icon(Icons.image),
+                                      ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: defaultPadding / 2),
-                          // Product Details
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item.productTitle,
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 4),
-                                if (item.size != null)
+                            const SizedBox(width: defaultPadding / 2),
+                            // Product Details
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   Text(
-                                    'Size: ${item.size!.sizeName}',
+                                    item.product?.productName ?? 'Product',
+                                    style: Theme.of(context).textTheme.bodySmall,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  if (item.size != null)
+                                    Text(
+                                      'Size: ${item.size!.sizeName}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(fontSize: 10),
+                                    ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Qty: ${item.quantity}',
                                     style: Theme.of(context)
                                         .textTheme
                                         .bodySmall
                                         ?.copyWith(fontSize: 10),
                                   ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Qty: ${item.quantity}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(fontSize: 10),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: defaultPadding / 2),
+                            // Price
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Row(
+                                  children: [
+                                    SvgPicture.asset(
+                                      'assets/icons/coin.svg',
+                                      width: 12,
+                                      height: 12,
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      '${item.totalPrice.toInt()}',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(width: defaultPadding / 2),
-                          // Price
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Row(
-                                children: [
-                                  SvgPicture.asset(
-                                    'assets/icons/coin.svg',
-                                    width: 12,
-                                    height: 12,
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Text(
-                                    '${item.totalPrice}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 const SizedBox(height: defaultPadding * 2),
                 // Price Summary
                 Container(
@@ -268,7 +279,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${(order.totalTokens * 0.91).toInt()}',
+                                '${((order?.totalAmount ?? totalAmount) * 0.91).toInt()}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -291,7 +302,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${(order.totalTokens * 0.09).toInt()}',
+                                '${((order?.totalAmount ?? totalAmount) * 0.09).toInt()}',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -317,7 +328,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${order.totalTokens}',
+                                '${(order?.totalAmount ?? totalAmount).toInt()}',
                                 style: Theme.of(context)
                                     .textTheme
                                     .titleSmall

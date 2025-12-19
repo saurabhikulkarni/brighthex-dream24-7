@@ -1,0 +1,230 @@
+# Complete Hygraph Schema - Copy and Paste Ready
+
+## Step 1: Create Address Model
+
+Model Name: Address
+
+Fields:
+- id (ID) - Auto-generated
+- fullName (Single line text, Required)
+- phoneNumber (Single line text, Required)
+- pincode (Single line text, Required)
+- addressLine1 (Single line text, Required)
+- addressLine2 (Single line text, Optional)
+- city (Single line text, Required)
+- state (Single line text, Required)
+- country (Single line text, Required, Default: "India")
+- isDefault (Boolean, Required, Default: false)
+- createdAt (DateTime, Auto-generated on create)
+- updatedAt (DateTime, Auto-generated on update)
+
+Relations:
+- userDetail (UserDetail, Many-to-One, Required) - Field name: userId
+
+---
+
+## Step 2: Create OrderItem Model
+
+Model Name: OrderItem
+
+Fields:
+- id (ID) - Auto-generated
+- quantity (Integer, Required)
+- pricePerUnit (Float, Required)
+- totalPrice (Float, Required)
+
+Relations:
+- order (Order, Many-to-One, Required) - Field name: orderId
+- product (Product, Many-to-One, Required) - Field name: productId
+- size (Size, Many-to-One, Optional) - Field name: sizeId
+
+---
+
+## Step 3: Create Order Model
+
+Model Name: Order
+
+Fields:
+- id (ID) - Auto-generated
+- orderNumber (Single line text, Required, Unique)
+- totalAmount (Float, Required)
+- status (Enum, Required, Default: PENDING)
+  - Enum values: PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED
+- trackingNumber (Single line text, Optional)
+- courierName (Single line text, Optional)
+- shiprocketOrderId (Single line text, Optional)
+- createdAt (DateTime, Auto-generated on create)
+- updatedAt (DateTime, Auto-generated on update)
+
+Relations:
+- userDetail (UserDetail, Many-to-One, Required) - Field name: userId
+- items (OrderItem, One-to-Many) - Reverse relation
+- shippingAddress (Address, Many-to-One, Optional) - Field name: shippingAddressId
+
+---
+
+## Step 4: Create Payment Model
+
+Model Name: Payment
+
+Fields:
+- id (ID) - Auto-generated
+- razorpayOrderId (Single line text, Required)
+- razorpayPaymentId (Single line text, Optional)
+- amount (Float, Required)
+- currency (Single line text, Required, Default: "INR")
+- status (Enum, Required, Default: PENDING)
+  - Enum values: PENDING, PROCESSING, COMPLETED, FAILED, CANCELLED, REFUNDED
+- method (Single line text, Optional) - e.g., "card", "upi", "wallet", "netbanking"
+- createdAt (DateTime, Auto-generated on create)
+- updatedAt (DateTime, Auto-generated on update)
+
+Relations:
+- userDetail (UserDetail, Many-to-One, Required) - Field name: userId
+- order (Order, Many-to-One, Optional) - Field name: orderId
+
+---
+
+## Step 5: Update UserDetail Model
+
+Add these Relations to existing UserDetail model:
+- addresses (Address, One-to-Many) - Reverse relation
+- orders (Order, One-to-Many) - Reverse relation
+- payments (Payment, One-to-Many) - Reverse relation
+
+---
+
+## Step 6: Update Product Model (if needed)
+
+If not already present, add this Relation:
+- orderItems (OrderItem, One-to-Many) - Reverse relation
+
+---
+
+## Step 7: Update Size Model (if needed)
+
+If not already present, add this Relation:
+- orderItems (OrderItem, One-to-Many) - Reverse relation
+
+---
+
+## Permissions Configuration
+
+For each model (Address, Order, OrderItem, Payment):
+
+### Public Content API (Read):
+- Enable for all models
+- Add filters:
+  - Address: Filter by userId
+  - Order: Filter by userId
+  - Payment: Filter by userId
+  - OrderItem: Accessible through Order
+
+### Content API (Write):
+- Enable Create, Update, Delete
+- No filters needed (handled by application logic)
+
+---
+
+## Quick Copy-Paste GraphQL Schema (if using Schema API)
+
+Note: This is a reference. Use the Hygraph Dashboard UI for easier setup.
+
+```graphql
+type Address @model {
+  id: ID! @id
+  userDetail: UserDetail! @relation(fields: [userId], references: [id])
+  userId: ID!
+  fullName: String!
+  phoneNumber: String!
+  pincode: String!
+  addressLine1: String!
+  addressLine2: String
+  city: String!
+  state: String!
+  country: String! @default(value: "India")
+  isDefault: Boolean! @default(value: false)
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
+}
+
+type OrderItem @model {
+  id: ID! @id
+  order: Order! @relation(fields: [orderId], references: [id])
+  orderId: ID!
+  product: Product! @relation(fields: [productId], references: [id])
+  productId: ID!
+  size: Size @relation(fields: [sizeId], references: [id])
+  sizeId: ID
+  quantity: Int!
+  pricePerUnit: Float!
+  totalPrice: Float!
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+type Order @model {
+  id: ID! @id
+  orderNumber: String! @unique
+  userDetail: UserDetail! @relation(fields: [userId], references: [id])
+  userId: ID!
+  items: [OrderItem!]!
+  totalAmount: Float!
+  status: OrderStatus! @default(value: PENDING)
+  shippingAddress: Address @relation(fields: [shippingAddressId], references: [id])
+  shippingAddressId: ID
+  trackingNumber: String
+  courierName: String
+  shiprocketOrderId: String
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+type Payment @model {
+  id: ID! @id
+  userDetail: UserDetail! @relation(fields: [userId], references: [id])
+  userId: ID!
+  razorpayOrderId: String!
+  razorpayPaymentId: String
+  amount: Float!
+  currency: String! @default(value: "INR")
+  status: PaymentStatus! @default(value: PENDING)
+  method: String
+  order: Order @relation(fields: [orderId], references: [id])
+  orderId: ID
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
+}
+```
+
+---
+
+## Next Steps After Schema Creation
+
+1. ✅ Publish all models
+2. ✅ Configure permissions
+3. ✅ Test creating an address via GraphQL playground
+4. ✅ Test creating an order via GraphQL playground
+5. ✅ Test creating a payment via GraphQL playground
+6. ✅ Update Flutter app to use the new services
+
+---
+
+*Use the Hygraph Dashboard UI for the easiest setup experience.*

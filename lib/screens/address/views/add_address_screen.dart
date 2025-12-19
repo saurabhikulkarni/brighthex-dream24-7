@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shop/components/gradient_button.dart';
 import 'package:shop/constants.dart';
+import 'package:shop/models/address_model.dart';
+import 'package:shop/services/address_service.dart';
+import 'package:shop/services/user_service.dart';
 
 class AddAddressScreen extends StatefulWidget {
   final String? addressId;
@@ -42,6 +45,8 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   late TextEditingController pincodeController;
   late TextEditingController cityController;
   late TextEditingController stateController;
+  
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -107,36 +112,85 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     );
   }
 
-  void _saveAddress() {
+  Future<void> _saveAddress() async {
     // Validate required fields
     if (fullNameController.text.isEmpty ||
         phoneController.text.isEmpty ||
         houseNumberController.text.isEmpty ||
         roadNameController.text.isEmpty ||
         pincodeController.text.isEmpty ||
-        cityController.text.isEmpty) {
+        cityController.text.isEmpty ||
+        stateController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all required fields')),
       );
       return;
     }
 
-    // Return address data to previous screen
-    Navigator.pop(context, {
-      'fullName': fullNameController.text,
-      'email': emailController.text,
-      'phone': phoneController.text,
-      'houseNumber': houseNumberController.text,
-      'roadName': roadNameController.text,
-      'landmark': landmarkController.text,
-      'pincode': pincodeController.text,
-      'city': cityController.text,
-      'state': stateController.text,
+    setState(() {
+      _isLoading = true;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Address saved successfully')),
-    );
+    try {
+      final userId = UserService.getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      // Create address model
+      final address = AddressModel(
+        id: widget.addressId,
+        userId: userId,
+        fullName: fullNameController.text,
+        phoneNumber: phoneController.text,
+        pincode: pincodeController.text,
+        addressLine1: houseNumberController.text,
+        addressLine2: roadNameController.text,
+        city: cityController.text,
+        state: stateController.text,
+        country: 'India',
+        isDefault: false, // You can add a checkbox for this if needed
+      );
+
+      // Save address using service
+      if (widget.addressId != null) {
+        // Update existing address
+        await addressService.updateAddress(address);
+      } else {
+        // Create new address
+        await addressService.createAddress(address);
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      // Return success
+      Navigator.pop(context, {'success': true});
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.addressId == null 
+              ? 'Address saved successfully' 
+              : 'Address updated successfully'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saving address: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -242,8 +296,17 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                 const SizedBox(height: defaultPadding * 2),
                 // Save Button
                 GradientButton(
-                  onPressed: _saveAddress,
-                  child: const Text('Save Address'),
+                  onPressed: _isLoading ? null : _saveAddress,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(widget.addressId == null ? 'Save Address' : 'Update Address'),
                 ),
               ],
             ),

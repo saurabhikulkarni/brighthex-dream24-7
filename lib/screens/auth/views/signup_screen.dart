@@ -96,6 +96,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     onPressed: () async {
                       if (!_formKey.currentState!.validate()) return;
 
+<<<<<<< Updated upstream
                       if (!_privacyAccepted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -104,6 +105,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           ),
                         );
                         return;
+=======
+                      // First verify OTP
+                      final otpVerified = await _signUpFormState.verifyOtp();
+                      if (!mounted) return;
+                      
+                      if (!otpVerified) {
+                        return; // Error message already shown in verifyOtp
+>>>>>>> Stashed changes
                       }
 
                       final name = _signUpFormState.getUserName();
@@ -112,12 +121,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       if (phone == null || phone.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text(
-                                'Please verify your phone number with OTP'),
+                            content: Text('Please verify your phone number with OTP'),
+                            backgroundColor: Colors.red,
                           ),
                         );
                         return;
                       }
+
+                      // Show loading indicator
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => const Center(child: CircularProgressIndicator()),
+                      );
 
                       try {
                         // Check if user already exists with this phone number
@@ -161,8 +177,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           variables: {
                             'firstName': firstName,
                             'lastName': lastName,
-                            'username': phone,
-                            'password': '', // Can be empty for phone-based signup
+                            'username': phone, // Use phone as username
+                            'mobileNumber': phone,
                           },
                         );
                         
@@ -171,6 +187,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         
                         if (result.hasException) {
                           if (mounted) {
+                            Navigator.of(context).pop(); // Hide loading
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text('Error: ${result.exception}'),
@@ -183,6 +200,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         }
                         
                         // Extract userId from response
+<<<<<<< Updated upstream
                         final userId = result.data?['createUserDetail']?['id'];
                         print('User created with ID: $userId, Response: ${result.data}');
 
@@ -206,6 +224,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         }
                         
                         if (userId != null && userId.isNotEmpty) {
+=======
+                        final userId = result.data?['createUserDetail']?['id']?.toString();
+                        
+                        if (userId != null && userId.isNotEmpty) {
+                          // Publish user (required for Hygraph)
+                          try {
+                            final publishOptions = MutationOptions(
+                              document: gql(GraphQLQueries.publishUser),
+                              variables: {'id': userId},
+                            );
+                            await graphQLClient.mutate(publishOptions);
+                          } catch (e) {
+                            print('Error publishing user: $e');
+                          }
+                          
+>>>>>>> Stashed changes
                           // Save login session with userId from Hygraph
                           final authService = AuthService();
                           await authService.saveLoginSession(
@@ -218,10 +252,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           print('Login session saved for user: $userId');
                           
                           if (!mounted) return;
+                          Navigator.of(context).pop(); // Hide loading
                           Navigator.pushReplacementNamed(
                               context, entryPointScreenRoute);
                         } else {
                           if (mounted) {
+                            Navigator.of(context).pop(); // Hide loading
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Error: Could not create user account'),
@@ -234,6 +270,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       } catch (e) {
                         print('Exception in signup: $e');
                         if (mounted) {
+                          Navigator.of(context).pop(); // Hide loading
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text('Error: $e'),

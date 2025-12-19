@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/screen_export.dart';
+import 'package:shop/models/address_model.dart';
+import 'package:shop/services/address_service.dart';
 
 class Address {
   final String id;
@@ -125,53 +127,39 @@ class _AddressesScreenState extends State<AddressesScreen> {
             icon: const Icon(Icons.add),
             onPressed: () {
               Navigator.pushNamed(context, addAddressScreenRoute).then((result) {
-                if (result != null && result is Map<String, dynamic>) {
-                  // Add new address to list
-                  final newAddress = Address(
-                    id: DateTime.now().toString(),
-                    fullName: result['fullName'] ?? 'New Address',
-                    email: result['email'] ?? '',
-                    phone: result['phone'] ?? '',
-                    houseNumber: result['houseNumber'] ?? '',
-                    roadName: result['roadName'] ?? '',
-                    landmark: result['landmark'] ?? '',
-                    pincode: result['pincode'] ?? '',
-                    city: result['city'] ?? '',
-                    state: result['state'] ?? '',
-                    isDefault: false,
-                  );
-                  setState(() {
-                    addresses.add(newAddress);
-                  });
+                if (result != null && result is Map && result['success'] == true) {
+                  _loadAddresses(); // Reload addresses from GraphQL
                 }
               });
             },
           ),
         ],
       ),
-      body: addresses.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.location_off_outlined,
-                    size: 80,
-                    color: Colors.grey.shade400,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : addresses.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.location_off_outlined,
+                        size: 80,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: defaultPadding),
+                      Text(
+                        "No addresses saved",
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: defaultPadding),
-                  Text(
-                    "No addresses saved",
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(defaultPadding),
-              itemCount: addresses.length,
-              itemBuilder: (context, index) {
-                final address = addresses[index];
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(defaultPadding),
+                  itemCount: addresses.length,
+                  itemBuilder: (context, index) {
+                    final address = addresses[index];
                 return Card(
                   margin: const EdgeInsets.only(bottom: defaultPadding),
                   child: Padding(
@@ -208,27 +196,14 @@ class _AddressesScreenState extends State<AddressesScreen> {
                         ),
                         const SizedBox(height: defaultPadding / 2),
                         Text(
-                          '${address.houseNumber}, ${address.roadName}',
+                          address.fullAddress,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
-                        if (address.landmark.isNotEmpty)
-                          Text(
-                            'Landmark: ${address.landmark}',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.grey[600],
-                                  fontSize: 12,
-                                ),
-                          ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${address.city}, ${address.state} ${address.pincode}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        if (address.phone.isNotEmpty)
+                        if (address.phoneNumber.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
-                              'Phone: ${address.phone}',
+                              'Phone: ${address.phoneNumber}',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Colors.grey[600],
                                     fontSize: 12,
@@ -239,6 +214,17 @@ class _AddressesScreenState extends State<AddressesScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
+                            if (!address.isDefault)
+                              ElevatedButton(
+                                onPressed: () => _setDefaultAddress(address.id!),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                ),
+                                child: const Text("Set as Default"),
+                              ),
                             ElevatedButton(
                               onPressed: () {
                                 Navigator.pushNamed(
@@ -247,43 +233,16 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                   arguments: {
                                     'addressId': address.id,
                                     'fullName': address.fullName,
-                                    'emailId': address.email,
-                                    'phoneNumber': address.phone,
-                                    'houseNumber': address.houseNumber,
-                                    'roadName': address.roadName,
-                                    'landmark': address.landmark,
+                                    'phoneNumber': address.phoneNumber,
+                                    'houseNumber': address.addressLine1,
+                                    'roadName': address.addressLine2 ?? '',
                                     'pincode': address.pincode,
                                     'city': address.city,
                                     'state': address.state,
                                   },
                                 ).then((result) {
-                                  if (result != null && result is Map<String, dynamic>) {
-                                    setState(() {
-                                      // Update the address
-                                      final addressIndex = addresses.indexWhere(
-                                        (a) => a.id == address.id,
-                                      );
-                                      if (addressIndex != -1) {
-                                        addresses[addressIndex] = Address(
-                                          id: address.id,
-                                          fullName: result['fullName'] ?? address.fullName,
-                                          email: result['email'] ?? address.email,
-                                          phone: result['phone'] ?? address.phone,
-                                          houseNumber: result['houseNumber'] ?? address.houseNumber,
-                                          roadName: result['roadName'] ?? address.roadName,
-                                          landmark: result['landmark'] ?? address.landmark,
-                                          pincode: result['pincode'] ?? address.pincode,
-                                          city: result['city'] ?? address.city,
-                                          state: result['state'] ?? address.state,
-                                          isDefault: address.isDefault,
-                                        );
-                                      }
-                                    });
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Address updated successfully'),
-                                      ),
-                                    );
+                                  if (result != null && result is Map && result['success'] == true) {
+                                    _loadAddresses(); // Reload addresses
                                   }
                                 });
                               },
@@ -296,7 +255,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                               child: const Text("Edit"),
                             ),
                             ElevatedButton(
-                              onPressed: () => _deleteAddress(index),
+                              onPressed: () => _deleteAddress(address.id!),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,
                                 padding: const EdgeInsets.symmetric(

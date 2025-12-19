@@ -118,6 +118,7 @@ class UserDetailModel {
   final String firstName;
   final String lastName;
   final String username;
+  final String mobileNumber;
   final double walletBalance;
 
   UserDetailModel({
@@ -125,6 +126,7 @@ class UserDetailModel {
     required this.firstName,
     required this.lastName,
     required this.username,
+    required this.mobileNumber,
     this.walletBalance = 0.0,
   });
 
@@ -134,6 +136,7 @@ class UserDetailModel {
       firstName: json['firstName'] ?? json['first_name'] ?? '',
       lastName: json['lastName'] ?? json['last_name'] ?? '',
       username: json['username'] ?? '',
+      mobileNumber: json['mobileNumber'] ?? json['mobile_number'] ?? json['phone'] ?? '',
       walletBalance: (json['walletBalance'] ?? json['wallet_balance'] ?? 0).toDouble(),
     );
   }
@@ -144,6 +147,7 @@ class UserDetailModel {
       'firstName': firstName,
       'lastName': lastName,
       'username': username,
+      'mobileNumber': mobileNumber,
       'walletBalance': walletBalance,
     };
   }

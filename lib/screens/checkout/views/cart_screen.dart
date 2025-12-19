@@ -19,12 +19,9 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   double walletBalance = 0.0; // User's shopping tokens
-
-  List<CartModel> get cartItems => cartService.getLocalCart();
-
-  double get subtotal => cartService.getCartTotal();
-  double get tax => subtotal * 0.1;
-  double get total => subtotal + tax;
+<<<<<<< Updated upstream
+=======
+  final UserService _userService = userService;
 
   @override
   void initState() {
@@ -35,13 +32,22 @@ class _CartScreenState extends State<CartScreen> {
   Future<void> _loadWalletBalance() async {
     try {
       final balance = await walletService.getBalance();
-      setState(() {
-        walletBalance = balance;
-      });
+      if (mounted) {
+        setState(() {
+          walletBalance = balance;
+        });
+      }
     } catch (e) {
       print('Error loading wallet balance: $e');
     }
   }
+>>>>>>> Stashed changes
+
+  List<CartModel> get cartItems => cartService.getLocalCart();
+
+  double get subtotal => cartService.getCartTotal();
+  double get tax => subtotal * 0.1;
+  double get total => subtotal + tax;
 
   void _removeItem(String cartItemId) {
     setState(() {
@@ -133,6 +139,7 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
+<<<<<<< Updated upstream
     // Deduct tokens from wallet and complete purchase
     final success = await walletService.deductBalance(totalTokensNeeded.toDouble());
     if (!success) {
@@ -148,44 +155,82 @@ class _CartScreenState extends State<CartScreen> {
 
     // Create order after successful deduction
     _createOrderFromCart(totalTokensNeeded);
+=======
+    // Sufficient tokens - create order
+    await _createOrderFromCart(totalTokensNeeded);
+>>>>>>> Stashed changes
   }
 
-  void _createOrderFromCart(int totalTokensNeeded) async {
-    // Convert cart items to order items
-    final orderItems = cartItems.map((cartItem) {
-      return OrderItem(
-        productId: cartItem.product?.id ?? cartItem.id ?? 'unknown',
-        productTitle: cartItem.product?.title ?? 'Product',
-        productImage: cartItem.product?.image ?? '',
-        quantity: cartItem.quantity,
-        pricePerUnit: (cartItem.product?.price ?? 0).toInt(),
-        size: cartItem.size,
-      );
-    }).toList();
-
-    // Use unified order creation flow from OrderService
-    final order = await orderService.createOrderWithPayment(
-      items: orderItems,
-      totalTokens: totalTokensNeeded,
-      clearCartAfter: true,
+  Future<void> _createOrderFromCart(int totalTokensNeeded) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    if (order != null) {
+    try {
+      // Get default address
+      final defaultAddress = await addressService.getDefaultAddress();
+      
+      // Convert cart items to OrderItemModel for GraphQL
+      final orderItems = cartItems.map((cartItem) {
+        return OrderItemModel(
+          productId: cartItem.product?.id ?? cartItem.id ?? '',
+          sizeId: cartItem.size?.id,
+          quantity: cartItem.quantity,
+          pricePerUnit: cartItem.product?.price ?? 0.0,
+        );
+      }).toList();
+
+      // Create order in GraphQL
+      final order = await orderServiceGraphQL.createOrder(
+        items: orderItems,
+        totalAmount: total.toDouble(),
+        shippingAddressId: defaultAddress?.id,
+        status: OrderStatus.confirmed,
+      );
+
+      // Deduct wallet balance
+      await walletService.deductBalance(total.toDouble());
+      
       // Update wallet balance in UI
-      setState(() {
-        walletBalance -= totalTokensNeeded;
-      });
+      await _loadWalletBalance();
+
+      // Create payment record (using wallet payment)
+      await paymentService.createPayment(PaymentModel(
+        orderId: order.id ?? '',
+        amount: total.toDouble(),
+        razorpayOrderId: '', // Wallet payment doesn't have Razorpay order
+        status: PaymentStatus.completed,
+        method: PaymentMethod.wallet,
+      ));
+
+      // Clear cart
+      cartService.clearLocalCart();
+
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading dialog
 
       // Navigate to order confirmation screen
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => OrderConfirmationScreen(order: order),
+          builder: (context) => OrderConfirmationScreen(
+            order: order,
+            orderId: order.orderNumber,
+            totalAmount: order.totalAmount,
+          ),
         ),
       );
-    } else {
-      // Order creation failed
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading dialog
+      
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to create order')),
+        SnackBar(
+          content: Text('Failed to create order: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }

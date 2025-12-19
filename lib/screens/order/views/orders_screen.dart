@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
-import 'package:shop/services/order_service.dart';
+import 'package:shop/services/order_service_graphql.dart';
+import 'package:shop/models/order_models.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -39,30 +40,32 @@ class _OrdersScreenState extends State<OrdersScreen> {
       appBar: AppBar(
         title: const Text("My Orders"),
       ),
-      body: orders.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.shopping_bag_outlined,
-                    size: 80,
-                    color: Colors.grey.shade400,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : orders.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.shopping_bag_outlined,
+                        size: 80,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: defaultPadding),
+                      Text(
+                        "No orders yet",
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: defaultPadding / 2),
+                      Text(
+                        "Start shopping to place your first order!",
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: defaultPadding),
-                  Text(
-                    "No orders yet",
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: defaultPadding / 2),
-                  Text(
-                    "Start shopping to place your first order!",
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
+                )
+              : ListView.builder(
               padding: const EdgeInsets.all(defaultPadding),
               itemCount: orders.length,
               itemBuilder: (context, index) {
@@ -82,12 +85,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Order ${order.id.substring(0, 8)}",
+                                    "Order ${order.orderNumber}",
                                     style: Theme.of(context).textTheme.titleSmall,
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    _formatDate(order.orderDate),
+                                    _formatDate(order.createdAt),
                                     style: Theme.of(context).textTheme.bodySmall,
                                   ),
                                 ],
@@ -103,14 +106,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                     .withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: Text(
-                                _formatStatus(order.status),
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: _getStatusColor(order.status),
+                                child: Text(
+                                  _formatStatus(order.statusString),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: _getStatusColor(order.statusString),
+                                  ),
                                 ),
-                              ),
                             ),
                           ],
                         ),
@@ -120,8 +123,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const SizedBox(height: defaultPadding / 2),
-                        // Show Shiprocket tracking info if available
-                        if (order.shiprocketData != null)
+                        // Show tracking info if available
+                        if (order.trackingNumber != null || order.courierName != null)
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -167,28 +170,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                   ],
                                 ),
                               ],
-                              if (order.shiprocketData?.currentLocation != null) ...[
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.location_on,
-                                      size: 16,
-                                      color: Colors.grey,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        'Location: ${order.shiprocketData!.currentLocation}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
                               const SizedBox(height: 4),
                             ],
                           ),
@@ -197,33 +178,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              "${order.totalTokens} Tokens",
+                              "₹${order.totalAmount.toStringAsFixed(2)}",
                               style: Theme.of(context).textTheme.titleSmall,
                             ),
-                            if (order.shiprocketData != null)
-                              ElevatedButton.icon(
-                                onPressed: () async {
-                                  // Refresh tracking info from Shiprocket
-                                  await orderService
-                                      .syncOrderWithShiprocket(order.id);
-                                  setState(() {});
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content:
-                                          Text('Tracking info updated'),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                },
-                                icon: const Icon(Icons.refresh, size: 16),
-                                label: const Text('Refresh'),
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                ),
-                              ),
+                            ElevatedButton(
+                              onPressed: () {
+                                // Navigate to order details/tracking screen
+                                // TODO: Implement order details screen
+                              },
+                              child: const Text('View Details'),
+                            ),
                           ],
                         ),
                       ],

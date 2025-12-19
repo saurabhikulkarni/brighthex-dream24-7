@@ -123,12 +123,27 @@ class GraphQLQueries {
         firstName
         lastName
         username
+        mobileNumber
         walletBalance
       }
     }
   ''';
 
-  // Query to fetch user by username (for login)
+  // Query to fetch user by mobile number (for login)
+  static const String getUserByMobileNumber = '''
+    query GetUserByMobileNumber(\$mobileNumber: String!) {
+      userDetails(where: {mobileNumber: \$mobileNumber}) {
+        id
+        firstName
+        lastName
+        username
+        mobileNumber
+        walletBalance
+      }
+    }
+  ''';
+  
+  // Query to fetch user by username (for backward compatibility)
   static const String getUserByUsername = '''
     query GetUserByUsername(\$username: String!) {
       userDetails(where: {username: \$username}) {
@@ -136,7 +151,7 @@ class GraphQLQueries {
         firstName
         lastName
         username
-        password
+        mobileNumber
         walletBalance
       }
     }
@@ -206,19 +221,20 @@ class GraphQLQueries {
 
   // Create new user
   static const String createUser = '''
-    mutation CreateUser(\$firstName: String!, \$lastName: String!, \$username: String!, \$password: String!) {
+    mutation CreateUser(\$firstName: String!, \$lastName: String!, \$username: String!, \$mobileNumber: String!) {
       createUserDetail(
         data: {
           firstName: \$firstName
           lastName: \$lastName
           username: \$username
-          password: \$password
+          mobileNumber: \$mobileNumber
         }
       ) {
         id
         firstName
         lastName
         username
+        mobileNumber
       }
     }
   ''';
@@ -358,7 +374,515 @@ class GraphQLQueries {
         firstName
         lastName
         username
+        mobileNumber
         walletBalance
+      }
+    }
+  ''';
+
+  // ============ Address Queries & Mutations ============
+  
+  // Get all addresses for a user
+  static const String getUserAddresses = '''
+    query GetUserAddresses(\$userId: ID!) {
+      addresses(where: {userDetail: {id: \$userId}}) {
+        id
+        fullName
+        phoneNumber
+        pincode
+        addressLine1
+        addressLine2
+        city
+        state
+        country
+        isDefault
+      }
+    }
+  ''';
+
+  // Get address by ID
+  static const String getAddressById = '''
+    query GetAddressById(\$id: ID!) {
+      address(where: {id: \$id}) {
+        id
+        fullName
+        phoneNumber
+        pincode
+        addressLine1
+        addressLine2
+        city
+        state
+        country
+        isDefault
+      }
+    }
+  ''';
+
+  // Create new address
+  static const String createAddress = '''
+    mutation CreateAddress(
+      \$userId: ID!,
+      \$fullName: String!,
+      \$phoneNumber: String!,
+      \$pincode: String!,
+      \$addressLine1: String!,
+      \$addressLine2: String,
+      \$city: String!,
+      \$state: String!,
+      \$country: String!,
+      \$isDefault: Boolean!
+    ) {
+      createAddress(
+        data: {
+          userDetail: {connect: {id: \$userId}}
+          fullName: \$fullName
+          phoneNumber: \$phoneNumber
+          pincode: \$pincode
+          addressLine1: \$addressLine1
+          addressLine2: \$addressLine2
+          city: \$city
+          state: \$state
+          country: \$country
+          isDefault: \$isDefault
+        }
+      ) {
+        id
+        fullName
+        phoneNumber
+        pincode
+        addressLine1
+        addressLine2
+        city
+        state
+        country
+        isDefault
+      }
+    }
+  ''';
+
+  // Update address
+  static const String updateAddress = '''
+    mutation UpdateAddress(
+      \$id: ID!,
+      \$fullName: String!,
+      \$phoneNumber: String!,
+      \$pincode: String!,
+      \$addressLine1: String!,
+      \$addressLine2: String,
+      \$city: String!,
+      \$state: String!,
+      \$country: String!,
+      \$isDefault: Boolean!
+    ) {
+      updateAddress(
+        where: {id: \$id}
+        data: {
+          fullName: \$fullName
+          phoneNumber: \$phoneNumber
+          pincode: \$pincode
+          addressLine1: \$addressLine1
+          addressLine2: \$addressLine2
+          city: \$city
+          state: \$state
+          country: \$country
+          isDefault: \$isDefault
+        }
+      ) {
+        id
+        fullName
+        phoneNumber
+        pincode
+        addressLine1
+        addressLine2
+        city
+        state
+        country
+        isDefault
+      }
+    }
+  ''';
+
+  // Delete address
+  static const String deleteAddress = '''
+    mutation DeleteAddress(\$id: ID!) {
+      deleteAddress(where: {id: \$id}) {
+        id
+      }
+    }
+  ''';
+
+  // Publish address
+  static const String publishAddress = '''
+    mutation PublishAddress(\$id: ID!) {
+      publishAddress(where: {id: \$id}) {
+        id
+      }
+    }
+  ''';
+
+  // ============ Order Queries & Mutations ============
+  
+  // Get all orders for a user
+  static const String getUserOrders = '''
+    query GetUserOrders(\$userId: ID!) {
+      orders(where: {userDetail: {id: \$userId}}, orderBy: createdAt_DESC) {
+        id
+        orderNumber
+        totalAmount
+        status
+        createdAt
+        updatedAt
+        trackingNumber
+        courierName
+        shiprocketOrderId
+        items {
+          id
+          quantity
+          pricePerUnit
+          totalPrice
+          product {
+            id
+            productName
+            price
+            image {
+              url
+            }
+          }
+          size {
+            id
+            sizeName
+          }
+        }
+        shippingAddress {
+          id
+          fullName
+          phoneNumber
+          pincode
+          addressLine1
+          addressLine2
+          city
+          state
+          country
+        }
+      }
+    }
+  ''';
+
+  // Get order by ID
+  static const String getOrderById = '''
+    query GetOrderById(\$id: ID!) {
+      order(where: {id: \$id}) {
+        id
+        orderNumber
+        totalAmount
+        status
+        createdAt
+        updatedAt
+        trackingNumber
+        courierName
+        shiprocketOrderId
+        items {
+          id
+          quantity
+          pricePerUnit
+          totalPrice
+          product {
+            id
+            productName
+            price
+            image {
+              url
+            }
+          }
+          size {
+            id
+            sizeName
+          }
+        }
+        shippingAddress {
+          id
+          fullName
+          phoneNumber
+          pincode
+          addressLine1
+          addressLine2
+          city
+          state
+          country
+        }
+      }
+    }
+  ''';
+
+  // Create new order (items will be created separately or use nested create)
+  // Note: For Hygraph, you may need to create order first, then items separately
+  // OR use nested create if your Hygraph schema supports it
+  static const String createOrder = '''
+    mutation CreateOrder(
+      \$userId: ID!,
+      \$orderNumber: String!,
+      \$totalAmount: Float!,
+      \$status: OrderStatus!,
+      \$shippingAddressId: ID
+    ) {
+      createOrder(
+        data: {
+          orderNumber: \$orderNumber
+          userDetail: {connect: {id: \$userId}}
+          totalAmount: \$totalAmount
+          status: \$status
+          shippingAddress: {connect: {id: \$shippingAddressId}}
+        }
+      ) {
+        id
+        orderNumber
+        totalAmount
+        status
+        createdAt
+      }
+    }
+  ''';
+
+  // Create order item (call this for each item after creating order)
+  static const String createOrderItem = '''
+    mutation CreateOrderItem(
+      \$orderId: ID!,
+      \$productId: ID!,
+      \$sizeId: ID,
+      \$quantity: Int!,
+      \$pricePerUnit: Float!,
+      \$totalPrice: Float!
+    ) {
+      createOrderItem(
+        data: {
+          order: {connect: {id: \$orderId}}
+          product: {connect: {id: \$productId}}
+          size: {connect: {id: \$sizeId}}
+          quantity: \$quantity
+          pricePerUnit: \$pricePerUnit
+          totalPrice: \$totalPrice
+        }
+      ) {
+        id
+        quantity
+        pricePerUnit
+        totalPrice
+      }
+    }
+  ''';
+
+  // Update order status
+  static const String updateOrderStatus = '''
+    mutation UpdateOrderStatus(\$id: ID!, \$status: OrderStatus!) {
+      updateOrder(
+        where: {id: \$id}
+        data: {status: \$status}
+      ) {
+        id
+        status
+        updatedAt
+      }
+    }
+  ''';
+
+  // Update order tracking info
+  static const String updateOrderTracking = '''
+    mutation UpdateOrderTracking(
+      \$id: ID!,
+      \$trackingNumber: String,
+      \$courierName: String,
+      \$shiprocketOrderId: String
+    ) {
+      updateOrder(
+        where: {id: \$id}
+        data: {
+          trackingNumber: \$trackingNumber
+          courierName: \$courierName
+          shiprocketOrderId: \$shiprocketOrderId
+        }
+      ) {
+        id
+        trackingNumber
+        courierName
+        shiprocketOrderId
+        updatedAt
+      }
+    }
+  ''';
+
+  // Cancel order
+  static const String cancelOrder = '''
+    mutation CancelOrder(\$id: ID!) {
+      updateOrder(
+        where: {id: \$id}
+        data: {status: CANCELLED}
+      ) {
+        id
+        status
+        updatedAt
+      }
+    }
+  ''';
+
+  // Publish order
+  static const String publishOrder = '''
+    mutation PublishOrder(\$id: ID!) {
+      publishOrder(where: {id: \$id}) {
+        id
+      }
+    }
+  ''';
+
+  // Publish order item
+  static const String publishOrderItem = '''
+    mutation PublishOrderItem(\$id: ID!) {
+      publishOrderItem(where: {id: \$id}) {
+        id
+      }
+    }
+  ''';
+
+  // ============ Payment Queries & Mutations ============
+  
+  // Get all payments for a user
+  static const String getUserPayments = '''
+    query GetUserPayments(\$userId: ID!, \$orderBy: PaymentOrderByInput) {
+      payments(where: {userDetail: {id: \$userId}}, orderBy: \$orderBy) {
+        id
+        razorpayOrderId
+        razorpayPaymentId
+        amount
+        currency
+        status
+        method
+        orderId
+        createdAt
+        updatedAt
+        order {
+          id
+          orderNumber
+        }
+      }
+    }
+  ''';
+
+  // Get payment by ID
+  static const String getPaymentById = '''
+    query GetPaymentById(\$id: ID!) {
+      payment(where: {id: \$id}) {
+        id
+        razorpayOrderId
+        razorpayPaymentId
+        amount
+        currency
+        status
+        method
+        orderId
+        createdAt
+        updatedAt
+        order {
+          id
+          orderNumber
+        }
+      }
+    }
+  ''';
+
+  // Get payment by Razorpay order ID
+  static const String getPaymentByRazorpayOrderId = '''
+    query GetPaymentByRazorpayOrderId(\$razorpayOrderId: String!) {
+      payment(where: {razorpayOrderId: \$razorpayOrderId}) {
+        id
+        razorpayOrderId
+        razorpayPaymentId
+        amount
+        currency
+        status
+        method
+        orderId
+        createdAt
+        updatedAt
+      }
+    }
+  ''';
+
+  // Create payment record
+  static const String createPayment = '''
+    mutation CreatePayment(
+      \$userId: ID!,
+      \$razorpayOrderId: String!,
+      \$razorpayPaymentId: String,
+      \$amount: Float!,
+      \$currency: String!,
+      \$status: PaymentStatus!,
+      \$method: String,
+      \$orderId: ID
+    ) {
+      createPayment(
+        data: {
+          userDetail: {connect: {id: \$userId}}
+          razorpayOrderId: \$razorpayOrderId
+          razorpayPaymentId: \$razorpayPaymentId
+          amount: \$amount
+          currency: \$currency
+          status: \$status
+          method: \$method
+          order: {connect: {id: \$orderId}}
+        }
+      ) {
+        id
+        razorpayOrderId
+        razorpayPaymentId
+        amount
+        currency
+        status
+        method
+        createdAt
+      }
+    }
+  ''';
+
+  // Update payment status
+  static const String updatePaymentStatus = '''
+    mutation UpdatePaymentStatus(\$id: ID!, \$status: PaymentStatus!) {
+      updatePayment(
+        where: {id: \$id}
+        data: {status: \$status}
+      ) {
+        id
+        status
+        updatedAt
+      }
+    }
+  ''';
+
+  // Update payment with Razorpay payment ID
+  static const String updatePaymentWithRazorpayId = '''
+    mutation UpdatePaymentWithRazorpayId(
+      \$id: ID!,
+      \$razorpayPaymentId: String!,
+      \$status: PaymentStatus!
+    ) {
+      updatePayment(
+        where: {id: \$id}
+        data: {
+          razorpayPaymentId: \$razorpayPaymentId
+          status: \$status
+        }
+      ) {
+        id
+        razorpayPaymentId
+        status
+        updatedAt
+      }
+    }
+  ''';
+
+  // Publish payment
+  static const String publishPayment = '''
+    mutation PublishPayment(\$id: ID!) {
+      publishPayment(where: {id: \$id}) {
+        id
       }
     }
   ''';

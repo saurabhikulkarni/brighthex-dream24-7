@@ -3,6 +3,7 @@ import 'package:shop/constants.dart';
 import 'package:shop/models/payment_model.dart';
 import 'package:shop/screens/checkout/components/payment_method_card.dart';
 import 'package:shop/services/razorpay_service.dart';
+import 'package:shop/services/payment_service.dart';
 
 class PaymentHistoryScreen extends StatefulWidget {
   const PaymentHistoryScreen({super.key});
@@ -12,48 +13,43 @@ class PaymentHistoryScreen extends StatefulWidget {
 }
 
 class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
-  final List<PaymentModel> _mockPaymentHistory = [
-    PaymentModel(
-      orderId: '#123456',
-      amount: 325.50,
-      status: PaymentStatus.completed,
-      method: PaymentMethod.upi,
-      razorpayPaymentId: 'pay_123456789',
-      razorpayOrderId: 'order_123456789',
-      receipt: 'receipt_001',
-    ),
-    PaymentModel(
-      orderId: '#123455',
-      amount: 85.00,
-      status: PaymentStatus.completed,
-      method: PaymentMethod.creditCard,
-      razorpayPaymentId: 'pay_987654321',
-      razorpayOrderId: 'order_987654321',
-      receipt: 'receipt_002',
-    ),
-    PaymentModel(
-      orderId: '#123454',
-      amount: 150.00,
-      status: PaymentStatus.failed,
-      method: PaymentMethod.netBanking,
-      razorpayPaymentId: 'pay_111111111',
-      razorpayOrderId: 'order_111111111',
-      failureReason: 'Insufficient funds',
-      receipt: 'receipt_003',
-    ),
-    PaymentModel(
-      orderId: '#123453',
-      amount: 450.75,
-      status: PaymentStatus.refunded,
-      method: PaymentMethod.debitCard,
-      razorpayPaymentId: 'pay_222222222',
-      razorpayOrderId: 'order_222222222',
-      completedAt: DateTime.now().subtract(const Duration(days: 10)),
-      receipt: 'receipt_004',
-    ),
-  ];
-
+  List<PaymentModel> _paymentHistory = [];
+  bool _isLoading = true;
   String? _selectedFilter;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPayments();
+  }
+
+  Future<void> _loadPayments() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final payments = await paymentService.getUserPayments(newestFirst: true);
+      if (mounted) {
+        setState(() {
+          _paymentHistory = payments;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading payment history: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,33 +84,35 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
           ),
           // Payment History List
           Expanded(
-            child: filteredPayments.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.payment_outlined,
-                          size: 80,
-                          color: Colors.grey.shade400,
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : filteredPayments.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.payment_outlined,
+                              size: 80,
+                              color: Colors.grey.shade400,
+                            ),
+                            const SizedBox(height: defaultPadding),
+                            Text(
+                              'No payments found',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: defaultPadding / 2),
+                            Text(
+                              'You haven\'t made any payments yet',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: defaultPadding),
-                        Text(
-                          'No payments found',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: defaultPadding / 2),
-                        Text(
-                          'You haven\'t made any payments yet',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
+                      )
+                    : ListView.builder(
                     padding: const EdgeInsets.all(defaultPadding),
                     itemCount: filteredPayments.length,
                     itemBuilder: (context, index) {
@@ -165,10 +163,10 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
 
   List<PaymentModel> _getFilteredPayments() {
     if (_selectedFilter == null) {
-      return _mockPaymentHistory;
+      return _paymentHistory;
     }
 
-    return _mockPaymentHistory
+    return _paymentHistory
         .where((payment) => payment.status.toString() == _selectedFilter)
         .toList();
   }
