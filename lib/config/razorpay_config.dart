@@ -4,11 +4,20 @@
 class RazorpayConfig {
   // Your Razorpay API Key (Public Key)
   // Available at: https://dashboard.razorpay.com/#/app/keys
-  static const String keyId = 'YOUR_RAZORPAY_KEY_ID';
+  static const String keyId = 'rzp_test_RqEBl9COpBTyyz';
 
   // Your Razorpay API Secret (Keep this ONLY on backend)
   // Never expose this in frontend code!
-  static const String keySecret = 'YOUR_RAZORPAY_KEY_SECRET';
+  // This is stored on backend server for signature verification
+  static const String keySecret = 'STORED_ON_BACKEND_SERVER';
+
+  // Backend API base URL for Razorpay operations
+  static const String backendBaseUrl = 'https://brighthex-dream-24-7-backend-psi.vercel.app';
+  
+  // Backend API endpoints
+  static const String createOrderEndpoint = '$backendBaseUrl/api/payments/create-order';
+  static const String verifySignatureEndpoint = '$backendBaseUrl/api/payments/verify-signature';
+  static const String getPaymentEndpoint = '$backendBaseUrl/api/payments';
 
   // Merchant Name/App Name
   static const String merchantName = 'Dream247';
@@ -29,7 +38,7 @@ class RazorpayConfig {
   static const String logoUrl = 'https://your-domain.com/logo.png';
 
   // Website URL
-  static const String websiteUrl = 'https://dream247.com';
+ // static const String websiteUrl = 'https://dream247.com';
 
   // Environment: 'production' or 'sandbox'
   // Use 'sandbox' for testing, 'production' for live

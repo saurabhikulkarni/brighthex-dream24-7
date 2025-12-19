@@ -169,7 +169,7 @@ class _PaymentMethodSelectionScreenState
                       ),
                     ),
                     Text(
-                      RazorpayService.formatAmount(widget.totalAmount),
+                      RazorpayService().formatAmount(widget.totalAmount),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -193,7 +193,7 @@ class _PaymentMethodSelectionScreenState
                       ),
                     ),
                     Text(
-                      RazorpayService.formatAmount(widget.totalAmount),
+                      RazorpayService().formatAmount(widget.totalAmount),
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,

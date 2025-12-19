@@ -119,10 +119,9 @@ class RazorpayService {
     Map<String, dynamic>? notes,
   }) async {
     try {
-      // This should call your backend API
-      // Example: POST /api/payments/create-order
+      // Call backend API to create Razorpay order
       final response = await http.post(
-        Uri.parse('YOUR_BACKEND_URL/api/payments/create-order'),
+        Uri.parse(RazorpayConfig.createOrderEndpoint),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -154,10 +153,9 @@ class RazorpayService {
     required String signature,
   }) async {
     try {
-      // This should call your backend API to verify signature
-      // Example: POST /api/payments/verify-signature
+      // Call backend API to verify Razorpay signature
       final response = await http.post(
-        Uri.parse('YOUR_BACKEND_URL/api/payments/verify-signature'),
+        Uri.parse(RazorpayConfig.verifySignatureEndpoint),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -181,27 +179,14 @@ class RazorpayService {
     }
   }
 
-  /// Generate signature (for backend verification - DO NOT USE IN FRONTEND)
-  static String generateSignature(
-    String orderId,
-    String paymentId,
-    String keySecret,
-  ) {
-    final message = '$orderId|$paymentId';
-    final signature = Hmac(sha256, utf8.encode(keySecret))
-        .convert(utf8.encode(message))
-        .toString();
-    return signature;
-  }
-
   /// Get payment details
   Future<PaymentModel?> getPaymentDetails({
     required String paymentId,
   }) async {
     try {
-      // This should call your backend API to get payment details
+      // Call backend API to get payment details
       final response = await http.get(
-        Uri.parse('YOUR_BACKEND_URL/api/payments/$paymentId'),
+        Uri.parse('${RazorpayConfig.getPaymentEndpoint}/$paymentId'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -285,12 +270,12 @@ class RazorpayService {
   }
 
   /// Format amount for display
-  static String formatAmount(double amount) {
+  String formatAmount(double amount) {
     return '₹${amount.toStringAsFixed(2)}';
   }
 
   /// Get payment status color
-  static String getStatusColor(PaymentStatus status) {
+  String getStatusColor(PaymentStatus status) {
     switch (status) {
       case PaymentStatus.completed:
         return '#219A00';
@@ -306,7 +291,7 @@ class RazorpayService {
   }
 
   /// Get payment status text
-  static String getStatusText(PaymentStatus status) {
+  String getStatusText(PaymentStatus status) {
     switch (status) {
       case PaymentStatus.completed:
         return 'Completed';
@@ -324,7 +309,7 @@ class RazorpayService {
   }
 
   /// Get payment method icon
-  static String getPaymentMethodIcon(PaymentMethod method) {
+  String getPaymentMethodIcon(PaymentMethod method) {
     switch (method) {
       case PaymentMethod.creditCard:
         return 'assets/icons/credit_card.svg';
@@ -344,7 +329,7 @@ class RazorpayService {
   }
 
   /// Get payment method name
-  static String getPaymentMethodName(PaymentMethod method) {
+  String getPaymentMethodName(PaymentMethod method) {
     switch (method) {
       case PaymentMethod.creditCard:
         return 'Credit Card';
