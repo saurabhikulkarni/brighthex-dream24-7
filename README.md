@@ -214,3 +214,37 @@ Visit FlutterLibrary.com to Download the [Flutter e-commerce app template](https
     <img src="readme image/buy_now_btn.png" alt="Full template" style="margin-right: 32px; width: 170px; height: 50px;">
   </a>
 </p>
+
+## Building the App
+
+### GitHub Actions - Automated APK Build
+
+This repository includes a GitHub Actions workflow that automatically builds a debug APK file. The workflow is triggered:
+
+- On push to `main` or `master` branches
+- On pull requests to `main` or `master` branches
+- Manually via the Actions tab (workflow_dispatch)
+
+**To download the built APK:**
+
+1. Go to the **Actions** tab in the repository
+2. Click on the latest workflow run
+3. Scroll down to **Artifacts**
+4. Download the `debug-apk` artifact
+
+The debug APK will be available for 30 days after the build completes.
+
+### Manual Build
+
+To build the app manually on your local machine:
+
+```bash
+# Install dependencies
+flutter pub get
+
+# Build debug APK
+flutter build apk --debug
+
+# The APK will be available at:
+# build/app/outputs/flutter-apk/app-debug.apk
+```
