@@ -202,16 +202,16 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
             _buildDetailRow('Order ID', payment.orderId),
             _buildDetailRow(
               'Amount',
-              RazorpayService.formatAmount(payment.amount),
+              RazorpayService().formatAmount(payment.amount),
             ),
             _buildDetailRow(
               'Status',
-              RazorpayService.getStatusText(payment.status),
+              RazorpayService().getStatusText(payment.status),
             ),
             _buildDetailRow(
               'Payment Method',
               payment.method != null
-                  ? RazorpayService.getPaymentMethodName(payment.method!)
+                  ? RazorpayService().getPaymentMethodName(payment.method!)
                   : 'N/A',
             ),
             _buildDetailRow(

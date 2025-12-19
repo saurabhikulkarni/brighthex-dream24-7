@@ -10,10 +10,11 @@
 /// See MSG91_BACKEND_SETUP.md for backend implementation details.
 
 class Msg91Config {
-  // TODO: Update this URL to your deployed backend server
-  // For local development: 'http://localhost:3000/api'
-  // For production: 'https://your-backend-domain.com/api'
-  static const String baseUrl = 'http://localhost:3000/api';
+  // Backend API base URL - Update this with your backend server URL
+  static const String baseUrl = 'https://brighthex-dream-24-7-backend-psi.vercel.app';
+  
+  // Alternative: Use localhost for development (uncomment if testing locally)
+  // static const String baseUrl = 'http://localhost:3000/api';
   
   // API endpoints
   static const String sendOtpEndpoint = '$baseUrl/auth/send-otp';

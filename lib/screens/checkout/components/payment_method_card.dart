@@ -44,7 +44,7 @@ class PaymentMethodCard extends StatelessWidget {
                     : Colors.grey.shade100,
               ),
               child: SvgPicture.asset(
-                RazorpayService.getPaymentMethodIcon(method),
+                RazorpayService().getPaymentMethodIcon(method),
                 height: 32,
                 width: 32,
                 colorFilter: ColorFilter.mode(
@@ -56,7 +56,7 @@ class PaymentMethodCard extends StatelessWidget {
             const SizedBox(height: defaultPadding / 2),
             // Payment Method Name
             Text(
-              RazorpayService.getPaymentMethodName(method),
+              RazorpayService().getPaymentMethodName(method),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
@@ -131,7 +131,7 @@ class PaymentHistoryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      RazorpayService.formatAmount(payment.amount),
+                      RazorpayService().formatAmount(payment.amount),
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -147,18 +147,18 @@ class PaymentHistoryCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: Color(int.parse(
-                      'FF${RazorpayService.getStatusColor(payment.status).replaceFirst('#', '')}',
+                      'FF${RazorpayService().getStatusColor(payment.status).replaceFirst('#', '')}',
                       radix: 16,
                     )).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    RazorpayService.getStatusText(payment.status),
+                    RazorpayService().getStatusText(payment.status),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: Color(int.parse(
-                        'FF${RazorpayService.getStatusColor(payment.status).replaceFirst('#', '')}',
+                        'FF${RazorpayService().getStatusColor(payment.status).replaceFirst('#', '')}',
                         radix: 16,
                       )),
                     ),
@@ -174,7 +174,7 @@ class PaymentHistoryCard extends StatelessWidget {
             _buildDetailRow(
               'Payment Method',
               payment.method != null
-                  ? RazorpayService.getPaymentMethodName(payment.method!)
+                  ? RazorpayService().getPaymentMethodName(payment.method!)
                   : 'N/A',
             ),
             _buildDetailRow(
@@ -322,7 +322,7 @@ class PaymentSuccessDialog extends StatelessWidget {
             ),
             const SizedBox(height: defaultPadding),
             _buildDetailRow('Order ID', orderId),
-            _buildDetailRow('Amount', RazorpayService.formatAmount(amount)),
+            _buildDetailRow('Amount', RazorpayService().formatAmount(amount)),
             _buildDetailRow('Payment ID', paymentId),
             const SizedBox(height: defaultPadding * 2),
             ElevatedButton(

@@ -162,7 +162,7 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
         if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => OrderConfirmationScreen(order: order),
+              builder: (context) => OrderConfirmationScreen(order: null),
             ),
           );
         }

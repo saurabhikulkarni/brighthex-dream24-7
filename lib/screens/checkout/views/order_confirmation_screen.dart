@@ -101,7 +101,7 @@ class OrderConfirmationScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            _formatDate(order.orderDate),
+                            _formatDate(order?.createdAt ?? DateTime.now()),
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,

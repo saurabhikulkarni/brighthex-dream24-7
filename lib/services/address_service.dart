@@ -246,7 +246,6 @@ class AddressService {
       final addresses = await getUserAddresses();
       for (final address in addresses) {
         if (address.isDefault && address.id != excludeId) {
-          final updatedAddress = address.copyWith(isDefault: false);
           // Update without republishing immediately
           await _client.mutate(
             MutationOptions(

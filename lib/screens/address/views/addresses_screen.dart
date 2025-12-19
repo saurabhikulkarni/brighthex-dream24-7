@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/screen_export.dart';
-import 'package:shop/models/address_model.dart';
-import 'package:shop/services/address_service.dart';
 
 class Address {
   final String id;
@@ -15,7 +13,7 @@ class Address {
   final String pincode;
   final String city;
   final String state;
-  final bool isDefault;
+  bool isDefault;
 
   Address({
     required this.id,
@@ -61,10 +59,19 @@ class AddressesScreen extends StatefulWidget {
 
 class _AddressesScreenState extends State<AddressesScreen> {
   late List<Address> addresses;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _loadAddresses();
+  }
+
+  void _loadAddresses() {
+    setState(() {
+      _isLoading = true;
+    });
+    // Load addresses from GraphQL or local mock data
     addresses = [
       Address(
         id: "1",
@@ -106,11 +113,25 @@ class _AddressesScreenState extends State<AddressesScreen> {
         isDefault: false,
       ),
     ];
+    setState(() {
+      _isLoading = false;
+    });
   }
 
-  void _deleteAddress(int index) {
+  void _setDefaultAddress(String addressId) {
     setState(() {
-      addresses.removeAt(index);
+      for (var address in addresses) {
+        address.isDefault = address.id == addressId;
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Default address updated")),
+    );
+  }
+
+  void _deleteAddress(String addressId) {
+    setState(() {
+      addresses.removeWhere((address) => address.id == addressId);
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text("Address deleted")),
@@ -196,14 +217,14 @@ class _AddressesScreenState extends State<AddressesScreen> {
                         ),
                         const SizedBox(height: defaultPadding / 2),
                         Text(
-                          address.fullAddress,
+                          '${address.houseNumber}, ${address.roadName}, ${address.city}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
-                        if (address.phoneNumber.isNotEmpty)
+                        if (address.phone.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
-                              'Phone: ${address.phoneNumber}',
+                              'Phone: ${address.phone}',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Colors.grey[600],
                                     fontSize: 12,
@@ -216,7 +237,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                           children: [
                             if (!address.isDefault)
                               ElevatedButton(
-                                onPressed: () => _setDefaultAddress(address.id!),
+                                onPressed: () => _setDefaultAddress(address.id),
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 16,
@@ -233,9 +254,9 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                   arguments: {
                                     'addressId': address.id,
                                     'fullName': address.fullName,
-                                    'phoneNumber': address.phoneNumber,
-                                    'houseNumber': address.addressLine1,
-                                    'roadName': address.addressLine2 ?? '',
+                                    'phoneNumber': address.phone,
+                                    'houseNumber': address.houseNumber,
+                                    'roadName': address.roadName,
                                     'pincode': address.pincode,
                                     'city': address.city,
                                     'state': address.state,
@@ -255,7 +276,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                               child: const Text("Edit"),
                             ),
                             ElevatedButton(
-                              onPressed: () => _deleteAddress(address.id!),
+                              onPressed: () => _deleteAddress(address.id),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,
                                 padding: const EdgeInsets.symmetric(

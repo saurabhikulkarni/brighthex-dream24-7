@@ -4,9 +4,13 @@ import 'package:shop/components/gradient_button.dart';
 import 'package:shop/components/network_image_with_loader.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/models/product_model.dart';
+import 'package:shop/models/order_models.dart';
+import 'package:shop/models/payment_model.dart';
 import 'package:shop/services/cart_service.dart';
+import 'package:shop/services/address_service.dart';
+import 'package:shop/services/order_service_graphql.dart';
+import 'package:shop/services/payment_service.dart';
 import 'package:shop/route/route_constants.dart';
-import 'package:shop/services/order_service.dart';
 import 'package:shop/services/wallet_service.dart';
 import 'package:shop/screens/checkout/views/order_confirmation_screen.dart';
 
@@ -19,9 +23,13 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   double walletBalance = 0.0; // User's shopping tokens
-<<<<<<< Updated upstream
-=======
-  final UserService _userService = userService;
+
+  // Service instances
+  final CartService cartService = CartService();
+  final AddressService addressService = AddressService();
+  final OrderServiceGraphQL orderServiceGraphQL = OrderServiceGraphQL();
+  final PaymentService paymentService = PaymentService();
+  final WalletService walletService = WalletService();
 
   @override
   void initState() {
@@ -41,7 +49,6 @@ class _CartScreenState extends State<CartScreen> {
       print('Error loading wallet balance: $e');
     }
   }
->>>>>>> Stashed changes
 
   List<CartModel> get cartItems => cartService.getLocalCart();
 
@@ -139,26 +146,8 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-<<<<<<< Updated upstream
-    // Deduct tokens from wallet and complete purchase
-    final success = await walletService.deductBalance(totalTokensNeeded.toDouble());
-    if (!success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to deduct tokens from wallet')),
-      );
-      return;
-    }
-
-    setState(() {
-      walletBalance -= totalTokensNeeded;
-    });
-
-    // Create order after successful deduction
-    _createOrderFromCart(totalTokensNeeded);
-=======
     // Sufficient tokens - create order
     await _createOrderFromCart(totalTokensNeeded);
->>>>>>> Stashed changes
   }
 
   Future<void> _createOrderFromCart(int totalTokensNeeded) async {
