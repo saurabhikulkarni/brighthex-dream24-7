@@ -74,7 +74,8 @@ class _MostPopularState extends State<MostPopular> {
           )
         else
           SizedBox(
-            height: 114,
+            // Match SecondaryProductCard height + padding to prevent overflow
+            height: 140,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: _products.length,

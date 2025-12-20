@@ -230,8 +230,8 @@ class _CartScreenState extends State<CartScreen> {
         method: PaymentMethod.wallet,
       ));
 
-      // Clear cart
-      cartService.clearLocalCart();
+      // Clear cart locally and on backend
+      await cartService.clearLocalCart(deleteOnBackend: true);
 
       if (!mounted) return;
       Navigator.pop(context); // Close loading dialog

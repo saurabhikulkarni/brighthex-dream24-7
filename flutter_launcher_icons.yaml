@@ -3,7 +3,8 @@ flutter_launcher_icons:
   ios: true
   image_path: "assets/images/appicon.png"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/images/appicon.png"
-  adaptive_icon_monochrome: "assets/images/appicon.png"
+  adaptive_icon_foreground: "assets/images/appicon_foreground.png"
+  adaptive_icon_monochrome: "assets/images/appicon_foreground.png"
   min_sdk_android: 21
   remove_alpha_channel: true
+  remove_alpha_ios: true
