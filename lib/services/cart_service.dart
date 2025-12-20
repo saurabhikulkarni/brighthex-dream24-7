@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/services/graphql_client.dart';
 import 'package:shop/services/graphql_queries.dart';
+import 'package:shop/services/user_service.dart';
 
 class CartService {
   static final CartService _instance = CartService._internal();
@@ -71,8 +72,9 @@ class CartService {
   }
 
   // Add item to local cart and persist
-  // Returns true if successful, throws exception if stock unavailable
-  void addToLocalCart(ProductModel product, SizeModel? size, int quantity) {
+  // Also syncs with Hygraph if user is logged in
+  // Throws exception if stock unavailable
+  Future<void> addToLocalCart(ProductModel product, SizeModel? size, int quantity) async {
     // Check stock availability if size is provided
     if (size != null && size.quantity < quantity) {
       throw Exception('Insufficient stock. Only ${size.quantity} items available for size ${size.sizeName}');
@@ -92,32 +94,106 @@ class CartService {
       throw Exception('Insufficient stock. Cannot add more items. Available: ${size.quantity}');
     }
 
+    // Get userId for backend sync
+    final userId = UserService.getCurrentUserId() ?? _userId;
+
     if (existingIndex >= 0) {
       // Update quantity
       final existingItem = _localCart[existingIndex];
+      
+      // Update locally first
       _localCart[existingIndex] = CartModel(
         id: existingItem.id,
         quantity: newQuantity,
         product: existingItem.product,
         size: existingItem.size,
       );
+      _saveToSharedPreferences();
+      
+      // Sync with backend if user is logged in
+      if (userId != null && userId.isNotEmpty && product.id != null) {
+        // Check if item has a real backend ID (not a temp numeric ID)
+        final hasBackendId = existingItem.id != null && 
+                             !RegExp(r'^\d+$').hasMatch(existingItem.id!);
+        
+        if (hasBackendId) {
+          // If item has a backend ID, update it
+          try {
+            await updateCartQuantity(existingItem.id!, newQuantity);
+          } catch (e) {
+            print('Error updating cart item in backend: $e');
+            // Continue even if backend update fails - local update succeeded
+          }
+        } else {
+          // If item doesn't have backend ID yet, create it
+          try {
+            final backendCartItem = await addToCart(
+              userId: userId,
+              productId: product.id!,
+              sizeId: size?.id,
+              quantity: newQuantity,
+            );
+            // Update local cart with backend ID
+            if (backendCartItem?.id != null) {
+              _localCart[existingIndex] = CartModel(
+                id: backendCartItem!.id,
+                quantity: newQuantity,
+                product: existingItem.product,
+                size: existingItem.size,
+              );
+              _saveToSharedPreferences();
+            }
+          } catch (e) {
+            print('Error creating cart item in backend: $e');
+            // Continue even if backend create fails - local update succeeded
+          }
+        }
+      }
     } else {
-      // Add new item
+      // Add new item locally first
+      final tempId = DateTime.now().millisecondsSinceEpoch.toString();
       _localCart.add(CartModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: tempId,
         quantity: quantity,
         product: product,
         size: size,
       ));
+      _saveToSharedPreferences();
+      
+      // Sync with backend if user is logged in
+      if (userId != null && userId.isNotEmpty && product.id != null) {
+        try {
+          final backendCartItem = await addToCart(
+            userId: userId,
+            productId: product.id!,
+            sizeId: size?.id,
+            quantity: quantity,
+          );
+          // Update local cart with backend ID
+          if (backendCartItem?.id != null) {
+            final newItemIndex = _localCart.indexWhere((item) => item.id == tempId);
+            if (newItemIndex >= 0) {
+              _localCart[newItemIndex] = CartModel(
+                id: backendCartItem!.id,
+                quantity: quantity,
+                product: product,
+                size: size,
+              );
+              _saveToSharedPreferences();
+            }
+          }
+        } catch (e) {
+          print('Error adding cart item to backend: $e');
+          // Continue even if backend add fails - local add succeeded
+        }
+      }
     }
-
-    // Persist to SharedPreferences
-    _saveToSharedPreferences();
   }
 
   // Update cart item quantity and persist
+  // Also syncs with Hygraph if user is logged in
   // Throws exception if stock is insufficient
-  void updateLocalCartQuantity(String cartItemId, int quantity) {
+  Future<void> updateLocalCartQuantity(String cartItemId, int quantity) async {
     if (quantity < 1) {
       throw Exception('Quantity must be at least 1');
     }
@@ -131,6 +207,7 @@ class CartService {
         throw Exception('Insufficient stock. Only ${item.size!.quantity} items available for size ${item.size!.sizeName}');
       }
 
+      // Update locally first
       _localCart[index] = CartModel(
         id: item.id,
         quantity: quantity,
@@ -140,13 +217,47 @@ class CartService {
 
       // Persist to SharedPreferences
       _saveToSharedPreferences();
+      
+      // Sync with backend if user is logged in and item has backend ID
+      final userId = UserService.getCurrentUserId() ?? _userId;
+      if (userId != null && userId.isNotEmpty && item.id != null) {
+        // Check if item has a real backend ID (not a temp numeric ID)
+        final hasBackendId = !RegExp(r'^\d+$').hasMatch(item.id!);
+        if (hasBackendId) {
+          try {
+            await updateCartQuantity(item.id!, quantity);
+          } catch (e) {
+            print('Error updating cart item quantity in backend: $e');
+            // Continue even if backend update fails - local update succeeded
+          }
+        }
+      }
     }
   }
 
   // Remove item from local cart and persist
-  void removeFromLocalCart(String cartItemId) {
+  // Also removes from Hygraph if user is logged in
+  Future<void> removeFromLocalCart(String cartItemId) async {
+    final item = _localCart.firstWhere((item) => item.id == cartItemId, orElse: () => throw Exception('Cart item not found'));
+    
+    // Remove from local cart
     _localCart.removeWhere((item) => item.id == cartItemId);
     _saveToSharedPreferences();
+    
+    // Remove from backend if user is logged in and item has backend ID
+    final userId = UserService.getCurrentUserId() ?? _userId;
+    if (userId != null && userId.isNotEmpty && item.id != null) {
+      // Check if item has a real backend ID (not a temp numeric ID)
+      final hasBackendId = !RegExp(r'^\d+$').hasMatch(item.id!);
+      if (hasBackendId) {
+        try {
+          await deleteCartItem(item.id!);
+        } catch (e) {
+          print('Error deleting cart item from backend: $e');
+          // Continue even if backend delete fails - local delete succeeded
+        }
+      }
+    }
   }
 
   // Clear local cart and persist
@@ -221,17 +332,36 @@ class CartService {
     int quantity = 1,
   }) async {
     try {
-      final QueryResult result = await _client.mutate(
-        MutationOptions(
-          document: gql(GraphQLQueries.createCartItem),
-          variables: {
-            'userId': userId,
-            'productId': productId,
-            'sizeId': sizeId,
-            'quantity': quantity,
-          },
-        ),
-      );
+      // Use different mutations based on whether sizeId is provided
+      final bool hasValidSizeId = sizeId != null && 
+                                  sizeId.isNotEmpty && 
+                                  !sizeId.startsWith('local_');
+      
+      final QueryResult result;
+      if (hasValidSizeId) {
+        result = await _client.mutate(
+          MutationOptions(
+            document: gql(GraphQLQueries.createCartItemWithSize),
+            variables: {
+              'userId': userId,
+              'productId': productId,
+              'sizeId': sizeId!,
+              'quantity': quantity.toString(),
+            },
+          ),
+        );
+      } else {
+        result = await _client.mutate(
+          MutationOptions(
+            document: gql(GraphQLQueries.createCartItemWithoutSize),
+            variables: {
+              'userId': userId,
+              'productId': productId,
+              'quantity': quantity.toString(),
+            },
+          ),
+        );
+      }
 
       if (result.hasException) {
         throw Exception(result.exception.toString());
@@ -260,7 +390,7 @@ class CartService {
           document: gql(GraphQLQueries.updateCartItem),
           variables: {
             'cartId': cartId,
-            'quantity': quantity,
+            'quantity': quantity.toString(), // Convert int to String for GraphQL
           },
         ),
       );

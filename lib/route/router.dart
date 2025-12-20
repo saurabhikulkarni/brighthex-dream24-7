@@ -251,6 +251,13 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => const OrdersScreen(),
       );
+    case orderTrackingScreenRoute:
+      final args = settings.arguments as Map<String, dynamic>?;
+      return MaterialPageRoute(
+        builder: (context) => OrderTrackingScreen(
+          orderId: args?['orderId'] ?? '',
+        ),
+      );
     case orderConfirmationScreenRoute:
       return MaterialPageRoute(
         builder: (context) => const OrderConfirmationScreen(order: null),

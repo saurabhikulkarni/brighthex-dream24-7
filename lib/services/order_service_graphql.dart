@@ -18,9 +18,28 @@ class OrderServiceGraphQL {
 
   final GraphQLClient _client = GraphQLService.getClient();
 
-  // Convert OrderStatus enum to string
+  // Convert OrderStatus enum to string for GraphQL
+  // Hygraph expects enum values to match the schema exactly
+  // Based on schema: PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED
   String _orderStatusToString(OrderStatus status) {
-    return status.toString().split('.').last.toUpperCase();
+    switch (status) {
+      case OrderStatus.pending:
+        return 'PENDING';
+      case OrderStatus.confirmed:
+        return 'CONFIRMED';
+      case OrderStatus.processing:
+        return 'PROCESSING';
+      case OrderStatus.shipped:
+        return 'SHIPPED';
+      case OrderStatus.delivered:
+        return 'DELIVERED';
+      case OrderStatus.cancelled:
+        return 'CANCELLED';
+      case OrderStatus.refunded:
+        return 'REFUNDED';
+      default:
+        return 'PENDING';
+    }
   }
 
   // Convert string to OrderStatus enum
@@ -68,9 +87,12 @@ class OrderServiceGraphQL {
       }
 
       final List<dynamic> ordersJson = result.data!['orders'] as List<dynamic>;
-      return ordersJson
-          .map((json) => _orderFromGraphQL(json as Map<String, dynamic>, userId))
-          .toList();
+      final List<OrderModel> orders = [];
+      for (final json in ordersJson) {
+        final order = await _orderFromGraphQL(json as Map<String, dynamic>, userId);
+        orders.add(order);
+      }
+      return orders;
     } catch (e) {
       throw Exception('Error fetching orders: $e');
     }
@@ -100,7 +122,7 @@ class OrderServiceGraphQL {
         return null;
       }
 
-      return _orderFromGraphQL(result.data!['order'] as Map<String, dynamic>, userId);
+      return await _orderFromGraphQL(result.data!['order'] as Map<String, dynamic>, userId);
     } catch (e) {
       throw Exception('Error fetching order: $e');
     }
@@ -115,34 +137,54 @@ class OrderServiceGraphQL {
   }) async {
     try {
       final userId = UserService.getCurrentUserId();
-      if (userId == null) {
-        throw Exception('User not logged in');
+      if (userId == null || userId.isEmpty) {
+        print('Error: userId is null or empty when creating order');
+        print('UserService.getCurrentUserId() returned: $userId');
+        throw Exception('User not logged in. Please log in to create an order.');
       }
+      
+      print('Creating order with userId: $userId');
 
+      // Ensure totalAmount is valid (should be >= 0)
+      if (totalAmount < 0) {
+        throw Exception('Total amount cannot be negative');
+      }
+      
+      // Generate order number
       final orderNumber = _generateOrderNumber();
-
-      // Create order first
+      
+      // Create order - use different mutation based on whether address is provided
+      final bool hasAddress = shippingAddressId != null && shippingAddressId.isNotEmpty;
+      
       final MutationOptions options = MutationOptions(
-        document: gql(GraphQLQueries.createOrder),
+        document: gql(hasAddress 
+          ? GraphQLQueries.createOrderWithAddress 
+          : GraphQLQueries.createOrderWithoutAddress),
         variables: {
           'userId': userId,
           'orderNumber': orderNumber,
           'totalAmount': totalAmount,
-          'status': _orderStatusToString(status),
-          'shippingAddressId': shippingAddressId,
+          'orderStatus': _orderStatusToString(status),
+          if (hasAddress) 'shippingAddressId': shippingAddressId!,
         },
       );
 
       final QueryResult result = await _client.mutate(options);
 
       if (result.hasException) {
+        print('Error creating order: ${result.exception}');
+        print('GraphQL errors: ${result.exception?.graphqlErrors}');
         throw Exception(result.exception.toString());
       }
 
+      print('Create order response: ${result.data}');
       final createdOrder = result.data?['createOrder'];
       if (createdOrder == null) {
-        throw Exception('Failed to create order');
+        print('Error: createOrder response is null. Full data: ${result.data}');
+        throw Exception('Failed to create order - no data returned');
       }
+      
+      print('Order created successfully: ${createdOrder['id']}');
 
       // Create order items
       final orderId = createdOrder['id']?.toString();
@@ -150,24 +192,68 @@ class OrderServiceGraphQL {
         throw Exception('Failed to get order ID after creation');
       }
 
-      // Create each order item
-      for (final item in items) {
-        final itemId = await _createOrderItem(
-          orderId: orderId,
-          productId: item.productId,
-          sizeId: item.sizeId,
-          quantity: item.quantity,
-          pricePerUnit: item.pricePerUnit,
-          totalPrice: item.totalPrice,
-        );
-        // Publish order item
-        if (itemId != null) {
+      // Validate and prepare order items with default values
+      if (items.isEmpty) {
+        throw Exception('Order must have at least one item');
+      }
+      
+      // Create each order item - if any fails, rollback the order
+      final List<String> createdItemIds = [];
+      try {
+        for (final item in items) {
+          // Validate required fields and use defaults if needed
+          final productId = item.productId.isNotEmpty 
+            ? item.productId 
+            : throw Exception('Product ID is required for order item');
+          
+          final quantity = item.quantity > 0 
+            ? item.quantity 
+            : 1; // Default to 1 if invalid
+          
+          final pricePerUnit = item.pricePerUnit >= 0 
+            ? item.pricePerUnit 
+            : 0.0; // Default to 0 if invalid
+          
+          final totalPrice = item.totalPrice >= 0 
+            ? item.totalPrice 
+            : (pricePerUnit * quantity); // Calculate if invalid
+          
+          // sizeId can be null (optional field)
+          final sizeId = item.sizeId;
+          
+          final itemId = await _createOrderItem(
+            orderId: orderId,
+            productId: productId,
+            sizeId: sizeId,
+            quantity: quantity,
+            pricePerUnit: pricePerUnit,
+            totalPrice: totalPrice,
+          );
+          
+          if (itemId == null) {
+            throw Exception('Failed to create order item - no ID returned');
+          }
+          
+          // Publish order item
+          print('Publishing order item: $itemId');
           await _publishOrderItem(itemId);
+          createdItemIds.add(itemId);
+          print('Order item created and published successfully: $itemId');
         }
+      } catch (e) {
+        // If any item creation fails, we should ideally rollback
+        // For now, log the error and throw to prevent order completion
+        print('Critical error creating order items: $e');
+        print('Created ${createdItemIds.length} out of ${items.length} items');
+        // Note: In a production system, you might want to delete the order here
+        // if some items fail. For now, we'll throw to prevent incomplete orders.
+        throw Exception('Failed to create all order items: $e');
       }
 
       // Publish order
+      print('Publishing order: $orderId');
       await _publishOrder(orderId);
+      print('Order published successfully');
 
       // Return full order by fetching it
       final order = await getOrderById(orderId);
@@ -187,7 +273,7 @@ class OrderServiceGraphQL {
         document: gql(GraphQLQueries.updateOrderStatus),
         variables: {
           'id': orderId,
-          'status': _orderStatusToString(status),
+          'orderStatus': _orderStatusToString(status),
         },
       );
 
@@ -278,13 +364,42 @@ class OrderServiceGraphQL {
     }
   }
 
+  // Helper: Fetch order items separately
+  Future<List<OrderItemModel>> _fetchOrderItems(String orderId) async {
+    try {
+      final QueryResult result = await _client.query(
+        QueryOptions(
+          document: gql(GraphQLQueries.getOrderItemsByOrderId),
+          variables: {'orderId': orderId},
+          fetchPolicy: FetchPolicy.networkOnly,
+        ),
+      );
+
+      if (result.hasException) {
+        print('Error fetching order items: ${result.exception}');
+        return [];
+      }
+
+      if (result.data == null || result.data!['orderItems'] == null) {
+        return [];
+      }
+
+      final List<dynamic> itemsJson = result.data!['orderItems'] as List<dynamic>;
+      return itemsJson
+          .map((itemJson) => OrderItemModel.fromJson(itemJson as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      print('Error fetching order items: $e');
+      return [];
+    }
+  }
+
   // Helper: Convert GraphQL JSON to OrderModel
-  OrderModel _orderFromGraphQL(Map<String, dynamic> json, String userId) {
-    // Parse items
-    final itemsJson = json['items'] as List<dynamic>? ?? [];
-    final items = itemsJson
-        .map((itemJson) => OrderItemModel.fromJson(itemJson as Map<String, dynamic>))
-        .toList();
+  Future<OrderModel> _orderFromGraphQL(Map<String, dynamic> json, String userId) async {
+    final orderId = json['id']?.toString() ?? '';
+    
+    // Fetch items separately
+    final items = await _fetchOrderItems(orderId);
 
     // Parse shipping address if present
     AddressModel? shippingAddress;
@@ -326,19 +441,40 @@ class OrderServiceGraphQL {
     required double totalPrice,
   }) async {
     try {
-      final result = await _client.mutate(
-        MutationOptions(
-          document: gql(GraphQLQueries.createOrderItem),
-          variables: {
-            'orderId': orderId,
-            'productId': productId,
-            'sizeId': sizeId,
-            'quantity': quantity,
-            'pricePerUnit': pricePerUnit,
-            'totalPrice': totalPrice,
-          },
-        ),
-      );
+      // Use different mutations based on whether sizeId is provided
+      final bool hasValidSizeId = sizeId != null && 
+                                  sizeId.isNotEmpty && 
+                                  !sizeId.startsWith('local_');
+      
+      final QueryResult result;
+      if (hasValidSizeId) {
+        result = await _client.mutate(
+          MutationOptions(
+            document: gql(GraphQLQueries.createOrderItemWithSize),
+            variables: {
+              'orderId': orderId,
+              'productId': productId,
+              'sizeId': sizeId!,
+              'quantity': quantity.toString(),
+              'pricePerUnit': pricePerUnit,
+              'totalPrice': totalPrice,
+            },
+          ),
+        );
+      } else {
+        result = await _client.mutate(
+          MutationOptions(
+            document: gql(GraphQLQueries.createOrderItemWithoutSize),
+            variables: {
+              'orderId': orderId,
+              'productId': productId,
+              'quantity': quantity.toString(),
+              'pricePerUnit': pricePerUnit,
+              'totalPrice': totalPrice,
+            },
+          ),
+        );
+      }
 
       if (result.hasException) {
         throw Exception(result.exception.toString());
@@ -355,30 +491,44 @@ class OrderServiceGraphQL {
   // Helper: Publish order item
   Future<void> _publishOrderItem(String itemId) async {
     try {
-      await _client.mutate(
+      final result = await _client.mutate(
         MutationOptions(
           document: gql(GraphQLQueries.publishOrderItem),
           variables: {'id': itemId},
         ),
       );
+      
+      if (result.hasException) {
+        print('Error publishing order item: ${result.exception}');
+        throw Exception('Failed to publish order item: ${result.exception}');
+      }
+      print('Order item published successfully: $itemId');
     } catch (e) {
       print('Error publishing order item: $e');
-      // Non-critical error
+      // Re-throw as this is critical for order creation
+      rethrow;
     }
   }
 
   // Helper: Publish order
   Future<void> _publishOrder(String orderId) async {
     try {
-      await _client.mutate(
+      final result = await _client.mutate(
         MutationOptions(
           document: gql(GraphQLQueries.publishOrder),
           variables: {'id': orderId},
         ),
       );
+      
+      if (result.hasException) {
+        print('Error publishing order: ${result.exception}');
+        throw Exception('Failed to publish order: ${result.exception}');
+      }
+      print('Order published successfully: $orderId');
     } catch (e) {
       print('Error publishing order: $e');
-      // Non-critical error
+      // Re-throw as this is critical for order creation
+      rethrow;
     }
   }
 }

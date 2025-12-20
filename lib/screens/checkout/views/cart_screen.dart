@@ -57,28 +57,44 @@ class _CartScreenState extends State<CartScreen> {
   double get tax => subtotal * 0.1;
   double get total => subtotal + tax;
 
-  void _removeItem(String cartItemId) {
-    setState(() {
-      cartService.removeFromLocalCart(cartItemId);
-    });
+  void _removeItem(String cartItemId) async {
+    try {
+      await cartService.removeFromLocalCart(cartItemId);
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error removing item: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
-  void _updateQuantity(String cartItemId, int newQuantity) {
+  void _updateQuantity(String cartItemId, int newQuantity) async {
     if (newQuantity < 1) return;
     
     try {
-      setState(() {
-        cartService.updateLocalCartQuantity(cartItemId, newQuantity);
-      });
+      await cartService.updateLocalCartQuantity(cartItemId, newQuantity);
+      if (mounted) {
+        setState(() {});
+      }
     } catch (e) {
       // Show error message if stock is insufficient
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 

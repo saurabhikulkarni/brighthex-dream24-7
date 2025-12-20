@@ -305,6 +305,104 @@ class ShiprocketService {
     }
   }
 
+  /// Create a shipment order in Shiprocket
+  /// Note: This method should ideally be called from your backend server for security
+  /// Parameters match Shiprocket API requirements
+  static Future<Map<String, dynamic>?> createShipment({
+    required String orderId,
+    required String orderDate,
+    required String pickupLocation,
+    required String billingCustomerName,
+    required String billingAddress,
+    required String billingCity,
+    required String billingPincode,
+    required String billingState,
+    required String billingCountry,
+    required String billingEmail,
+    required String billingPhone,
+    bool shippingIsBilling = true,
+    String? shippingCustomerName,
+    String? shippingAddress,
+    String? shippingCity,
+    String? shippingPincode,
+    String? shippingState,
+    String? shippingCountry,
+    String? shippingEmail,
+    String? shippingPhone,
+    required List<Map<String, dynamic>> orderItems, // [{name, sku, units, selling_price, discount}]
+    required String paymentMethod, // "Prepaid" or "COD"
+    required double subTotal,
+    double? length,
+    double? breadth,
+    double? height,
+    double? weight,
+  }) async {
+    try {
+      final token = await _getAuthToken();
+      if (token == null) {
+        print('Failed to authenticate with Shiprocket');
+        return null;
+      }
+
+      final Map<String, dynamic> shipmentData = {
+        'order_id': orderId,
+        'order_date': orderDate,
+        'pickup_location': pickupLocation,
+        'billing_customer_name': billingCustomerName,
+        'billing_address': billingAddress,
+        'billing_city': billingCity,
+        'billing_pincode': billingPincode,
+        'billing_state': billingState,
+        'billing_country': billingCountry,
+        'billing_email': billingEmail,
+        'billing_phone': billingPhone,
+        'shipping_is_billing': shippingIsBilling,
+        'order_items': orderItems,
+        'payment_method': paymentMethod,
+        'sub_total': subTotal,
+      };
+
+      // Add shipping address if different from billing
+      if (!shippingIsBilling) {
+        shipmentData['shipping_customer_name'] = shippingCustomerName ?? billingCustomerName;
+        shipmentData['shipping_address'] = shippingAddress ?? billingAddress;
+        shipmentData['shipping_city'] = shippingCity ?? billingCity;
+        shipmentData['shipping_pincode'] = shippingPincode ?? billingPincode;
+        shipmentData['shipping_state'] = shippingState ?? billingState;
+        shipmentData['shipping_country'] = shippingCountry ?? billingCountry;
+        shipmentData['shipping_email'] = shippingEmail ?? billingEmail;
+        shipmentData['shipping_phone'] = shippingPhone ?? billingPhone;
+      }
+
+      // Add dimensions if provided
+      if (length != null) shipmentData['length'] = length;
+      if (breadth != null) shipmentData['breadth'] = breadth;
+      if (height != null) shipmentData['height'] = height;
+      if (weight != null) shipmentData['weight'] = weight;
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/orders/create/adhoc'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(shipmentData),
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('Shiprocket shipment created successfully: ${data['order_id']}');
+        return data;
+      } else {
+        print('Error creating Shiprocket shipment: ${response.statusCode} - ${response.body}');
+        return null;
+      }
+    } catch (e) {
+      print('Exception in createShipment: $e');
+      return null;
+    }
+  }
+
   /// Mock data for development and testing (when API is not configured)
   static ShiprocketOrderData getMockOrderTracking(String orderId) {
     return ShiprocketOrderData(

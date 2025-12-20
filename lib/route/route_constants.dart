@@ -42,6 +42,7 @@ const String ordersScreenRoute = "orders";
 const String orderConfirmationScreenRoute = "order_confirmation";
 const String orderProcessingScreenRoute = "order_processing";
 const String orderDetailsScreenRoute = "order_details";
+const String orderTrackingScreenRoute = "order_tracking";
 const String cancleOrderScreenRoute = "cancle_order";
 const String deliveredOrdersScreenRoute = "delivered_orders";
 const String cancledOrdersScreenRoute = "cancled_orders";
