@@ -65,9 +65,21 @@ class _CartScreenState extends State<CartScreen> {
 
   void _updateQuantity(String cartItemId, int newQuantity) {
     if (newQuantity < 1) return;
-    setState(() {
-      cartService.updateLocalCartQuantity(cartItemId, newQuantity);
-    });
+    
+    try {
+      setState(() {
+        cartService.updateLocalCartQuantity(cartItemId, newQuantity);
+      });
+    } catch (e) {
+      // Show error message if stock is insufficient
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _proceedToPayment(BuildContext context) async {

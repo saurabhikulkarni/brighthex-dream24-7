@@ -117,44 +117,125 @@ class _WalletScreenState extends State<WalletScreen> {
   }
 
   void _initiatePayment() async {
-    const uuid = Uuid();
-    final orderId = '#${uuid.v4().substring(0, 8).toUpperCase()}';
+    if (_selectedTopUpAmount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a valid amount'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-    // Fetch user data from AuthService
-    final authService = AuthService();
-    final userPhone = await authService.getUserPhone() ?? '+91 0000000000';
-    final userName = await authService.getUserName() ?? 'Customer';
-    // TODO: Get user email from user profile/backend when available
-    final userEmail = 'customer@dream247.com'; // Placeholder - update when email is available in user profile
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
 
-    final razorpayService = RazorpayService();
-    
-    razorpayService.startPayment(
-      orderId: orderId,
-      amount: _selectedTopUpAmount,
-      userEmail: userEmail,
-      userPhone: userPhone,
-      userName: userName,
-      onSuccess: (response) async {
-        // Payment successful, add money to wallet
-        await _addMoney(_selectedTopUpAmount);
-        
+    try {
+      // Fetch user data from AuthService
+      final authService = AuthService();
+      final userPhone = await authService.getUserPhone() ?? '+91 0000000000';
+      final userName = await authService.getUserName() ?? 'Customer';
+      // TODO: Get user email from user profile/backend when available
+      final userEmail = 'customer@dream247.com'; // Placeholder - update when email is available in user profile
+
+      final razorpayService = RazorpayService();
+      
+      // Create order on backend first
+      final receipt = 'wallet_topup_${DateTime.now().millisecondsSinceEpoch}';
+      final razorpayOrder = await razorpayService.createOrder(
+        amount: _selectedTopUpAmount,
+        receipt: receipt,
+        notes: {
+          'type': 'wallet_topup',
+          'userId': UserService.getCurrentUserId(),
+        },
+      );
+
+      if (!mounted) return;
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      if (razorpayOrder == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              "Successfully added ₹${_selectedTopUpAmount.toStringAsFixed(2)} to wallet",
-            ),
-            duration: const Duration(seconds: 2),
-            backgroundColor: Colors.green,
+          const SnackBar(
+            content: Text('Failed to create payment order. Please try again.'),
+            backgroundColor: Colors.red,
           ),
         );
+        return;
+      }
 
-        // If returning to cart, pop with updated balance
-        if (returnToCart) {
-          Navigator.pop(context, {
-            'walletBalance': walletBalance,
-            'shoppingTokens': shoppingTokens,
+      // Now start payment with the created order ID
+      razorpayService.startPayment(
+        orderId: razorpayOrder.razorpayOrderId,
+        amount: _selectedTopUpAmount,
+        userEmail: userEmail,
+        userPhone: userPhone,
+        userName: userName,
+      onSuccess: (response) async {
+        try {
+          // Verify payment signature on backend
+          final razorpayService = RazorpayService();
+          final isVerified = await razorpayService.verifyPaymentSignature(
+            paymentId: response.paymentId,
+            orderId: razorpayOrder.razorpayOrderId,
+            signature: response.signature,
+          );
+
+          if (!isVerified) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Payment verification failed. Please contact support.'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            return;
+          }
+
+          // Payment verified, add money to wallet
+          await _addMoney(_selectedTopUpAmount);
+          
+          if (!mounted) return;
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                "Successfully added ₹${_selectedTopUpAmount.toStringAsFixed(2)} to wallet",
+              ),
+              duration: const Duration(seconds: 2),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Reset amount field
+          setState(() {
+            _selectedTopUpAmount = 0;
+            _amountController.clear();
           });
+
+          // If returning to cart, pop with updated balance
+          if (returnToCart) {
+            Navigator.pop(context, {
+              'walletBalance': walletBalance,
+              'shoppingTokens': shoppingTokens,
+            });
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error processing payment: ${e.toString()}'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
       },
       onError: (error) {
@@ -182,6 +263,18 @@ class _WalletScreenState extends State<WalletScreen> {
         );
       },
     );
+    } catch (e) {
+      // Close loading dialog if still open
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error initiating payment: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -370,59 +463,16 @@ class _WalletScreenState extends State<WalletScreen> {
                           ),
                         ),
                       ),
-                      SliverPadding(
-                        padding: const EdgeInsets.only(top: defaultPadding / 2),
-                        sliver: SliverToBoxAdapter(
-                          child: Text(
-                            "Transaction History",
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                        ),
-                      ),
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final transactions = [
-                              {
-                                'type': 'Top-up',
-                                'date': '28-09-2025',
-                                'amount': 150.0,
-                                'isIncome': true,
-                              },
-                              {
-                                'type': 'Purchase',
-                                'date': '25-09-2025',
-                                'amount': 200.0,
-                                'isIncome': false,
-                              },
-                              {
-                                'type': 'Purchase',
-                                'date': '22-09-2025',
-                                'amount': 50.0,
-                                'isIncome': false,
-                              },
-                              {
-                                'type': 'Top-up',
-                                'date': '20-09-2025',
-                                'amount': 100.0,
-                                'isIncome': true,
-                              },
-                            ];
-
-                            final transaction = transactions[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(top: defaultPadding),
-                              child: TransactionHistoryCard(
-                                transactionType: transaction['type'] as String,
-                                date: transaction['date'] as String,
-                                amount: transaction['amount'] as double,
-                                isIncome: transaction['isIncome'] as bool,
-                              ),
-                            );
-                          },
-                          childCount: 4,
-                        ),
-                      )
+                      // TODO: Transaction history will be integrated with backend payment history
+                      // SliverPadding(
+                      //   padding: const EdgeInsets.only(top: defaultPadding / 2),
+                      //   sliver: SliverToBoxAdapter(
+                      //     child: Text(
+                      //       "Transaction History",
+                      //       style: Theme.of(context).textTheme.titleSmall,
+                      //     ),
+                      //   ),
+                      // ),
                     ],
                   ),
           ),

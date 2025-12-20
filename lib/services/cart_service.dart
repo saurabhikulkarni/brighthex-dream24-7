@@ -71,18 +71,33 @@ class CartService {
   }
 
   // Add item to local cart and persist
+  // Returns true if successful, throws exception if stock unavailable
   void addToLocalCart(ProductModel product, SizeModel? size, int quantity) {
+    // Check stock availability if size is provided
+    if (size != null && size.quantity < quantity) {
+      throw Exception('Insufficient stock. Only ${size.quantity} items available for size ${size.sizeName}');
+    }
+
     // Check if product already exists in cart
     final existingIndex = _localCart.indexWhere(
       (item) => item.product?.id == product.id && item.size?.id == size?.id,
     );
+
+    final newQuantity = existingIndex >= 0 
+        ? _localCart[existingIndex].quantity + quantity 
+        : quantity;
+
+    // Validate stock again with new quantity
+    if (size != null && size.quantity < newQuantity) {
+      throw Exception('Insufficient stock. Cannot add more items. Available: ${size.quantity}');
+    }
 
     if (existingIndex >= 0) {
       // Update quantity
       final existingItem = _localCart[existingIndex];
       _localCart[existingIndex] = CartModel(
         id: existingItem.id,
-        quantity: existingItem.quantity + quantity,
+        quantity: newQuantity,
         product: existingItem.product,
         size: existingItem.size,
       );
@@ -101,10 +116,21 @@ class CartService {
   }
 
   // Update cart item quantity and persist
+  // Throws exception if stock is insufficient
   void updateLocalCartQuantity(String cartItemId, int quantity) {
+    if (quantity < 1) {
+      throw Exception('Quantity must be at least 1');
+    }
+
     final index = _localCart.indexWhere((item) => item.id == cartItemId);
     if (index >= 0) {
       final item = _localCart[index];
+      
+      // Check stock availability if size is provided
+      if (item.size != null && item.size!.quantity < quantity) {
+        throw Exception('Insufficient stock. Only ${item.size!.quantity} items available for size ${item.size!.sizeName}');
+      }
+
       _localCart[index] = CartModel(
         id: item.id,
         quantity: quantity,
