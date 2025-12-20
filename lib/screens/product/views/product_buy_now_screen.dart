@@ -93,7 +93,7 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     }
   }
 
-  void _addToCart() {
+  void _addToCart() async {
     // Create a size model from selected size name if no API sizes
     SizeModel? sizeToAdd = selectedSize;
     if (sizeToAdd == null && availableSizes.isNotEmpty) {
@@ -105,28 +105,32 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     }
 
     try {
-      // Add to local cart
-      cartService.addToLocalCart(
+      // Add to local cart (also syncs with backend if logged in)
+      await cartService.addToLocalCart(
         widget.product,
         sizeToAdd,
         _quantity,
       );
 
       // Show success message
-      customModalBottomSheet(
-        context,
-        isDismissible: false,
-        child: const AddedToCartMessageScreen(),
-      );
+      if (mounted) {
+        customModalBottomSheet(
+          context,
+          isDismissible: false,
+          child: const AddedToCartMessageScreen(),
+        );
+      }
     } catch (e) {
-      // Show error message if stock is insufficient
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      // Show error message if stock is insufficient or other error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     }
   }
 

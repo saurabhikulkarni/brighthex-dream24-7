@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/services/order_service_graphql.dart';
 import 'package:shop/models/order_models.dart';
+import 'package:shop/route/route_constants.dart';
+import 'order_tracking_screen.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -12,12 +14,12 @@ class OrdersScreen extends StatefulWidget {
 
 class _OrdersScreenState extends State<OrdersScreen> {
   bool _isLoading = true;
+  List<OrderModel> _orders = [];
   final OrderServiceGraphQL orderService = OrderServiceGraphQL();
 
   @override
   void initState() {
     super.initState();
-    // Load orders from GraphQL
     _loadOrders();
   }
 
@@ -26,23 +28,29 @@ class _OrdersScreenState extends State<OrdersScreen> {
       setState(() {
         _isLoading = true;
       });
-      // Load orders from GraphQL
-      // Orders will be loaded from the service
+      final orders = await orderService.getUserOrders();
       setState(() {
+        _orders = orders;
         _isLoading = false;
       });
     } catch (e) {
       print('Error loading orders: $e');
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading orders: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get orders from service - using empty list as placeholder
-    final orders = <OrderModel>[];
 
     return Scaffold(
       appBar: AppBar(
@@ -50,7 +58,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : orders.isEmpty
+          : _orders.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -73,11 +81,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     ],
                   ),
                 )
-              : ListView.builder(
-              padding: const EdgeInsets.all(defaultPadding),
-              itemCount: orders.length,
-              itemBuilder: (context, index) {
-                final order = orders[index];
+              : RefreshIndicator(
+                  onRefresh: _loadOrders,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(defaultPadding),
+                    itemCount: _orders.length,
+                    itemBuilder: (context, index) {
+                      final order = _orders[index];
                 return Card(
                   margin: const EdgeInsets.only(bottom: defaultPadding),
                   child: Padding(
@@ -110,18 +120,18 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: _getStatusColor(order.orderStatus.toString().split('.').last)
+                                color: _getStatusColor(order.statusString)
                                     .withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                                child: Text(
-                                  _formatStatus(order.statusString),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: _getStatusColor(order.statusString),
-                                  ),
+                              child: Text(
+                                _formatStatus(order.statusString),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: _getStatusColor(order.statusString),
                                 ),
+                              ),
                             ),
                           ],
                         ),
@@ -189,12 +199,47 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               "₹${order.totalAmount.toStringAsFixed(2)}",
                               style: Theme.of(context).textTheme.titleSmall,
                             ),
-                            ElevatedButton(
-                              onPressed: () {
-                                // Navigate to order details/tracking screen
-                                // TODO: Implement order details screen
-                              },
-                              child: const Text('View Details'),
+                            Row(
+                              children: [
+                                // Track button - show if order has Shiprocket order ID or tracking number
+                                if (order.shiprocketOrderId != null || order.trackingNumber != null)
+                                  OutlinedButton.icon(
+                                    onPressed: () {
+                                      // Navigate to tracking screen with Shiprocket order ID or order number
+                                      final trackingId = order.shiprocketOrderId ?? order.orderNumber;
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => OrderTrackingScreen(
+                                            orderId: trackingId,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.track_changes, size: 18),
+                                    label: const Text('Track'),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    ),
+                                  ),
+                                if (order.shiprocketOrderId != null || order.trackingNumber != null)
+                                  const SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    // Navigate to order details/tracking screen
+                                    final trackingId = order.shiprocketOrderId ?? order.orderNumber;
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => OrderTrackingScreen(
+                                          orderId: trackingId,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text('View Details'),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -202,8 +247,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     ),
                   ),
                 );
-              },
-            ),
+                    },
+                  ),
+                ),
     );
   }
 

@@ -182,7 +182,7 @@ class GraphQLQueries {
 
   // Create a new cart item
   static const String createCartItem = '''
-    mutation CreateCartItem(\$quantity: Int!, \$userId: ID!, \$productId: ID!, \$sizeId: ID) {
+    mutation CreateCartItem(\$quantity: String!, \$userId: ID!, \$productId: ID!, \$sizeId: ID) {
       createCart(
         data: {
           quantity: \$quantity
@@ -199,7 +199,7 @@ class GraphQLQueries {
 
   // Update cart item quantity
   static const String updateCartItem = '''
-    mutation UpdateCartItem(\$cartId: ID!, \$quantity: Int!) {
+    mutation UpdateCartItem(\$cartId: ID!, \$quantity: String!) {
       updateCart(
         where: {id: \$cartId}
         data: {quantity: \$quantity}

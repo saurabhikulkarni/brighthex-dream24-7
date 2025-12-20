@@ -172,9 +172,21 @@ class CartModel {
   });
 
   factory CartModel.fromJson(Map<String, dynamic> json) {
+    // Handle quantity as String (from GraphQL) or int (from local storage)
+    int quantity = 1;
+    if (json['quantity'] != null) {
+      if (json['quantity'] is String) {
+        quantity = int.tryParse(json['quantity'] as String) ?? 1;
+      } else if (json['quantity'] is int) {
+        quantity = json['quantity'] as int;
+      } else if (json['quantity'] is num) {
+        quantity = (json['quantity'] as num).toInt();
+      }
+    }
+    
     return CartModel(
       id: json['id']?.toString(),
-      quantity: json['quantity'] ?? 1,
+      quantity: quantity,
       userDetail: json['userDetail'] != null
           ? UserDetailModel.fromJson(json['userDetail'] as Map<String, dynamic>)
           : null,

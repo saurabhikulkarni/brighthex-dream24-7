@@ -1,4 +1,4 @@
-import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:crypto/crypto.dart';
 import 'dart:convert';
 import 'package:shop/config/razorpay_config.dart';
@@ -6,17 +6,23 @@ import 'package:shop/config/razorpay_backend_config.dart';
 import 'package:shop/models/payment_model.dart';
 import 'package:http/http.dart' as http;
 
+// Conditional imports for platform-specific Razorpay implementation
+import 'razorpay_service_mobile_stub.dart'
+    if (dart.library.io) 'razorpay_service_mobile.dart'
+    if (dart.library.html) 'razorpay_service_web.dart' as platform;
+
 typedef PaymentSuccessCallback = void Function(RazorpayPaymentResponse response);
 typedef PaymentErrorCallback = void Function(String error);
 typedef PaymentDismissCallback = void Function();
 
 class RazorpayService {
   static final RazorpayService _instance = RazorpayService._internal();
-  late Razorpay _razorpay;
+  late platform.RazorpayPlatform _razorpayPlatform;
 
   PaymentSuccessCallback? _onSuccess;
   PaymentErrorCallback? _onError;
   PaymentDismissCallback? _onDismiss;
+  bool _isInitialized = false;
 
   RazorpayService._internal() {
     _initRazorpay();
@@ -26,34 +32,32 @@ class RazorpayService {
     return _instance;
   }
 
-  /// Initialize Razorpay
+  /// Initialize Razorpay (platform-specific)
   void _initRazorpay() {
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    if (_isInitialized) return;
+    
+    _razorpayPlatform = platform.RazorpayPlatform();
+    _razorpayPlatform.init(
+      onSuccess: _handlePaymentSuccess,
+      onError: _handlePaymentError,
+      onDismiss: _handlePaymentDismiss,
+    );
+    _isInitialized = true;
   }
 
   /// Handle payment success
-  void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    final razorpayResponse = RazorpayPaymentResponse.fromMap({
-      'razorpay_payment_id': response.paymentId,
-      'razorpay_order_id': response.orderId,
-      'razorpay_signature': response.signature,
-    });
-
+  void _handlePaymentSuccess(Map<String, dynamic> response) {
+    final razorpayResponse = RazorpayPaymentResponse.fromMap(response);
     _onSuccess?.call(razorpayResponse);
   }
 
   /// Handle payment error
-  void _handlePaymentError(PaymentFailureResponse response) {
-    final errorMessage = response.message ?? 'Payment failed. Please try again.';
+  void _handlePaymentError(String errorMessage) {
     _onError?.call(errorMessage);
   }
 
-  /// Handle external wallet
-  void _handleExternalWallet(ExternalWalletResponse response) {
-    // Handle external wallet selection (e.g., PhonePe, Google Pay, etc.)
+  /// Handle payment dismiss
+  void _handlePaymentDismiss() {
     _onDismiss?.call();
   }
 
@@ -103,11 +107,13 @@ class RazorpayService {
       };
 
       // Add payment method preferences if specified
-      if (preferredMethod != null) {
+      if (preferredMethod != null && !kIsWeb) {
+        // Payment method preferences are not supported in web JavaScript Checkout
         options['method'] = _getMethodString(preferredMethod);
       }
 
-      _razorpay.open(options);
+      // Use platform-specific implementation
+      _razorpayPlatform.open(options);
     } catch (e) {
       _onError?.call('Failed to open payment gateway: ${e.toString()}');
     }
@@ -389,6 +395,6 @@ class RazorpayService {
 
   /// Dispose Razorpay instance
   void dispose() {
-    _razorpay.clear();
+    _razorpayPlatform.dispose();
   }
 }
