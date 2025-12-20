@@ -29,7 +29,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   Future<ShiprocketOrderData?> _fetchTrackingData() async {
     try {
       // Check if credentials are configured
-      final isConfigured = ShiprocketConfig.email != 'YOUR_SHIPROCKET_EMAIL';
+      const isConfigured = ShiprocketConfig.email != 'YOUR_SHIPROCKET_EMAIL';
       
       if (isConfigured) {
         // Try to fetch real tracking data from Shiprocket by Order ID

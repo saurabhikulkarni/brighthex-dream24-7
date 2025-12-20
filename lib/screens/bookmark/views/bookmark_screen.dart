@@ -50,7 +50,7 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(child: Text('Error loading products'))
+              ? const Center(child: Text('Error loading products'))
               : _products.isEmpty
                   ? const Center(child: Text('No bookmarked products'))
                   : CustomScrollView(

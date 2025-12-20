@@ -47,7 +47,7 @@ class Msg91Service {
         body: jsonEncode({
           'mobileNumber': cleanMobile,
         }),
-      ).timeout(Duration(seconds: Msg91Config.requestTimeoutSeconds));
+      ).timeout(const Duration(seconds: Msg91Config.requestTimeoutSeconds));
 
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
@@ -126,7 +126,7 @@ class Msg91Service {
           'Content-Type': 'application/json',
         },
         body: jsonEncode(requestBody),
-      ).timeout(Duration(seconds: Msg91Config.requestTimeoutSeconds));
+      ).timeout(const Duration(seconds: Msg91Config.requestTimeoutSeconds));
 
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
