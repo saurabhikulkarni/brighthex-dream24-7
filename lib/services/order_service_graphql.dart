@@ -301,7 +301,7 @@ class OrderServiceGraphQL {
       userId: userId,
       items: items,
       totalAmount: (json['totalAmount'] ?? json['total_amount'] ?? 0).toDouble(),
-      orderStatus: _stringToOrderStatus(json['orderStatus']?.toString() ?? json['status']?.toString() ?? 'pending'),
+      orderStatus: _stringToOrderStatus(json['status']?.toString() ?? 'pending'),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),

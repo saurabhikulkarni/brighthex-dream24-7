@@ -84,7 +84,7 @@ class PaymentModel {
       amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
       currency: json['currency'] ?? 'INR',
       paymentStatus: PaymentStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == json['paymentStatus'] ?? json['status'],
+        (e) => e.toString().split('.').last == (json['paymentStatus'] ?? json['status']),
         orElse: () => PaymentStatus.pending,
       ),
       method: json['method'] != null
