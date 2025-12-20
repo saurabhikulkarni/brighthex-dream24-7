@@ -272,7 +272,7 @@ class OrderServiceGraphQL {
   Future<List<OrderModel>> getOrdersByStatus(OrderStatus status) async {
     try {
       final orders = await getUserOrders();
-      return orders.where((order) => order.status == status).toList();
+      return orders.where((order) => order.orderStatus == status).toList();
     } catch (e) {
       throw Exception('Error fetching orders by status: $e');
     }
@@ -301,7 +301,7 @@ class OrderServiceGraphQL {
       userId: userId,
       items: items,
       totalAmount: (json['totalAmount'] ?? json['total_amount'] ?? 0).toDouble(),
-      status: _stringToOrderStatus(json['status']?.toString() ?? 'pending'),
+      orderStatus: _stringToOrderStatus(json['orderStatus']?.toString() ?? json['status']?.toString() ?? 'pending'),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),

@@ -172,6 +172,7 @@ class RazorpayService {
         Uri.parse(RazorpayConfig.verifySignatureEndpoint),
         headers: {
           'Content-Type': 'application/json',
+        },
         body: jsonEncode({
           'orderId': orderId,
           'paymentId': paymentId,
@@ -181,8 +182,7 @@ class RazorpayService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['success'] == true && data['verified
-        },'] == true;
+        return data['success'] == true && data['verified'] == true;
       } else {
         try {
           final errorData = jsonDecode(response.body);
@@ -234,7 +234,7 @@ class RazorpayService {
       // This should call your backend API to process refund
       // Example: POST /api/payments/refund
       final response = await http.post(
-        Uri.parse('YOUR_BACKEND_URL/api/payments/refund'),
+        Uri.parse('${RazorpayConfig.backendBaseUrl}/payments/refund'),
         headers: {
           'Content-Type': 'application/json',
         },

@@ -6,26 +6,31 @@ import 'package:shop/services/user_service.dart';
 
 class AddressService {
   static final AddressService _instance = AddressService._internal();
-  
+
   factory AddressService() {
     return _instance;
   }
-  
+
   AddressService._internal();
 
   final GraphQLClient _client = GraphQLService.getClient();
 
-  // Get all addresses for current user
+  // Get all addresses for the current user
   Future<List<AddressModel>> getUserAddresses() async {
-    try {
-      final userId = UserService.getCurrentUserId();
-      if (userId == null) {
-        throw Exception('User not logged in');
-      }
+    final userId = UserService.getCurrentUserId();
+    if (userId == null) {
+      return [];
+    }
 
+    return await getAddressesByUserId(userId);
+  }
+
+  // Get all addresses for a specific user ID
+  Future<List<AddressModel>> getAddressesByUserId(String userId) async {
+    try {
       final QueryResult result = await _client.query(
         QueryOptions(
-          document: gql(GraphQLQueries.getUserAddresses),
+          document: gql(GraphQLQueries.getAddressesByUser),
           variables: {'userId': userId},
           fetchPolicy: FetchPolicy.networkOnly,
         ),
@@ -43,7 +48,7 @@ class AddressService {
       return addressesJson
           .map((json) => AddressModel.fromJson({
                 ...json as Map<String, dynamic>,
-                'userId': userId, // Add userId from context
+                'userId': userId,
               }))
           .toList();
     } catch (e) {
@@ -51,7 +56,7 @@ class AddressService {
     }
   }
 
-  // Get address by ID
+  // Get a single address by ID
   Future<AddressModel?> getAddressById(String addressId) async {
     try {
       final QueryResult result = await _client.query(
@@ -70,58 +75,67 @@ class AddressService {
         return null;
       }
 
-      final userId = UserService.getCurrentUserId();
+      final json = result.data!['address'] as Map<String, dynamic>;
+      // Extract userId from userDetail relation
+      final userId = json['userDetail']?['id']?.toString() ?? '';
       return AddressModel.fromJson({
-        ...result.data!['address'] as Map<String, dynamic>,
-        'userId': userId ?? '',
+        ...json,
+        'userId': userId,
       });
     } catch (e) {
       throw Exception('Error fetching address: $e');
     }
   }
 
-  // Create new address
-  Future<AddressModel> createAddress(AddressModel address) async {
+  // Create a new address
+  Future<AddressModel?> createAddress({
+    required String userId,
+    required String fullName,
+    required String phoneNumber,
+    required String pincode,
+    required String addressLine1,
+    String? addressLine2,
+    required String city,
+    required String state,
+    String country = 'India',
+    bool isDefault = false,
+  }) async {
     try {
-      final userId = UserService.getCurrentUserId();
-      if (userId == null) {
-        throw Exception('User not logged in');
+      // If setting as default, unset all other default addresses first
+      if (isDefault) {
+        await _unsetAllDefaultAddresses(userId);
       }
 
-      // If setting as default, first unset other default addresses
-      if (address.isDefault) {
-        await _unsetDefaultAddresses(userId);
-      }
-
-      final MutationOptions options = MutationOptions(
-        document: gql(GraphQLQueries.createAddress),
-        variables: {
-          'userId': userId,
-          'fullName': address.fullName,
-          'phoneNumber': address.phoneNumber,
-          'pincode': address.pincode,
-          'addressLine1': address.addressLine1,
-          'addressLine2': address.addressLine2,
-          'city': address.city,
-          'state': address.state,
-          'country': address.country,
-          'isDefault': address.isDefault,
-        },
+      final QueryResult result = await _client.mutate(
+        MutationOptions(
+          document: gql(GraphQLQueries.createAddress),
+          variables: {
+            'userId': userId,
+            'fullName': fullName,
+            'phoneNumber': phoneNumber,
+            'pincode': pincode,
+            'addressLine1': addressLine1,
+            'addressLine2': addressLine2,
+            'city': city,
+            'state': state,
+            'country': country,
+            'isDefault': isDefault,
+          },
+        ),
       );
-
-      final QueryResult result = await _client.mutate(options);
 
       if (result.hasException) {
         throw Exception(result.exception.toString());
       }
 
-      final createdAddress = result.data?['createAddress'];
-      if (createdAddress == null) {
-        throw Exception('Failed to create address');
+      if (result.data == null || result.data!['createAddress'] == null) {
+        return null;
       }
 
-      // Publish address
+      final createdAddress = result.data!['createAddress'];
       final addressId = createdAddress['id']?.toString();
+
+      // Publish the address (required for Hygraph)
       if (addressId != null) {
         await _publishAddress(addressId);
       }
@@ -135,147 +149,151 @@ class AddressService {
     }
   }
 
-  // Update address
-  Future<AddressModel> updateAddress(AddressModel address) async {
+  // Update an existing address
+  Future<AddressModel?> updateAddress({
+    required String addressId,
+    required String fullName,
+    required String phoneNumber,
+    required String pincode,
+    required String addressLine1,
+    String? addressLine2,
+    required String city,
+    required String state,
+    String country = 'India',
+    bool isDefault = false,
+  }) async {
     try {
-      if (address.id == null) {
-        throw Exception('Address ID is required for update');
+      // Get the address first to get userId
+      final existingAddress = await getAddressById(addressId);
+      if (existingAddress == null) {
+        throw Exception('Address not found');
       }
 
-      final userId = UserService.getCurrentUserId();
-      if (userId == null) {
-        throw Exception('User not logged in');
+      // If setting as default, unset all other default addresses first
+      if (isDefault) {
+        await _unsetAllDefaultAddresses(existingAddress.userId);
       }
 
-      // If setting as default, first unset other default addresses
-      if (address.isDefault) {
-        await _unsetDefaultAddresses(userId, excludeId: address.id);
-      }
-
-      final MutationOptions options = MutationOptions(
-        document: gql(GraphQLQueries.updateAddress),
-        variables: {
-          'id': address.id,
-          'fullName': address.fullName,
-          'phoneNumber': address.phoneNumber,
-          'pincode': address.pincode,
-          'addressLine1': address.addressLine1,
-          'addressLine2': address.addressLine2,
-          'city': address.city,
-          'state': address.state,
-          'country': address.country,
-          'isDefault': address.isDefault,
-        },
+      final QueryResult result = await _client.mutate(
+        MutationOptions(
+          document: gql(GraphQLQueries.updateAddress),
+          variables: {
+            'id': addressId,
+            'fullName': fullName,
+            'phoneNumber': phoneNumber,
+            'pincode': pincode,
+            'addressLine1': addressLine1,
+            'addressLine2': addressLine2,
+            'city': city,
+            'state': state,
+            'country': country,
+            'isDefault': isDefault,
+          },
+        ),
       );
-
-      final QueryResult result = await _client.mutate(options);
 
       if (result.hasException) {
         throw Exception(result.exception.toString());
       }
 
-      final updatedAddress = result.data?['updateAddress'];
-      if (updatedAddress == null) {
-        throw Exception('Failed to update address');
+      if (result.data == null || result.data!['updateAddress'] == null) {
+        return null;
       }
 
-      // Publish address
-      await _publishAddress(address.id!);
+      final updatedAddress = result.data!['updateAddress'];
+
+      // Publish the address (required for Hygraph)
+      await _publishAddress(addressId);
 
       return AddressModel.fromJson({
         ...updatedAddress as Map<String, dynamic>,
-        'userId': userId,
+        'userId': existingAddress.userId,
       });
     } catch (e) {
       throw Exception('Error updating address: $e');
     }
   }
 
-  // Delete address
+  // Delete an address
   Future<bool> deleteAddress(String addressId) async {
     try {
-      final MutationOptions options = MutationOptions(
-        document: gql(GraphQLQueries.deleteAddress),
-        variables: {'id': addressId},
+      final QueryResult result = await _client.mutate(
+        MutationOptions(
+          document: gql(GraphQLQueries.deleteAddress),
+          variables: {'id': addressId},
+        ),
       );
-
-      final QueryResult result = await _client.mutate(options);
 
       if (result.hasException) {
         throw Exception(result.exception.toString());
       }
 
-      return result.data?['deleteAddress'] != null;
+      return result.data != null && result.data!['deleteAddress'] != null;
     } catch (e) {
       throw Exception('Error deleting address: $e');
     }
   }
 
-  // Set address as default
-  Future<AddressModel> setDefaultAddress(String addressId) async {
+  // Set an address as default (unset others first)
+  Future<bool> setDefaultAddress(String addressId) async {
     try {
       final address = await getAddressById(addressId);
       if (address == null) {
-        throw Exception('Address not found');
+        return false;
       }
 
-      final updatedAddress = address.copyWith(isDefault: true);
-      return await updateAddress(updatedAddress);
+      // Unset all default addresses for this user
+      await _unsetAllDefaultAddresses(address.userId);
+
+      // Update this address to be default
+      final updated = await updateAddress(
+        addressId: addressId,
+        fullName: address.fullName,
+        phoneNumber: address.phoneNumber,
+        pincode: address.pincode,
+        addressLine1: address.addressLine1,
+        addressLine2: address.addressLine2,
+        city: address.city,
+        state: address.state,
+        country: address.country,
+        isDefault: true,
+      );
+
+      return updated != null;
     } catch (e) {
       throw Exception('Error setting default address: $e');
     }
   }
 
-  // Get default address
-  Future<AddressModel?> getDefaultAddress() async {
+  // Get the default address for a user
+  Future<AddressModel?> getDefaultAddress(String userId) async {
     try {
-      final addresses = await getUserAddresses();
-      try {
-        return addresses.firstWhere((addr) => addr.isDefault);
-      } catch (e) {
-        return addresses.isNotEmpty ? addresses.first : null;
-      }
+      final addresses = await getAddressesByUserId(userId);
+      return addresses.firstWhere(
+        (address) => address.isDefault,
+        orElse: () => addresses.isNotEmpty ? addresses.first : throw StateError('No addresses'),
+      );
     } catch (e) {
-      throw Exception('Error getting default address: $e');
+      return null;
     }
   }
 
-  // Helper: Unset default addresses (except excluded ID)
-  Future<void> _unsetDefaultAddresses(String userId, {String? excludeId}) async {
+  // Helper: Unset all default addresses for a user
+  Future<void> _unsetAllDefaultAddresses(String userId) async {
     try {
-      final addresses = await getUserAddresses();
-      for (final address in addresses) {
-        if (address.isDefault && address.id != excludeId) {
-          // Update without republishing immediately
-          await _client.mutate(
-            MutationOptions(
-              document: gql(GraphQLQueries.updateAddress),
-              variables: {
-                'id': address.id,
-                'fullName': address.fullName,
-                'phoneNumber': address.phoneNumber,
-                'pincode': address.pincode,
-                'addressLine1': address.addressLine1,
-                'addressLine2': address.addressLine2,
-                'city': address.city,
-                'state': address.state,
-                'country': address.country,
-                'isDefault': false,
-              },
-            ),
-          );
-          if (address.id != null) {
-            await _publishAddress(address.id!);
-          }
-        }
-      }
+      await _client.mutate(
+        MutationOptions(
+          document: gql(GraphQLQueries.unsetAllDefaultAddresses),
+          variables: {'userId': userId},
+        ),
+      );
     } catch (e) {
-      print('Error unsetting default addresses: $e');
-      // Non-critical error, continue
+      // Silently fail - not critical
+      print('Warning: Could not unset default addresses: $e');
     }
   }
 
-  // Helper: Publish address
+  // Helper: Publish address (required for Hygraph)
   Future<void> _publishAddress(String addressId) async {
     try {
       await _client.mutate(
@@ -285,11 +303,11 @@ class AddressService {
         ),
       );
     } catch (e) {
-      print('Error publishing address: $e');
-      // Non-critical error
+      // Silently fail - address is still created/updated
+      print('Warning: Could not publish address: $e');
     }
   }
 }
 
-// Global instance
+// Singleton instance
 final addressService = AddressService();

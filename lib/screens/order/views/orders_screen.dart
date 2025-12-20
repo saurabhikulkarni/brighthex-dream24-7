@@ -110,7 +110,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: _getStatusColor(order.status.toString().split('.').last)
+                                color: _getStatusColor(order.orderStatus.toString().split('.').last)
                                     .withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(4),
                               ),

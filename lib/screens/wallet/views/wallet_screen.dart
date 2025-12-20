@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/services/razorpay_service.dart';
 import 'package:shop/services/user_service.dart';
+import 'package:shop/services/auth_service.dart';
 import 'package:uuid/uuid.dart';
 
 import 'components/transaction_history_card.dart';
@@ -115,18 +116,25 @@ class _WalletScreenState extends State<WalletScreen> {
     }
   }
 
-  void _initiatePayment() {
+  void _initiatePayment() async {
     const uuid = Uuid();
     final orderId = '#${uuid.v4().substring(0, 8).toUpperCase()}';
+
+    // Fetch user data from AuthService
+    final authService = AuthService();
+    final userPhone = await authService.getUserPhone() ?? '+91 0000000000';
+    final userName = await authService.getUserName() ?? 'Customer';
+    // TODO: Get user email from user profile/backend when available
+    final userEmail = 'customer@dream247.com'; // Placeholder - update when email is available in user profile
 
     final razorpayService = RazorpayService();
     
     razorpayService.startPayment(
       orderId: orderId,
       amount: _selectedTopUpAmount,
-      userEmail: 'user@example.com',
-      userPhone: '+91 9999999999',
-      userName: 'Customer',
+      userEmail: userEmail,
+      userPhone: userPhone,
+      userName: userName,
       onSuccess: (response) async {
         // Payment successful, add money to wallet
         await _addMoney(_selectedTopUpAmount);

@@ -51,15 +51,42 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   @override
   void initState() {
     super.initState();
-    fullNameController = TextEditingController(text: widget.fullName);
-    emailController = TextEditingController(text: widget.emailId);
-    phoneController = TextEditingController(text: widget.phoneNumber);
-    houseNumberController = TextEditingController(text: widget.houseNumber);
-    roadNameController = TextEditingController(text: widget.roadName);
-    landmarkController = TextEditingController(text: widget.landmark);
-    pincodeController = TextEditingController(text: widget.pincode);
-    cityController = TextEditingController(text: widget.city);
-    stateController = TextEditingController(text: widget.state);
+    fullNameController = TextEditingController(text: widget.fullName ?? '');
+    emailController = TextEditingController(text: widget.emailId ?? '');
+    phoneController = TextEditingController(text: widget.phoneNumber ?? '');
+    houseNumberController = TextEditingController(text: widget.houseNumber ?? '');
+    roadNameController = TextEditingController(text: widget.roadName ?? '');
+    landmarkController = TextEditingController(text: widget.landmark ?? '');
+    pincodeController = TextEditingController(text: widget.pincode ?? '');
+    cityController = TextEditingController(text: widget.city ?? '');
+    stateController = TextEditingController(text: widget.state ?? '');
+    
+    // If editing, load address data from service
+    if (widget.addressId != null && widget.addressId!.isNotEmpty) {
+      _loadAddressData();
+    }
+  }
+
+  Future<void> _loadAddressData() async {
+    if (widget.addressId == null) return;
+    
+    try {
+      final address = await addressService.getAddressById(widget.addressId!);
+      if (address != null && mounted) {
+        setState(() {
+          fullNameController.text = address.fullName;
+          phoneController.text = address.phoneNumber;
+          houseNumberController.text = address.addressLine1;
+          roadNameController.text = address.addressLine2 ?? '';
+          pincodeController.text = address.pincode;
+          cityController.text = address.city;
+          stateController.text = address.state;
+        });
+      }
+    } catch (e) {
+      // Silently fail - user can still edit manually
+      print('Error loading address: $e');
+    }
   }
 
   @override
@@ -114,13 +141,12 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   Future<void> _saveAddress() async {
     // Validate required fields
-    if (fullNameController.text.isEmpty ||
-        phoneController.text.isEmpty ||
-        houseNumberController.text.isEmpty ||
-        roadNameController.text.isEmpty ||
-        pincodeController.text.isEmpty ||
-        cityController.text.isEmpty ||
-        stateController.text.isEmpty) {
+    if (fullNameController.text.trim().isEmpty ||
+        phoneController.text.trim().isEmpty ||
+        houseNumberController.text.trim().isEmpty ||
+        pincodeController.text.trim().isEmpty ||
+        cityController.text.trim().isEmpty ||
+        stateController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all required fields')),
       );
@@ -137,28 +163,44 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
         throw Exception('User not logged in');
       }
 
-      // Create address model
-      final address = AddressModel(
-        id: widget.addressId,
-        userId: userId,
-        fullName: fullNameController.text,
-        phoneNumber: phoneController.text,
-        pincode: pincodeController.text,
-        addressLine1: houseNumberController.text,
-        addressLine2: roadNameController.text,
-        city: cityController.text,
-        state: stateController.text,
-        country: 'India',
-        isDefault: false, // You can add a checkbox for this if needed
-      );
-
       // Save address using service
+      AddressModel? savedAddress;
       if (widget.addressId != null) {
         // Update existing address
-        await addressService.updateAddress(address);
+        savedAddress = await addressService.updateAddress(
+          addressId: widget.addressId!,
+          fullName: fullNameController.text.trim(),
+          phoneNumber: phoneController.text.trim(),
+          pincode: pincodeController.text.trim(),
+          addressLine1: houseNumberController.text.trim(),
+          addressLine2: roadNameController.text.trim().isNotEmpty 
+              ? roadNameController.text.trim() 
+              : null,
+          city: cityController.text.trim(),
+          state: stateController.text.trim(),
+          country: 'India',
+          isDefault: false, // You can add a checkbox for this if needed
+        );
       } else {
         // Create new address
-        await addressService.createAddress(address);
+        savedAddress = await addressService.createAddress(
+          userId: userId,
+          fullName: fullNameController.text.trim(),
+          phoneNumber: phoneController.text.trim(),
+          pincode: pincodeController.text.trim(),
+          addressLine1: houseNumberController.text.trim(),
+          addressLine2: roadNameController.text.trim().isNotEmpty 
+              ? roadNameController.text.trim() 
+              : null,
+          city: cityController.text.trim(),
+          state: stateController.text.trim(),
+          country: 'India',
+          isDefault: false, // You can add a checkbox for this if needed
+        );
+      }
+
+      if (savedAddress == null) {
+        throw Exception('Failed to save address');
       }
 
       if (!mounted) return;

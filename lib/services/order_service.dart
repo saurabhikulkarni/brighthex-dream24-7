@@ -29,7 +29,7 @@ class Order {
   final DateTime orderDate;
   final List<OrderItem> items;
   final int totalTokens;
-  final String status; // pending, confirmed, shipped, delivered, cancelled
+  final String orderStatus; // pending, confirmed, shipped, delivered, cancelled
   final String? trackingNumber;
   final String? courierName;
   final ShiprocketOrderData? shiprocketData;
@@ -39,7 +39,7 @@ class Order {
     DateTime? orderDate,
     required this.items,
     required this.totalTokens,
-    this.status = 'confirmed',
+    this.orderStatus = 'confirmed',
     this.trackingNumber,
     this.courierName,
     this.shiprocketData,
@@ -58,7 +58,7 @@ class Order {
 
   // Create a copy with updated fields
   Order copyWith({
-    String? status,
+    String? orderStatus,
     String? trackingNumber,
     String? courierName,
     ShiprocketOrderData? shiprocketData,
@@ -68,7 +68,7 @@ class Order {
       orderDate: orderDate,
       items: items,
       totalTokens: totalTokens,
-      status: status ?? this.status,
+      orderStatus: orderStatus ?? this.orderStatus,
       trackingNumber: trackingNumber ?? this.trackingNumber,
       courierName: courierName ?? this.courierName,
       shiprocketData: shiprocketData ?? this.shiprocketData,
@@ -109,7 +109,7 @@ class OrderService {
 
   // Get orders by status
   List<Order> getOrdersByStatus(String status) {
-    return _orders.where((order) => order.status == status).toList();
+    return _orders.where((order) => order.orderStatus == status).toList();
   }
 
   // Update order status
@@ -117,7 +117,7 @@ class OrderService {
     final index = _orders.indexWhere((order) => order.id == orderId);
     if (index != -1) {
       final oldOrder = _orders[index];
-      final updatedOrder = oldOrder.copyWith(status: newStatus);
+      final updatedOrder = oldOrder.copyWith(orderStatus: newStatus);
       _orders[index] = updatedOrder;
     }
   }
@@ -135,7 +135,7 @@ class OrderService {
       String mappedStatus = _mapShiprocketStatus(shiprocketData.orderStatus);
       
       final updatedOrder = oldOrder.copyWith(
-        status: mappedStatus,
+        orderStatus: mappedStatus,
         trackingNumber: shiprocketData.trackingNumber,
         courierName: shiprocketData.courierName,
         shiprocketData: shiprocketData,
@@ -221,7 +221,7 @@ class OrderService {
       final order = Order(
         items: items,
         totalTokens: totalTokens,
-        status: 'confirmed',
+        orderStatus: 'confirmed',
       );
 
       // Add order to service
@@ -268,7 +268,7 @@ class OrderService {
         ),
       ],
       totalTokens: 450,
-      status: 'delivered',
+      orderStatus: 'delivered',
       trackingNumber: 'DEL123456',
       courierName: 'DELHIVERY',
       shiprocketData: ShiprocketOrderData(
@@ -294,7 +294,7 @@ class OrderService {
         ),
       ],
       totalTokens: 780,
-      status: 'shipped',
+      orderStatus: 'shipped',
       trackingNumber: 'TRACK789012',
       courierName: 'FedEx',
       shiprocketData: ShiprocketOrderData(
@@ -327,7 +327,7 @@ class OrderService {
         ),
       ],
       totalTokens: 1040,
-      status: 'confirmed',
+      orderStatus: 'confirmed',
       shiprocketData: ShiprocketOrderData(
         orderId: 'SR003',
         orderStatus: 'Processing',

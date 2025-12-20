@@ -1,54 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/screen_export.dart';
-
-class Address {
-  final String id;
-  final String fullName;
-  final String email;
-  final String phone;
-  final String houseNumber;
-  final String roadName;
-  final String landmark;
-  final String pincode;
-  final String city;
-  final String state;
-  bool isDefault;
-
-  Address({
-    required this.id,
-    required this.fullName,
-    this.email = '',
-    this.phone = '',
-    this.houseNumber = '',
-    this.roadName = '',
-    this.landmark = '',
-    required this.pincode,
-    required this.city,
-    this.state = '',
-    this.isDefault = false,
-  });
-
-  // For backward compatibility with old Address constructor
-  Address.simple({
-    required String id,
-    required String name,
-    required String address,
-    required String city,
-    required String zipCode,
-    required bool isDefault,
-  })  : id = id,
-        fullName = name,
-        email = '',
-        phone = '',
-        houseNumber = address,
-        roadName = '',
-        landmark = '',
-        pincode = zipCode,
-        city = city,
-        state = '',
-        isDefault = isDefault;
-}
+import 'package:shop/models/address_model.dart';
+import 'package:shop/services/address_service.dart';
+import 'package:shop/services/user_service.dart';
 
 class AddressesScreen extends StatefulWidget {
   const AddressesScreen({super.key});
@@ -58,8 +13,9 @@ class AddressesScreen extends StatefulWidget {
 }
 
 class _AddressesScreenState extends State<AddressesScreen> {
-  late List<Address> addresses;
+  List<AddressModel> addresses = [];
   bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -67,75 +23,120 @@ class _AddressesScreenState extends State<AddressesScreen> {
     _loadAddresses();
   }
 
-  void _loadAddresses() {
+  Future<void> _loadAddresses() async {
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
-    // Load addresses from GraphQL or local mock data
-    addresses = [
-      Address(
-        id: "1",
-        fullName: "John Doe",
-        email: "john@example.com",
-        phone: "+1 (555) 123-4567",
-        houseNumber: "123",
-        roadName: "Main Street, Apt 4B",
-        landmark: "Near Central Park",
-        pincode: "10001",
-        city: "New York",
-        state: "NY",
-        isDefault: true,
-      ),
-      Address(
-        id: "2",
-        fullName: "John Doe",
-        email: "john@example.com",
-        phone: "+1 (555) 123-4567",
-        houseNumber: "456",
-        roadName: "Business Ave, Suite 200",
-        landmark: "Business District",
-        pincode: "10002",
-        city: "New York",
-        state: "NY",
-        isDefault: false,
-      ),
-      Address(
-        id: "3",
-        fullName: "John Doe",
-        email: "john@example.com",
-        phone: "+1 (555) 123-4567",
-        houseNumber: "789",
-        roadName: "Oak Road",
-        landmark: "Residential Area",
-        pincode: "02101",
-        city: "Boston",
-        state: "MA",
-        isDefault: false,
-      ),
-    ];
-    setState(() {
-      _isLoading = false;
-    });
-  }
 
-  void _setDefaultAddress(String addressId) {
-    setState(() {
-      for (var address in addresses) {
-        address.isDefault = address.id == addressId;
+    try {
+      final userId = UserService.getCurrentUserId();
+      if (userId == null) {
+        setState(() {
+          addresses = [];
+          _isLoading = false;
+          _errorMessage = 'Please login to view your addresses';
+        });
+        return;
       }
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Default address updated")),
-    );
+
+      final fetchedAddresses = await addressService.getAddressesByUserId(userId);
+      setState(() {
+        addresses = fetchedAddresses;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Failed to load addresses: ${e.toString()}';
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_errorMessage ?? 'Failed to load addresses'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
-  void _deleteAddress(String addressId) {
-    setState(() {
-      addresses.removeWhere((address) => address.id == addressId);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Address deleted")),
+  Future<void> _setDefaultAddress(String addressId) async {
+    try {
+      final success = await addressService.setDefaultAddress(addressId);
+      if (success) {
+        await _loadAddresses(); // Reload to reflect changes
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Default address updated"),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        throw Exception('Failed to update default address');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to update default address: ${e.toString()}"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteAddress(String addressId) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Address'),
+        content: const Text('Are you sure you want to delete this address?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
+
+    if (confirmed != true) return;
+
+    try {
+      final success = await addressService.deleteAddress(addressId);
+      if (success) {
+        await _loadAddresses(); // Reload to reflect changes
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Address deleted"),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        throw Exception('Failed to delete address');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Failed to delete address: ${e.toString()}"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -158,6 +159,32 @@ class _AddressesScreenState extends State<AddressesScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 80,
+                        color: Colors.red.shade300,
+                      ),
+                      const SizedBox(height: defaultPadding),
+                      Text(
+                        _errorMessage!,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Colors.red,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: defaultPadding),
+                      ElevatedButton(
+                        onPressed: _loadAddresses,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
           : addresses.isEmpty
               ? Center(
                   child: Column(
@@ -172,6 +199,12 @@ class _AddressesScreenState extends State<AddressesScreen> {
                       Text(
                         "No addresses saved",
                         style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: defaultPadding / 2),
+                      Text(
+                        "Tap the + button to add a new address",
+                        style: Theme.of(context).textTheme.bodySmall,
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),
@@ -217,14 +250,14 @@ class _AddressesScreenState extends State<AddressesScreen> {
                         ),
                         const SizedBox(height: defaultPadding / 2),
                         Text(
-                          '${address.houseNumber}, ${address.roadName}, ${address.city}',
+                          '${address.addressLine1}${address.addressLine2 != null && address.addressLine2!.isNotEmpty ? ", ${address.addressLine2}" : ""}, ${address.city}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
-                        if (address.phone.isNotEmpty)
+                        if (address.phoneNumber.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
-                              'Phone: ${address.phone}',
+                              'Phone: ${address.phoneNumber}',
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Colors.grey[600],
                                     fontSize: 12,
@@ -235,9 +268,9 @@ class _AddressesScreenState extends State<AddressesScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            if (!address.isDefault)
+                            if (!address.isDefault && address.id != null)
                               ElevatedButton(
-                                onPressed: () => _setDefaultAddress(address.id),
+                                onPressed: () => _setDefaultAddress(address.id!),
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 16,
@@ -254,12 +287,13 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                   arguments: {
                                     'addressId': address.id,
                                     'fullName': address.fullName,
-                                    'phoneNumber': address.phone,
-                                    'houseNumber': address.houseNumber,
-                                    'roadName': address.roadName,
+                                    'phoneNumber': address.phoneNumber,
+                                    'addressLine1': address.addressLine1,
+                                    'addressLine2': address.addressLine2,
                                     'pincode': address.pincode,
                                     'city': address.city,
                                     'state': address.state,
+                                    'country': address.country,
                                   },
                                 ).then((result) {
                                   if (result != null && result is Map && result['success'] == true) {
@@ -276,7 +310,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                               child: const Text("Edit"),
                             ),
                             ElevatedButton(
-                              onPressed: () => _deleteAddress(address.id),
+                              onPressed: address.id != null ? () => _deleteAddress(address.id!) : null,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,
                                 padding: const EdgeInsets.symmetric(

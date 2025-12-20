@@ -12,12 +12,12 @@ class RazorpayConfig {
   static const String keySecret = 'STORED_ON_BACKEND_SERVER';
 
   // Backend API base URL for Razorpay operations
-  static const String backendBaseUrl = 'https://brighthex-dream-24-7-backend-psi.vercel.app';
+  static const String backendBaseUrl = 'https://brighthex-dream-24-7-backend-psi.vercel.app/api';
   
   // Backend API endpoints
-  static const String createOrderEndpoint = '$backendBaseUrl/api/payments/create-order';
-  static const String verifySignatureEndpoint = '$backendBaseUrl/api/payments/verify-signature';
-  static const String getPaymentEndpoint = '$backendBaseUrl/api/payments';
+  static const String createOrderEndpoint = '$backendBaseUrl/payments/create-order';
+  static const String verifySignatureEndpoint = '$backendBaseUrl/payments/verify-signature';
+  static const String getPaymentEndpoint = '$backendBaseUrl/payments';
 
   // Merchant Name/App Name
   static const String merchantName = 'Dream247';
@@ -35,7 +35,8 @@ class RazorpayConfig {
   static const String themeColor = '#6441A5';
 
   // Logo URL (Optional - should be HTTPS)
-  static const String logoUrl = 'https://your-domain.com/logo.png';
+  // TODO: Update with your actual logo URL or set to empty string if not needed
+  static const String logoUrl = '';
 
   // Website URL
  // static const String websiteUrl = 'https://dream247.com';

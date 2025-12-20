@@ -153,7 +153,7 @@ class PaymentService {
           'razorpayPaymentId': payment.razorpayPaymentId,
           'amount': payment.amount,
           'currency': payment.currency,
-          'status': _paymentStatusToString(payment.status),
+          'paymentStatus': _paymentStatusToString(payment.paymentStatus),
           'method': _paymentMethodToString(payment.method),
           'orderId': payment.orderId,
         },
@@ -271,7 +271,7 @@ class PaymentService {
       orderId: orderId ?? '',
       amount: (json['amount'] ?? 0).toDouble(),
       currency: json['currency'] ?? 'INR',
-      status: _stringToPaymentStatus(json['status']?.toString() ?? 'pending'),
+      paymentStatus: _stringToPaymentStatus(json['paymentStatus']?.toString() ?? json['status']?.toString() ?? 'pending'),
       method: _stringToPaymentMethod(json['method']?.toString()),
       razorpayPaymentId: json['razorpayPaymentId']?.toString(),
       razorpayOrderId: json['razorpayOrderId']?.toString(),
@@ -279,7 +279,7 @@ class PaymentService {
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
       completedAt: json['updatedAt'] != null &&
-              _stringToPaymentStatus(json['status']?.toString() ?? '') == PaymentStatus.completed
+              _stringToPaymentStatus(json['paymentStatus']?.toString() ?? json['status']?.toString() ?? '') == PaymentStatus.completed
           ? DateTime.parse(json['updatedAt'])
           : null,
     );

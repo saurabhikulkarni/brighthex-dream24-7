@@ -167,7 +167,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
     }
 
     return _paymentHistory
-        .where((payment) => payment.status.toString() == _selectedFilter)
+        .where((payment) => payment.paymentStatus.toString() == _selectedFilter)
         .toList();
   }
 
@@ -206,7 +206,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
             ),
             _buildDetailRow(
               'Status',
-              RazorpayService().getStatusText(payment.status),
+              RazorpayService().getStatusText(payment.paymentStatus),
             ),
             _buildDetailRow(
               'Payment Method',
@@ -234,7 +234,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
             if (payment.failureReason != null)
               _buildDetailRow('Failure Reason', payment.failureReason!),
             const SizedBox(height: defaultPadding * 2),
-            if (payment.status == PaymentStatus.failed)
+            if (payment.paymentStatus == PaymentStatus.failed)
               ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
@@ -242,7 +242,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
                 },
                 child: const Text('Retry Payment'),
               ),
-            if (payment.status == PaymentStatus.completed)
+            if (payment.paymentStatus == PaymentStatus.completed)
               Row(
                 children: [
                   Expanded(
