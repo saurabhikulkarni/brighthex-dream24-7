@@ -253,7 +253,7 @@ class _GetHelpScreenState extends State<GetHelpScreen> {
       child: Container(
         width: 8,
         height: 8,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: Colors.grey,
           shape: BoxShape.circle,
         ),
@@ -306,7 +306,7 @@ class _GetHelpScreenState extends State<GetHelpScreen> {
             onPressed: _isTyping ? null : _sendMessage,
             mini: true,
             backgroundColor: Theme.of(context).primaryColor,
-            child: Icon(
+            child: const Icon(
               Icons.send,
               color: Colors.white,
               size: 20,

@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:crypto/crypto.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'dart:convert';
 import 'package:shop/config/razorpay_config.dart';
-import 'package:shop/config/razorpay_backend_config.dart';
 import 'package:shop/models/payment_model.dart';
 import 'package:http/http.dart' as http;
 
@@ -158,13 +158,7 @@ class RazorpayService {
     }
   }
 
-  /// Get backend config
-  Map<String, String> _getBackendConfig() {
-    return {
-      'createOrderEndpoint': RazorpayBackendConfig.createOrderEndpoint,
-      'verifySignatureEndpoint': RazorpayBackendConfig.verifySignatureEndpoint,
-    };
-  }
+
 
   /// Verify payment signature
   Future<bool> verifyPaymentSignature({

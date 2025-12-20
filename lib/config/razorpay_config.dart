@@ -81,7 +81,7 @@ class RazorpayConfig {
 
   /// Validate configuration
   static bool isConfigured() {
-    return keyId != 'YOUR_RAZORPAY_KEY_ID' &&
-        keySecret != 'YOUR_RAZORPAY_KEY_SECRET';
+    return keyId != 'rzp_test_RqEBl9COpBTyyz' &&
+        keySecret != 'STORED_ON_BACKEND_SERVER';
   }
 }

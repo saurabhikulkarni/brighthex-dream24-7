@@ -30,7 +30,7 @@ class TransactionHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final amount_str = amount.toStringAsFixed(0);
+    final amountStr = amount.toStringAsFixed(0);
     
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -75,7 +75,7 @@ class TransactionHistoryCard extends StatelessWidget {
           ),
         ),
         trailing: Text(
-          isIncome ? "+ ₹$amount_str" : "- ₹$amount_str",
+          isIncome ? "+ ₹$amountStr" : "- ₹$amountStr",
           style: Theme.of(context).textTheme.titleSmall!.copyWith(
                 color: isIncome ? Colors.green : Colors.red,
                 fontWeight: FontWeight.w600,

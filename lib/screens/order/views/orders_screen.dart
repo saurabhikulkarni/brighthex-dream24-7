@@ -170,7 +170,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    Icon(
+                                    const Icon(
                                       Icons.track_changes,
                                       size: 16,
                                       color: Colors.grey,

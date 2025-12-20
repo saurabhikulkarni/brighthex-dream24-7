@@ -206,9 +206,9 @@ class _EntryPointState extends State<EntryPoint> {
                 child: Container(
                   width: highlightWidth,
                   height: 56,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     gradient: appPrimaryGradient,
-                    borderRadius: const BorderRadius.only(
+                    borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(12),
                       topRight: Radius.circular(12),
                     ),

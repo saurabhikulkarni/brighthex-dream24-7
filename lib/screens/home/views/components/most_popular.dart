@@ -63,13 +63,13 @@ class _MostPopularState extends State<MostPopular> {
         if (_isLoading)
           const SeconderyProductsSkelton()
         else if (_error != null)
-          Padding(
-            padding: const EdgeInsets.all(defaultPadding),
+          const Padding(
+            padding: EdgeInsets.all(defaultPadding),
             child: Text('Error loading products'),
           )
         else if (_products.isEmpty)
-          Padding(
-            padding: const EdgeInsets.all(defaultPadding),
+          const Padding(
+            padding: EdgeInsets.all(defaultPadding),
             child: Text('No popular products available'),
           )
         else

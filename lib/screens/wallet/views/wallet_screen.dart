@@ -257,7 +257,7 @@ class _WalletScreenState extends State<WalletScreen> {
             content: Text(
               "Payment cancelled",
             ),
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
             backgroundColor: Colors.orange,
           ),
         );
