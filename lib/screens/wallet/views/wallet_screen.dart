@@ -127,6 +127,18 @@ class _WalletScreenState extends State<WalletScreen> {
       return;
     }
 
+    // Check if user is logged in
+    final userId = UserService.getCurrentUserId();
+    if (userId == null || userId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please log in to add money to wallet'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     // Show loading indicator
     showDialog(
       context: context,
@@ -151,7 +163,7 @@ class _WalletScreenState extends State<WalletScreen> {
         receipt: receipt,
         notes: {
           'type': 'wallet_topup',
-          'userId': UserService.getCurrentUserId(),
+          'userId': userId, // Use validated userId
         },
       );
 
