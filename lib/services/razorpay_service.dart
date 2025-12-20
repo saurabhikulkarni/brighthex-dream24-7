@@ -174,8 +174,7 @@ class RazorpayService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['success'] == true && data['verified'] == true;
-      } else {
+        return data['verified'] ?? false;
         try {
           final errorData = jsonDecode(response.body);
           print('Error verifying signature: ${errorData['message'] ?? response.body}');
