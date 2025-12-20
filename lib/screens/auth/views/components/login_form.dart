@@ -189,10 +189,13 @@ class _LogInFormState extends State<LogInForm> {
         // First, try to find existing user by mobile number
         final graphQLClient = GraphQLService.getClient();
         
+        // Clean phone number (remove non-digit characters)
+        final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+        
         // Query for existing user
         final QueryOptions queryOptions = QueryOptions(
           document: gql(GraphQLQueries.getUserByMobileNumber),
-          variables: {'mobileNumber': phone},
+          variables: {'mobileNumber': cleanPhone},
         );
         
         QueryResult queryResult = await graphQLClient.query(queryOptions);
@@ -213,7 +216,7 @@ class _LogInFormState extends State<LogInForm> {
               'firstName': name,
               'lastName': '',
               'username': phone, // Use phone as username
-              'mobileNumber': phone,
+              'mobileNumber': cleanPhone, // Use cleaned phone as String
             },
           );
           

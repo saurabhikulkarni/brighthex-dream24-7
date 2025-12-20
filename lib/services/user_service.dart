@@ -11,7 +11,7 @@ class UserService {
 
   // Set current user ID (call this after login)
   static void setCurrentUserId(String userId) {
-    _currentUserId = userId;
+    _currentUserId = userId.isEmpty ? null : userId;
   }
 
   // Get current user ID
@@ -48,10 +48,13 @@ class UserService {
   // Fetch user by mobile number (for login with OTP)
   Future<UserDetailModel?> getUserByMobileNumber(String mobileNumber) async {
     try {
+      // Clean phone number (remove non-digit characters)
+      final cleanPhone = mobileNumber.replaceAll(RegExp(r'[^\d]'), '');
+      
       final QueryResult result = await _client.query(
         QueryOptions(
           document: gql(GraphQLQueries.getUserByMobileNumber),
-          variables: {'mobileNumber': mobileNumber},
+          variables: {'mobileNumber': cleanPhone},
           fetchPolicy: FetchPolicy.networkOnly,
         ),
       );
