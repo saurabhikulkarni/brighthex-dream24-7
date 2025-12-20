@@ -153,20 +153,24 @@ class OrderServiceGraphQL {
       // Generate order number
       final orderNumber = _generateOrderNumber();
       
-      // Create order - use different mutation based on whether address is provided
+      // Create order using address/non-address mutation variant to match schema
+      final Map<String, dynamic> variables = {
+        'userId': userId,
+        'orderNumber': orderNumber,
+        'totalAmount': totalAmount,
+        'orderStatus': _orderStatusToString(status),
+      };
+
       final bool hasAddress = shippingAddressId != null && shippingAddressId.isNotEmpty;
-      
+      if (hasAddress) {
+        variables['shippingAddressId'] = shippingAddressId;
+      }
+
       final MutationOptions options = MutationOptions(
-        document: gql(hasAddress 
-          ? GraphQLQueries.createOrderWithAddress 
-          : GraphQLQueries.createOrderWithoutAddress),
-        variables: {
-          'userId': userId,
-          'orderNumber': orderNumber,
-          'totalAmount': totalAmount,
-          'orderStatus': _orderStatusToString(status),
-          if (hasAddress) 'shippingAddressId': shippingAddressId!,
-        },
+        document: gql(hasAddress
+            ? GraphQLQueries.createOrderWithAddress
+            : GraphQLQueries.createOrderWithoutAddress),
+        variables: variables,
       );
 
       final QueryResult result = await _client.mutate(options);
@@ -446,35 +450,25 @@ class OrderServiceGraphQL {
                                   sizeId.isNotEmpty && 
                                   !sizeId.startsWith('local_');
       
-      final QueryResult result;
+      final Map<String, dynamic> variables = {
+        'orderId': orderId,
+        'productId': productId,
+        'quantity': quantity,
+        'pricePerUnit': pricePerUnit,
+        'totalPrice': totalPrice,
+      };
+      
+      // Add sizeId to variables if valid
       if (hasValidSizeId) {
-        result = await _client.mutate(
-          MutationOptions(
-            document: gql(GraphQLQueries.createOrderItemWithSize),
-            variables: {
-              'orderId': orderId,
-              'productId': productId,
-              'sizeId': sizeId!,
-              'quantity': quantity.toString(),
-              'pricePerUnit': pricePerUnit,
-              'totalPrice': totalPrice,
-            },
-          ),
-        );
-      } else {
-        result = await _client.mutate(
-          MutationOptions(
-            document: gql(GraphQLQueries.createOrderItemWithoutSize),
-            variables: {
-              'orderId': orderId,
-              'productId': productId,
-              'quantity': quantity.toString(),
-              'pricePerUnit': pricePerUnit,
-              'totalPrice': totalPrice,
-            },
-          ),
-        );
+        variables['sizeId'] = sizeId!;
       }
+      
+      final QueryResult result = await _client.mutate(
+        MutationOptions(
+          document: gql(GraphQLQueries.createOrderItem),
+          variables: variables,
+        ),
+      );
 
       if (result.hasException) {
         throw Exception(result.exception.toString());
