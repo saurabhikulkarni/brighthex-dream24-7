@@ -109,13 +109,19 @@ class WishlistService {
     await _saveToPreferences();
   }
 
-  // Toggle wishlist (add if not exists, remove if exists)
+  // Toggle wishlist (add if not exists, remove if exists) + sync with backend
   Future<bool> toggleWishlist(ProductModel product, {String? sizeId}) async {
     if (isInWishlist(product.id!)) {
+      // Remove from local cache first
       await removeFromWishlist(product.id!);
+      // Then sync with backend
+      await removeFromWishlistOnBackend(product.id!);
       return false; // Removed
     } else {
+      // Add to local cache first
       await addToWishlist(product, sizeId: sizeId);
+      // Then sync with backend
+      await addToWishlistOnBackend(product.id!, sizeId: sizeId);
       return true; // Added
     }
   }

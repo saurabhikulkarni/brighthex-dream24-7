@@ -31,7 +31,7 @@ class AddedToCartMessageScreen extends StatelessWidget {
               ),
               const SizedBox(height: defaultPadding / 2),
               const Text(
-                "Click the checkout button to complete the purchase process.",
+                "View your cart and proceed to checkout.",
                 textAlign: TextAlign.center,
               ),
               const Spacer(flex: 2),
@@ -43,8 +43,10 @@ class AddedToCartMessageScreen extends StatelessWidget {
               ),
               const SizedBox(height: defaultPadding),
               ElevatedButton(
-                onPressed: () {},
-                child: const Text("Checkout"),
+                onPressed: () {
+                  Navigator.pushNamed(context, cartScreenRoute);
+                },
+                child: const Text("Go to Cart"),
               ),
               const Spacer(),
             ],

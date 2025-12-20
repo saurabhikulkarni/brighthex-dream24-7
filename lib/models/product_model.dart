@@ -47,6 +47,10 @@ class ProductModel {
       'description': description,
       'price': price,
       'category': category?.toJson(),
+      // Preserve image so wishlist/local cache shows correct product visuals
+      'image': {
+        'url': image,
+      },
     };
   }
 }
