@@ -78,12 +78,9 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  # Use a tightly-cropped logo for foreground so it fits the safe zone
   image_path: "assets/images/appicon.png"
-  image_path_android: "assets/images/appicon.png"
-  image_path_ios: "assets/images/appicon.png"
-  adaptive_icon_background: "#6441A5" # brand purple background
-  adaptive_icon_foreground: "assets/logo/dream247_logo.png" # cropped foreground for proper fit
-  adaptive_icon_monochrome: "assets/logo/dream247_logo.png" # Android 13 monochrome
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/appicon.png"
+  adaptive_icon_monochrome: "assets/images/appicon.png"
   min_sdk_android: 21
   remove_alpha_ios: true

@@ -1,11 +1,9 @@
 flutter_launcher_icons:
-  android: "ic_launcher"
+  android: true
   ios: true
   image_path: "assets/images/appicon.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/appicon.png"
+  adaptive_icon_monochrome: "assets/images/appicon.png"
   min_sdk_android: 21
   remove_alpha_channel: true
-  
-  android_adaptive:
-    monochrome_image: "assets/images/appicon.png"
-    background_color: "#FFFFFF"
-    foreground_image: "assets/images/appicon.png"
