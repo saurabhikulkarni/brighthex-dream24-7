@@ -31,7 +31,8 @@ class OnbordingContent extends StatelessWidget {
 
         Image.asset(
           image,
-          height: 250,
+          height: MediaQuery.of(context).size.height * 0.3,
+          fit: BoxFit.contain,
         ),
         if (!isTextOnTop) const Spacer(),
         if (!isTextOnTop)

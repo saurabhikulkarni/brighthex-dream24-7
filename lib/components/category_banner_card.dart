@@ -26,13 +26,18 @@ class CategoryBannerCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(defaultBorderRadious),
       child: Stack(
         children: [
-          // Background Image
+          // Background Image (supports both assets and network)
           AspectRatio(
             aspectRatio: 2.0,
-            child: NetworkImageWithLoader(
-              image,
-              radius: defaultBorderRadious,
-            ),
+            child: image.startsWith('assets/')
+                ? Image.asset(
+                    image,
+                    fit: BoxFit.cover,
+                  )
+                : NetworkImageWithLoader(
+                    image,
+                    radius: defaultBorderRadious,
+                  ),
           ),
           // Dark overlay
           Container(

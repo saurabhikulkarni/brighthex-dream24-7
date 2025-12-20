@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:shop/components/gradient_button.dart';
+import 'package:shop/components/responsive_image.dart';
 
 import 'components/login_form.dart';
 
@@ -22,20 +23,12 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Top hero image: render within SafeArea and avoid fixed cache sizes
-            SafeArea(
-              bottom: false,
-              child: Container(
-                height: MediaQuery.of(context).size.height * 0.35,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage("assets/images/welcome.jpg"),
-                    fit: BoxFit.cover,
-                    alignment: Alignment.topCenter,
-                  ),
-                ),
-              ),
+            // Top hero image: responsive for all Android and iOS devices
+            const ResponsiveImage(
+              imagePath: "assets/images/welcome.jpg",
+              heightPercentage: 55,
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
             ),
             Padding(
               padding: const EdgeInsets.all(defaultPadding),

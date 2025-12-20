@@ -19,6 +19,7 @@ class AddedToCartMessageScreen extends StatelessWidget {
                     ? "assets/Illustration/success.png"
                     : "assets/Illustration/success_dark.png",
                 height: MediaQuery.of(context).size.height * 0.3,
+                fit: BoxFit.contain,
               ),
               const Spacer(flex: 2),
               Text(
