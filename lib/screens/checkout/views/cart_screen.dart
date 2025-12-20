@@ -12,6 +12,7 @@ import 'package:shop/services/order_service_graphql.dart';
 import 'package:shop/services/payment_service.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:shop/services/wallet_service.dart';
+import 'package:shop/services/user_service.dart';
 import 'package:shop/screens/checkout/views/order_confirmation_screen.dart';
 
 class CartScreen extends StatefulWidget {
@@ -64,9 +65,21 @@ class _CartScreenState extends State<CartScreen> {
 
   void _updateQuantity(String cartItemId, int newQuantity) {
     if (newQuantity < 1) return;
-    setState(() {
-      cartService.updateLocalCartQuantity(cartItemId, newQuantity);
-    });
+    
+    try {
+      setState(() {
+        cartService.updateLocalCartQuantity(cartItemId, newQuantity);
+      });
+    } catch (e) {
+      // Show error message if stock is insufficient
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _proceedToPayment(BuildContext context) async {
@@ -159,8 +172,14 @@ class _CartScreenState extends State<CartScreen> {
     );
 
     try {
+      // Get user ID
+      final userId = UserService.getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
       // Get default address
-      final defaultAddress = await addressService.getDefaultAddress();
+      final defaultAddress = await addressService.getDefaultAddress(userId);
       
       // Convert cart items to OrderItemModel for GraphQL
       final orderItems = cartItems.map((cartItem) {
@@ -191,7 +210,7 @@ class _CartScreenState extends State<CartScreen> {
         orderId: order.id ?? '',
         amount: total.toDouble(),
         razorpayOrderId: '', // Wallet payment doesn't have Razorpay order
-        status: PaymentStatus.completed,
+        paymentStatus: PaymentStatus.completed,
         method: PaymentMethod.wallet,
       ));
 

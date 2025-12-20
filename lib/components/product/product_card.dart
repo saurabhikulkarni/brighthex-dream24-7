@@ -33,7 +33,7 @@ class ProductCard extends StatefulWidget {
 }
 
 class _ProductCardState extends State<ProductCard> {
-  late bool _isInWishlist;
+  bool _isInWishlist = false;
 
   @override
   void initState() {
@@ -41,10 +41,24 @@ class _ProductCardState extends State<ProductCard> {
     _checkWishlistStatus();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Re-check wishlist status when dependencies change
+    _checkWishlistStatus();
+  }
+
   void _checkWishlistStatus() {
+    // Check using productId if available
     if (widget.productId != null) {
       setState(() {
         _isInWishlist = wishlistService.isInWishlist(widget.productId!);
+      });
+    } 
+    // Otherwise check using product.id if product is available
+    else if (widget.product != null && widget.product.id != null) {
+      setState(() {
+        _isInWishlist = wishlistService.isInWishlist(widget.product.id!);
       });
     }
   }
@@ -102,82 +116,107 @@ class _ProductCardState extends State<ProductCard> {
                       vertical: context.responsiveSpacing / 2),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        widget.brandName.toUpperCase(),
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium!
-                            .copyWith(fontSize: fontSize),
+                      Flexible(
+                        child: Text(
+                          widget.brandName.toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium!
+                              .copyWith(fontSize: fontSize),
+                        ),
                       ),
-                      const SizedBox(height: defaultPadding / 2),
-                      Text(
-                        widget.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleSmall!
-                            .copyWith(fontSize: fontSize + 2),
+                      const SizedBox(height: 4),
+                      Flexible(
+                        child: Text(
+                          widget.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleSmall!
+                              .copyWith(fontSize: fontSize + 2),
+                        ),
                       ),
                       const Spacer(),
                       widget.priceAfetDiscount != null
-                          ? Row(
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/icons/coin.svg',
-                                  width: 14,
-                                  height: 14,
-                                ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  "${widget.priceAfetDiscount!.toInt()}",
-                                  style: const TextStyle(
-                                    color: Color(0xFF31B0D8),
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                                const SizedBox(width: defaultPadding / 4),
-                                Opacity(
-                                  opacity: 0.5,
-                                  child: SvgPicture.asset(
+                          ? Flexible(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SvgPicture.asset(
                                     'assets/icons/coin.svg',
-                                    width: 12,
-                                    height: 12,
+                                    width: 14,
+                                    height: 14,
                                   ),
-                                ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  "${widget.price.toInt()}",
-                                  style: TextStyle(
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium!
-                                        .color,
-                                    fontSize: 10,
-                                    decoration: TextDecoration.lineThrough,
+                                  const SizedBox(width: 2),
+                                  Flexible(
+                                    child: Text(
+                                      "${widget.priceAfetDiscount!.toInt()}",
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Color(0xFF31B0D8),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: defaultPadding / 4),
+                                  Opacity(
+                                    opacity: 0.5,
+                                    child: SvgPicture.asset(
+                                      'assets/icons/coin.svg',
+                                      width: 12,
+                                      height: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Flexible(
+                                    child: Text(
+                                      "${widget.price.toInt()}",
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        color: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium!
+                                            .color,
+                                        fontSize: 10,
+                                        decoration: TextDecoration.lineThrough,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             )
-                          : Row(
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/icons/coin.svg',
-                                  width: 14,
-                                  height: 14,
-                                ),
-                                const SizedBox(width: 2),
-                                Text(
-                                  "${widget.price.toInt()}",
-                                  style: const TextStyle(
-                                    color: Color(0xFF31B0D8),
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 12,
+                          : Flexible(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/icons/coin.svg',
+                                    width: 14,
+                                    height: 14,
                                   ),
-                                ),
-                              ],
+                                  const SizedBox(width: 2),
+                                  Flexible(
+                                    child: Text(
+                                      "${widget.price.toInt()}",
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Color(0xFF31B0D8),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                     ],
                   ),

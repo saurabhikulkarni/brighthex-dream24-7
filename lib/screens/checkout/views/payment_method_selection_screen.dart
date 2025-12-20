@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/models/payment_model.dart';
 import 'package:shop/services/razorpay_service.dart';
+import 'package:shop/services/auth_service.dart';
 import '../components/payment_method_card.dart';
 
 class PaymentMethodSelectionScreen extends StatefulWidget {
@@ -51,7 +52,7 @@ class _PaymentMethodSelectionScreenState
     _initiatePayment();
   }
 
-  void _initiatePayment() {
+  void _initiatePayment() async {
     setState(() => _isProcessing = true);
 
     showDialog(
@@ -62,6 +63,13 @@ class _PaymentMethodSelectionScreenState
       ),
     );
 
+    // Fetch user data from AuthService
+    final authService = AuthService();
+    final userPhone = await authService.getUserPhone() ?? '+91 0000000000';
+    final userName = await authService.getUserName() ?? 'Customer';
+    // TODO: Get user email from user profile/backend when available
+    final userEmail = 'customer@dream247.com'; // Placeholder - update when email is available in user profile
+
     // Simulate delay for order creation on backend
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
@@ -71,9 +79,9 @@ class _PaymentMethodSelectionScreenState
         _razorpayService.startPayment(
           orderId: widget.orderId,
           amount: widget.totalAmount,
-          userEmail: 'user@example.com', // Get from user data
-          userPhone: '+91 9876543210', // Get from user data
-          userName: 'John Doe', // Get from user data
+          userEmail: userEmail,
+          userPhone: userPhone,
+          userName: userName,
           preferredMethod: _selectedPaymentMethod,
           onSuccess: (response) {
             _handlePaymentSuccess(response);

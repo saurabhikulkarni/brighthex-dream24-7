@@ -5,6 +5,7 @@ import 'package:shop/services/graphql_queries.dart';
 import 'package:shop/services/wallet_service.dart';
 import 'package:shop/services/wishlist_service.dart';
 import 'package:shop/services/cart_service.dart';
+import 'package:shop/services/user_service.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -33,6 +34,17 @@ class AuthService {
   Future<void> initialize() async {
     if (_isInitialized) return;
     _isInitialized = true;
+    
+    // Initialize UserService with userId from SharedPreferences if user is logged in
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString(_userIdKey);
+      if (userId != null && userId.isNotEmpty) {
+        UserService.setCurrentUserId(userId);
+      }
+    } catch (e) {
+      print('Error initializing UserService userId: $e');
+    }
   }
 
   // Check if user is logged in
@@ -108,10 +120,11 @@ class AuthService {
       // Store userId and set it in wallet/wishlist/cart services
       if (userId != null && userId.isNotEmpty) {
         await prefs.setString(_userIdKey, userId);
-        // Set userId in wallet, wishlist, and cart services for GraphQL backend sync
+        // Set userId in wallet, wishlist, cart, and user services for GraphQL backend sync
         walletService.setUserId(userId);
         wishlistService.setUserId(userId);
         cartService.setUserId(userId);
+        UserService.setCurrentUserId(userId);
       }
     } catch (e) {
       print('Error saving login session: $e');
@@ -142,10 +155,11 @@ class AuthService {
       await prefs.remove(_lastLoginKey);
       await prefs.remove(_userIdKey);
       
-      // Clear wallet, wishlist, and cart services on logout
+      // Clear wallet, wishlist, cart, and user services on logout
       walletService.clear();
       wishlistService.clear();
       cartService.clear();
+      UserService.setCurrentUserId(''); // Clear userId in UserService
     } catch (e) {
       print('Error during logout: $e');
     }

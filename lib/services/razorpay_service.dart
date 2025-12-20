@@ -226,7 +226,7 @@ class RazorpayService {
       // This should call your backend API to process refund
       // Example: POST /api/payments/refund
       final response = await http.post(
-        Uri.parse('YOUR_BACKEND_URL/api/payments/refund'),
+        Uri.parse('${RazorpayConfig.backendBaseUrl}/payments/refund'),
         headers: {
           'Content-Type': 'application/json',
         },

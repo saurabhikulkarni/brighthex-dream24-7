@@ -282,6 +282,165 @@ class GraphQLQueries {
     }
   ''';
 
+  // ============ Address Queries & Mutations ============
+  
+  // Get all addresses for a user
+  static const String getAddressesByUser = '''
+    query GetAddressesByUser(\$userId: ID!) {
+      addresses(where: {userDetail: {id: \$userId}}) {
+        id
+        fullName
+        phoneNumber
+        pincode
+        addressLine1
+        addressLine2
+        city
+        state
+        country
+        isDefault
+        createdAt
+        updatedAt
+      }
+    }
+  ''';
+
+  // Get a single address by ID
+  static const String getAddressById = '''
+    query GetAddressById(\$id: ID!) {
+      address(where: {id: \$id}) {
+        id
+        fullName
+        phoneNumber
+        pincode
+        addressLine1
+        addressLine2
+        city
+        state
+        country
+        isDefault
+        createdAt
+        updatedAt
+        userDetail {
+          id
+        }
+      }
+    }
+  ''';
+
+  // Create a new address
+  static const String createAddress = '''
+    mutation CreateAddress(
+      \$userId: ID!
+      \$fullName: String!
+      \$phoneNumber: String!
+      \$pincode: String!
+      \$addressLine1: String!
+      \$addressLine2: String
+      \$city: String!
+      \$state: String!
+      \$country: String!
+      \$isDefault: Boolean!
+    ) {
+      createAddress(
+        data: {
+          userDetail: {connect: {id: \$userId}}
+          fullName: \$fullName
+          phoneNumber: \$phoneNumber
+          pincode: \$pincode
+          addressLine1: \$addressLine1
+          addressLine2: \$addressLine2
+          city: \$city
+          state: \$state
+          country: \$country
+          isDefault: \$isDefault
+        }
+      ) {
+        id
+        fullName
+        phoneNumber
+        pincode
+        addressLine1
+        addressLine2
+        city
+        state
+        country
+        isDefault
+      }
+    }
+  ''';
+
+  // Update an address
+  static const String updateAddress = '''
+    mutation UpdateAddress(
+      \$id: ID!
+      \$fullName: String!
+      \$phoneNumber: String!
+      \$pincode: String!
+      \$addressLine1: String!
+      \$addressLine2: String
+      \$city: String!
+      \$state: String!
+      \$country: String!
+      \$isDefault: Boolean!
+    ) {
+      updateAddress(
+        where: {id: \$id}
+        data: {
+          fullName: \$fullName
+          phoneNumber: \$phoneNumber
+          pincode: \$pincode
+          addressLine1: \$addressLine1
+          addressLine2: \$addressLine2
+          city: \$city
+          state: \$state
+          country: \$country
+          isDefault: \$isDefault
+        }
+      ) {
+        id
+        fullName
+        phoneNumber
+        pincode
+        addressLine1
+        addressLine2
+        city
+        state
+        country
+        isDefault
+      }
+    }
+  ''';
+
+  // Delete an address
+  static const String deleteAddress = '''
+    mutation DeleteAddress(\$id: ID!) {
+      deleteAddress(where: {id: \$id}) {
+        id
+      }
+    }
+  ''';
+
+  // Publish address (required for Hygraph)
+  static const String publishAddress = '''
+    mutation PublishAddress(\$id: ID!) {
+      publishAddress(where: {id: \$id}) {
+        id
+      }
+    }
+  ''';
+
+  // Update all addresses to set isDefault to false (before setting a new default)
+  static const String unsetAllDefaultAddresses = '''
+    mutation UnsetAllDefaultAddresses(\$userId: ID!) {
+      updateManyAddresses(
+        where: {userDetail: {id: \$userId}, isDefault: true}
+        data: {isDefault: false}
+      ) {
+        count
+      }
+    }
+  ''';
+
   // Increment wallet balance (add money)
   static const String addWalletBalance = '''
     mutation AddWalletBalance(\$userId: ID!, \$amount: Float!) {
@@ -376,146 +535,6 @@ class GraphQLQueries {
         username
         mobileNumber
         walletBalance
-      }
-    }
-  ''';
-
-  // ============ Address Queries & Mutations ============
-  
-  // Get all addresses for a user
-  static const String getUserAddresses = '''
-    query GetUserAddresses(\$userId: ID!) {
-      addresses(where: {userDetail: {id: \$userId}}) {
-        id
-        fullName
-        phoneNumber
-        pincode
-        addressLine1
-        addressLine2
-        city
-        state
-        country
-        isDefault
-      }
-    }
-  ''';
-
-  // Get address by ID
-  static const String getAddressById = '''
-    query GetAddressById(\$id: ID!) {
-      address(where: {id: \$id}) {
-        id
-        fullName
-        phoneNumber
-        pincode
-        addressLine1
-        addressLine2
-        city
-        state
-        country
-        isDefault
-      }
-    }
-  ''';
-
-  // Create new address
-  static const String createAddress = '''
-    mutation CreateAddress(
-      \$userId: ID!,
-      \$fullName: String!,
-      \$phoneNumber: String!,
-      \$pincode: String!,
-      \$addressLine1: String!,
-      \$addressLine2: String,
-      \$city: String!,
-      \$state: String!,
-      \$country: String!,
-      \$isDefault: Boolean!
-    ) {
-      createAddress(
-        data: {
-          userDetail: {connect: {id: \$userId}}
-          fullName: \$fullName
-          phoneNumber: \$phoneNumber
-          pincode: \$pincode
-          addressLine1: \$addressLine1
-          addressLine2: \$addressLine2
-          city: \$city
-          state: \$state
-          country: \$country
-          isDefault: \$isDefault
-        }
-      ) {
-        id
-        fullName
-        phoneNumber
-        pincode
-        addressLine1
-        addressLine2
-        city
-        state
-        country
-        isDefault
-      }
-    }
-  ''';
-
-  // Update address
-  static const String updateAddress = '''
-    mutation UpdateAddress(
-      \$id: ID!,
-      \$fullName: String!,
-      \$phoneNumber: String!,
-      \$pincode: String!,
-      \$addressLine1: String!,
-      \$addressLine2: String,
-      \$city: String!,
-      \$state: String!,
-      \$country: String!,
-      \$isDefault: Boolean!
-    ) {
-      updateAddress(
-        where: {id: \$id}
-        data: {
-          fullName: \$fullName
-          phoneNumber: \$phoneNumber
-          pincode: \$pincode
-          addressLine1: \$addressLine1
-          addressLine2: \$addressLine2
-          city: \$city
-          state: \$state
-          country: \$country
-          isDefault: \$isDefault
-        }
-      ) {
-        id
-        fullName
-        phoneNumber
-        pincode
-        addressLine1
-        addressLine2
-        city
-        state
-        country
-        isDefault
-      }
-    }
-  ''';
-
-  // Delete address
-  static const String deleteAddress = '''
-    mutation DeleteAddress(\$id: ID!) {
-      deleteAddress(where: {id: \$id}) {
-        id
-      }
-    }
-  ''';
-
-  // Publish address
-  static const String publishAddress = '''
-    mutation PublishAddress(\$id: ID!) {
-      publishAddress(where: {id: \$id}) {
-        id
       }
     }
   ''';

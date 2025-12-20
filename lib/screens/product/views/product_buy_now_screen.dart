@@ -104,19 +104,30 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
       );
     }
 
-    // Add to local cart
-    cartService.addToLocalCart(
-      widget.product,
-      sizeToAdd,
-      _quantity,
-    );
+    try {
+      // Add to local cart
+      cartService.addToLocalCart(
+        widget.product,
+        sizeToAdd,
+        _quantity,
+      );
 
-    // Show success message
-    customModalBottomSheet(
-      context,
-      isDismissible: false,
-      child: const AddedToCartMessageScreen(),
-    );
+      // Show success message
+      customModalBottomSheet(
+        context,
+        isDismissible: false,
+        child: const AddedToCartMessageScreen(),
+      );
+    } catch (e) {
+      // Show error message if stock is insufficient
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   void _createOrder() async {

@@ -11,7 +11,6 @@
 library;
 
 class Msg91Config {
-  // Backend API base URL - only the host, NO trailing /api
   static const String baseUrl = 'https://brighthex-dream-24-7-backend-psi.vercel.app/api';
   
   // Alternative: Use localhost for development (uncomment if testing locally)

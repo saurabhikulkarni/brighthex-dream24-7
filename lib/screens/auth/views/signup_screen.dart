@@ -147,10 +147,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         // Check if user already exists with this phone number
                         print('Checking if user exists with phone: $phone');
                         final UserService userService = UserService();
-                        final existingUser = await userService.getUserByUsername(phone);
+                        final existingUser = await userService.getUserByMobileNumber(phone);
                         
                         if (existingUser != null) {
                           if (mounted) {
+                            Navigator.of(context).pop(); // Hide loading dialog
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: const Text(
@@ -178,6 +179,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         final firstName = nameParts.isNotEmpty ? nameParts[0] : '';
                         final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
                         
+                        // Clean phone number (remove non-digit characters)
+                        final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+                        
                         // Call GraphQL mutation to create user and get their ID
                         final graphQLClient = GraphQLService.getClient();
                         final MutationOptions options = MutationOptions(
@@ -186,7 +190,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             'firstName': firstName,
                             'lastName': lastName,
                             'username': phone, // Use phone as username
-                            'mobileNumber': phone,
+                            'mobileNumber': cleanPhone, // Use cleaned phone as String
                           },
                         );
                         

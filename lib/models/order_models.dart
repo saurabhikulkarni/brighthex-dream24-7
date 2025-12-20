@@ -71,7 +71,7 @@ class OrderModel {
   final String userId;
   final List<OrderItemModel> items;
   final double totalAmount;
-  final OrderStatus status;
+  final OrderStatus orderStatus;
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? shippingAddressId;
@@ -87,7 +87,7 @@ class OrderModel {
     required this.userId,
     required this.items,
     required this.totalAmount,
-    this.status = OrderStatus.pending,
+    this.orderStatus = OrderStatus.pending,
     DateTime? createdAt,
     DateTime? updatedAt,
     this.shippingAddressId,
@@ -123,7 +123,7 @@ class OrderModel {
               .toList() ??
           [],
       totalAmount: (json['totalAmount'] ?? json['total_amount'] ?? 0).toDouble(),
-      status: parseStatus(json['status']?.toString()),
+      orderStatus: parseStatus(json['orderStatus']?.toString() ?? json['status']?.toString()),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'])
           : DateTime.now(),
@@ -147,7 +147,7 @@ class OrderModel {
       'userId': userId,
       'items': items.map((item) => item.toJson()).toList(),
       'totalAmount': totalAmount,
-      'status': status.toString().split('.').last,
+      'orderStatus': orderStatus.toString().split('.').last,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'trackingNumber': trackingNumber,
@@ -158,7 +158,7 @@ class OrderModel {
 
   int get itemCount => items.length;
 
-  String get statusString => status.toString().split('.').last;
+  String get statusString => orderStatus.toString().split('.').last;
 
   String get orderSummary {
     if (items.isEmpty) return 'No items';
@@ -174,7 +174,7 @@ class OrderModel {
     String? userId,
     List<OrderItemModel>? items,
     double? totalAmount,
-    OrderStatus? status,
+    OrderStatus? orderStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
     String? shippingAddressId,
@@ -190,7 +190,7 @@ class OrderModel {
       userId: userId ?? this.userId,
       items: items ?? this.items,
       totalAmount: totalAmount ?? this.totalAmount,
-      status: status ?? this.status,
+      orderStatus: orderStatus ?? this.orderStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       shippingAddressId: shippingAddressId ?? this.shippingAddressId,

@@ -27,7 +27,7 @@ class PaymentModel {
   final String orderId;
   final double amount;
   final String currency;
-  final PaymentStatus status;
+  final PaymentStatus paymentStatus;
   final PaymentMethod? method;
   final String? razorpayPaymentId;
   final String? razorpayOrderId;
@@ -43,7 +43,7 @@ class PaymentModel {
     required this.orderId,
     required this.amount,
     this.currency = 'INR',
-    this.status = PaymentStatus.pending,
+    this.paymentStatus = PaymentStatus.pending,
     this.method,
     this.razorpayPaymentId,
     this.razorpayOrderId,
@@ -63,7 +63,7 @@ class PaymentModel {
       'orderId': orderId,
       'amount': amount,
       'currency': currency,
-      'status': status.toString().split('.').last,
+      'paymentStatus': paymentStatus.toString().split('.').last,
       'method': method?.toString().split('.').last,
       'razorpayPaymentId': razorpayPaymentId,
       'razorpayOrderId': razorpayOrderId,
@@ -83,8 +83,8 @@ class PaymentModel {
       orderId: json['orderId'] ?? '',
       amount: (json['amount'] as num?)?.toDouble() ?? 0.0,
       currency: json['currency'] ?? 'INR',
-      status: PaymentStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == json['status'],
+      paymentStatus: PaymentStatus.values.firstWhere(
+        (e) => e.toString().split('.').last == json['paymentStatus'] ?? json['status'],
         orElse: () => PaymentStatus.pending,
       ),
       method: json['method'] != null
@@ -114,7 +114,7 @@ class PaymentModel {
     String? orderId,
     double? amount,
     String? currency,
-    PaymentStatus? status,
+    PaymentStatus? paymentStatus,
     PaymentMethod? method,
     String? razorpayPaymentId,
     String? razorpayOrderId,
@@ -130,7 +130,7 @@ class PaymentModel {
       orderId: orderId ?? this.orderId,
       amount: amount ?? this.amount,
       currency: currency ?? this.currency,
-      status: status ?? this.status,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
       method: method ?? this.method,
       razorpayPaymentId: razorpayPaymentId ?? this.razorpayPaymentId,
       razorpayOrderId: razorpayOrderId ?? this.razorpayOrderId,
@@ -145,7 +145,7 @@ class PaymentModel {
 
   @override
   String toString() {
-    return 'PaymentModel(paymentId: $paymentId, orderId: $orderId, amount: $amount, status: $status)';
+    return 'PaymentModel(paymentId: $paymentId, orderId: $orderId, amount: $amount, paymentStatus: $paymentStatus)';
   }
 }
 

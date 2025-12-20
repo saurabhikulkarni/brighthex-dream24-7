@@ -35,7 +35,8 @@ class RazorpayConfig {
   static const String themeColor = '#6441A5';
 
   // Logo URL (Optional - should be HTTPS)
-  static const String logoUrl = 'https://your-domain.com/logo.png';
+  // TODO: Update with your actual logo URL or set to empty string if not needed
+  static const String logoUrl = '';
 
   // Website URL
  // static const String websiteUrl = 'https://dream247.com';

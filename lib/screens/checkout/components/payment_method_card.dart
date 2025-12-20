@@ -147,18 +147,18 @@ class PaymentHistoryCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: Color(int.parse(
-                      'FF${RazorpayService().getStatusColor(payment.status).replaceFirst('#', '')}',
+                      'FF${RazorpayService().getStatusColor(payment.paymentStatus).replaceFirst('#', '')}',
                       radix: 16,
                     )).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    RazorpayService().getStatusText(payment.status),
+                    RazorpayService().getStatusText(payment.paymentStatus),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: Color(int.parse(
-                        'FF${RazorpayService().getStatusColor(payment.status).replaceFirst('#', '')}',
+                        'FF${RazorpayService().getStatusColor(payment.paymentStatus).replaceFirst('#', '')}',
                         radix: 16,
                       )),
                     ),
