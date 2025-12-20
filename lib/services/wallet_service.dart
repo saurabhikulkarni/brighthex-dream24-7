@@ -68,7 +68,7 @@ class WalletService {
         document: gql(GraphQLQueries.updateWalletBalance),
         variables: {
           'userId': userId,
-          'walletBalance': newBalance,
+          'walletBalance': newBalance.toInt(),
         },
       );
 
@@ -111,7 +111,7 @@ class WalletService {
         document: gql(GraphQLQueries.updateWalletBalance),
         variables: {
           'userId': userId,
-          'walletBalance': newBalance,
+          'walletBalance': newBalance.toInt(),
         },
       );
 
@@ -202,7 +202,7 @@ class WalletService {
         document: gql(GraphQLQueries.updateWalletBalance),
         variables: {
           'userId': userId,
-          'walletBalance': newBalance,
+          'walletBalance': newBalance.toInt(),
         },
       );
 
@@ -251,7 +251,7 @@ class WalletService {
         document: gql(GraphQLQueries.updateWalletBalance),
         variables: {
           'userId': userId,
-          'walletBalance': newBalance,
+          'walletBalance': newBalance.toInt(),
         },
       );
 

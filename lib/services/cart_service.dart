@@ -332,17 +332,36 @@ class CartService {
     int quantity = 1,
   }) async {
     try {
-      final QueryResult result = await _client.mutate(
-        MutationOptions(
-          document: gql(GraphQLQueries.createCartItem),
-          variables: {
-            'userId': userId,
-            'productId': productId,
-            'sizeId': sizeId,
-            'quantity': quantity.toString(), // Convert int to String for GraphQL
-          },
-        ),
-      );
+      // Use different mutations based on whether sizeId is provided
+      final bool hasValidSizeId = sizeId != null && 
+                                  sizeId.isNotEmpty && 
+                                  !sizeId.startsWith('local_');
+      
+      final QueryResult result;
+      if (hasValidSizeId) {
+        result = await _client.mutate(
+          MutationOptions(
+            document: gql(GraphQLQueries.createCartItemWithSize),
+            variables: {
+              'userId': userId,
+              'productId': productId,
+              'sizeId': sizeId!,
+              'quantity': quantity.toString(),
+            },
+          ),
+        );
+      } else {
+        result = await _client.mutate(
+          MutationOptions(
+            document: gql(GraphQLQueries.createCartItemWithoutSize),
+            variables: {
+              'userId': userId,
+              'productId': productId,
+              'quantity': quantity.toString(),
+            },
+          ),
+        );
+      }
 
       if (result.hasException) {
         throw Exception(result.exception.toString());

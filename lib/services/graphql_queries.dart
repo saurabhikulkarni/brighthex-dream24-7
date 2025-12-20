@@ -180,15 +180,31 @@ class GraphQLQueries {
 
   // Mutations
 
-  // Create a new cart item
-  static const String createCartItem = '''
-    mutation CreateCartItem(\$quantity: String!, \$userId: ID!, \$productId: ID!, \$sizeId: ID) {
+  // Create a new cart item (with size)
+  static const String createCartItemWithSize = '''
+    mutation CreateCartItemWithSize(\$quantity: String!, \$userId: ID!, \$productId: ID!, \$sizeId: ID!) {
       createCart(
         data: {
           quantity: \$quantity
           userDetail: {connect: {id: \$userId}}
           product: {connect: {id: \$productId}}
           size: {connect: {id: \$sizeId}}
+        }
+      ) {
+        id
+        quantity
+      }
+    }
+  ''';
+
+  // Create a new cart item (without size)
+  static const String createCartItemWithoutSize = '''
+    mutation CreateCartItemWithoutSize(\$quantity: String!, \$userId: ID!, \$productId: ID!) {
+      createCart(
+        data: {
+          quantity: \$quantity
+          userDetail: {connect: {id: \$userId}}
+          product: {connect: {id: \$productId}}
         }
       ) {
         id
@@ -271,7 +287,7 @@ class GraphQLQueries {
 
   // Update user wallet balance
   static const String updateWalletBalance = '''
-    mutation UpdateWalletBalance(\$userId: ID!, \$walletBalance: Float!) {
+    mutation UpdateWalletBalance(\$userId: ID!, \$walletBalance: Int!) {
       updateUserDetail(
         where: {id: \$userId}
         data: {walletBalance: \$walletBalance}
@@ -548,30 +564,12 @@ class GraphQLQueries {
         id
         orderNumber
         totalAmount
-        status
+        orderStatus
         createdAt
         updatedAt
         trackingNumber
         courierName
         shiprocketOrderId
-        items {
-          id
-          quantity
-          pricePerUnit
-          totalPrice
-          product {
-            id
-            productName
-            price
-            image {
-              url
-            }
-          }
-          size {
-            id
-            sizeName
-          }
-        }
         shippingAddress {
           id
           fullName
@@ -594,31 +592,13 @@ class GraphQLQueries {
         id
         orderNumber
         totalAmount
-        status
+        orderStatus
         createdAt
         updatedAt
         trackingNumber
         courierName
         shiprocketOrderId
-        items {
-          id
-          quantity
-          pricePerUnit
-          totalPrice
-          product {
-            id
-            productName
-            price
-            image {
-              url
-            }
-          }
-          size {
-            id
-            sizeName
-          }
-        }
-        shippingAddress {
+        address {
           id
           fullName
           phoneNumber
@@ -633,42 +613,89 @@ class GraphQLQueries {
     }
   ''';
 
-  // Create new order (items will be created separately or use nested create)
-  // Note: For Hygraph, you may need to create order first, then items separately
-  // OR use nested create if your Hygraph schema supports it
-  static const String createOrder = '''
-    mutation CreateOrder(
+  // Get order items by order ID
+  static const String getOrderItemsByOrderId = '''
+    query GetOrderItemsByOrderId(\$orderId: ID!) {
+      orderItems(where: {order: {id: \$orderId}}) {
+        id
+        quantity
+        pricePerUnit
+        totalPrice
+        product {
+          id
+          productName
+          price
+          image {
+            url
+          }
+        }
+        size {
+          id
+          sizeName
+        }
+      }
+    }
+  ''';
+
+  // Create order without shipping address
+  static const String createOrderWithoutAddress = '''
+    mutation CreateOrderWithoutAddress(
       \$userId: ID!,
       \$orderNumber: String!,
       \$totalAmount: Float!,
-      \$status: OrderStatus!,
-      \$shippingAddressId: ID
+      \$orderStatus: OrderStatus!
     ) {
       createOrder(
         data: {
           orderNumber: \$orderNumber
           userDetail: {connect: {id: \$userId}}
           totalAmount: \$totalAmount
-          status: \$status
+          orderStatus: \$orderStatus
+        }
+      ) {
+        id
+        orderNumber
+        totalAmount
+        orderStatus
+        createdAt
+      }
+    }
+  ''';
+
+  // Create order with shipping address
+  static const String createOrderWithAddress = '''
+    mutation CreateOrderWithAddress(
+      \$userId: ID!,
+      \$orderNumber: String!,
+      \$totalAmount: Float!,
+      \$orderStatus: OrderStatus!,
+      \$shippingAddressId: ID!
+    ) {
+      createOrder(
+        data: {
+          orderNumber: \$orderNumber
+          userDetail: {connect: {id: \$userId}}
+          totalAmount: \$totalAmount
+          orderStatus: \$orderStatus
           shippingAddress: {connect: {id: \$shippingAddressId}}
         }
       ) {
         id
         orderNumber
         totalAmount
-        status
+        orderStatus
         createdAt
       }
     }
   ''';
 
-  // Create order item (call this for each item after creating order)
-  static const String createOrderItem = '''
-    mutation CreateOrderItem(
+  // Create order item with size
+  static const String createOrderItemWithSize = '''
+    mutation CreateOrderItemWithSize(
       \$orderId: ID!,
       \$productId: ID!,
-      \$sizeId: ID,
-      \$quantity: Int!,
+      \$sizeId: ID!,
+      \$quantity: String!,
       \$pricePerUnit: Float!,
       \$totalPrice: Float!
     ) {
@@ -690,15 +717,41 @@ class GraphQLQueries {
     }
   ''';
 
-  // Update order status
-  static const String updateOrderStatus = '''
-    mutation UpdateOrderStatus(\$id: ID!, \$status: OrderStatus!) {
-      updateOrder(
-        where: {id: \$id}
-        data: {status: \$status}
+  // Create order item without size
+  static const String createOrderItemWithoutSize = '''
+    mutation CreateOrderItemWithoutSize(
+      \$orderId: ID!,
+      \$productId: ID!,
+      \$quantity: String!,
+      \$pricePerUnit: Float!,
+      \$totalPrice: Float!
+    ) {
+      createOrderItem(
+        data: {
+          order: {connect: {id: \$orderId}}
+          product: {connect: {id: \$productId}}
+          quantity: \$quantity
+          pricePerUnit: \$pricePerUnit
+          totalPrice: \$totalPrice
+        }
       ) {
         id
-        status
+        quantity
+        pricePerUnit
+        totalPrice
+      }
+    }
+  ''';
+
+  // Update order status
+  static const String updateOrderStatus = '''
+    mutation UpdateOrderStatus(\$id: ID!, \$orderStatus: OrderStatus!) {
+      updateOrder(
+        where: {id: \$id}
+        data: {orderStatus: \$orderStatus}
+      ) {
+        id
+        orderStatus
         updatedAt
       }
     }
@@ -734,10 +787,10 @@ class GraphQLQueries {
     mutation CancelOrder(\$id: ID!) {
       updateOrder(
         where: {id: \$id}
-        data: {status: CANCELLED}
+        data: {orderStatus: CANCELLED}
       ) {
         id
-        status
+        orderStatus
         updatedAt
       }
     }

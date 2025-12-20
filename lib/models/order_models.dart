@@ -36,6 +36,18 @@ class OrderItemModel {
   }) : totalPrice = totalPrice ?? (pricePerUnit * quantity);
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
+    // Handle quantity as String (from GraphQL) or int (from local storage)
+    int quantity = 1;
+    if (json['quantity'] != null) {
+      if (json['quantity'] is String) {
+        quantity = int.tryParse(json['quantity'] as String) ?? 1;
+      } else if (json['quantity'] is int) {
+        quantity = json['quantity'] as int;
+      } else if (json['quantity'] is num) {
+        quantity = (json['quantity'] as num).toInt();
+      }
+    }
+    
     return OrderItemModel(
       id: json['id']?.toString(),
       productId: json['productId']?.toString() ?? json['product']?['id']?.toString() ?? '',
@@ -46,9 +58,9 @@ class OrderItemModel {
       size: json['size'] != null
           ? SizeModel.fromJson(json['size'] as Map<String, dynamic>)
           : null,
-      quantity: json['quantity'] ?? 1,
+      quantity: quantity,
       pricePerUnit: (json['pricePerUnit'] ?? json['price_per_unit'] ?? json['product']?['price'] ?? 0).toDouble(),
-      totalPrice: (json['totalPrice'] ?? json['total_price']).toDouble(),
+      totalPrice: (json['totalPrice'] ?? json['total_price'] ?? 0).toDouble(),
     );
   }
 
