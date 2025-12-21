@@ -12,6 +12,7 @@ import 'package:shop/screens/checkout/views/order_confirmation_screen.dart';
 import 'package:shop/services/cart_service.dart';
 import 'package:shop/services/order_service.dart';
 import 'package:shop/services/wallet_service.dart';
+import 'package:shop/services/wishlist_service.dart';
 
 import '../../../constants.dart';
 import 'components/product_quantity.dart';
@@ -36,6 +37,7 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   int _quantity = 1;
   int _selectedSizeIndex = 0;
   double walletBalance = 0.0; // User's shopping tokens
+  bool _isInWishlist = false;
 
   // Default sizes if none from API
   static const List<String> _defaultSizes = ["S", "M", "L", "XL", "XXL"];
@@ -66,6 +68,21 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   void initState() {
     super.initState();
     _loadWalletBalance();
+    _checkWishlistStatus();
+  }
+
+  Future<void> _checkWishlistStatus() async {
+    final isInWishlist = await wishlistService.isInWishlist(widget.product.id);
+    setState(() {
+      _isInWishlist = isInWishlist;
+    });
+  }
+
+  Future<void> _toggleWishlist() async {
+    await wishlistService.toggleWishlist(widget.product.id);
+    setState(() {
+      _isInWishlist = !_isInWishlist;
+    });
   }
 
   Future<void> _loadWalletBalance() async {
@@ -376,9 +393,14 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () {},
-                  icon: SvgPicture.asset("assets/icons/Bookmark.svg",
-                      color: Theme.of(context).textTheme.bodyLarge!.color),
+                  onPressed: _toggleWishlist,
+                  icon: SvgPicture.asset(
+                    "assets/icons/Wishlist.svg",
+                    colorFilter: ColorFilter.mode(
+                      _isInWishlist ? Colors.red : Theme.of(context).textTheme.bodyLarge!.color!,
+                      BlendMode.srcIn,
+                    ),
+                  ),
                 ),
               ],
             ),

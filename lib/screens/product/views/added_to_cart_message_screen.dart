@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
+import 'package:shop/route/route_constants.dart';
 import 'package:shop/route/screen_export.dart';
 
 class AddedToCartMessageScreen extends StatelessWidget {
@@ -42,8 +43,10 @@ class AddedToCartMessageScreen extends StatelessWidget {
               ),
               const SizedBox(height: defaultPadding),
               ElevatedButton(
-                onPressed: () {},
-                child: const Text("Checkout"),
+                onPressed: () {
+                  Navigator.pushNamed(context, cartScreenRoute);
+                },
+                child: const Text("Go to Cart"),
               ),
               const Spacer(),
             ],

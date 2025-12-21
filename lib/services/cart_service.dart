@@ -345,7 +345,7 @@ class CartService {
             variables: {
               'userId': userId,
               'productId': productId,
-              'sizeId': sizeId!,
+              'sizeId': sizeId,
               'quantity': quantity.toString(),
             },
           ),

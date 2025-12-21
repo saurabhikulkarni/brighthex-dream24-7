@@ -6,6 +6,5 @@ flutter_launcher_icons:
   remove_alpha_channel: true
   
   android_adaptive:
-    monochrome_image: "assets/images/appicon.png"
-    background_color: "#FFFFFF"
+    background_color: "#6441A5"
     foreground_image: "assets/images/appicon.png"

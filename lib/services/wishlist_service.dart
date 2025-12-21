@@ -112,10 +112,16 @@ class WishlistService {
   // Toggle wishlist (add if not exists, remove if exists)
   Future<bool> toggleWishlist(ProductModel product, {String? sizeId}) async {
     if (isInWishlist(product.id!)) {
+      // Remove from local and backend
       await removeFromWishlist(product.id!);
+      await removeFromWishlistOnBackend(product.id!);
       return false; // Removed
     } else {
+      // Add to local and backend
       await addToWishlist(product, sizeId: sizeId);
+      await addToWishlistOnBackend(product.id!, sizeId: sizeId);
+      // Sync to get the wishlist ID from backend
+      await syncWithBackend();
       return true; // Added
     }
   }

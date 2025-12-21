@@ -30,7 +30,9 @@ class _WishlistScreenState extends State<WishlistScreen> {
     _loadWishlist();
   }
 
-  void _loadWishlist() {
+  void _loadWishlist() async {
+    // Sync with backend first to get latest wishlist
+    await wishlistService.syncWithBackend();
     setState(() {
       _wishlistItems = wishlistService.getWishlist();
     });
