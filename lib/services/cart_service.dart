@@ -35,7 +35,7 @@ class CartService {
       final userIdString = _prefs.getString('user_id');
 
       _userId = userIdString;
-
+      
       if (cartJson != null && cartJson.isNotEmpty) {
         final List<dynamic> decoded = jsonDecode(cartJson);
         _localCart = decoded
@@ -45,6 +45,7 @@ class CartService {
         _localCart = [];
       }
     } catch (e) {
+      // Silently fail - cart will be empty
       _localCart = [];
     }
   }
@@ -312,6 +313,7 @@ class CartService {
   // Sync cart with backend (fetch latest from GraphQL)
   Future<void> syncWithBackend() async {
     if (_userId == null || _userId!.isEmpty) {
+      print('⚠️ Cannot sync cart: User ID not found');
       return;
     }
 
@@ -438,11 +440,11 @@ class CartService {
       // Silently fail publish - item is still created
     }
   }
-  // Clear cart on logout
+  // Clear cart on logout (only clears userId, cart data preserved for restoration)
   void clear() {
     _userId = null;
-    _localCart = [];
-    _saveToSharedPreferences();
+    // Don't clear _localCart - let it remain for offline access
+    // Backend will be the source of truth on next login
   }
 }
 

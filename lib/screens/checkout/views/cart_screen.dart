@@ -36,6 +36,14 @@ class _CartScreenState extends State<CartScreen> {
   void initState() {
     super.initState();
     _loadWalletBalance();
+    _syncCart();
+  }
+
+  Future<void> _syncCart() async {
+    await cartService.syncWithBackend();
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _loadWalletBalance() async {
@@ -54,8 +62,7 @@ class _CartScreenState extends State<CartScreen> {
   List<CartModel> get cartItems => cartService.getLocalCart();
 
   double get subtotal => cartService.getCartTotal();
-  double get tax => subtotal * 0.1;
-  double get total => subtotal + tax;
+  double get total => subtotal;
 
   void _removeItem(String cartItemId) async {
     try {
@@ -433,24 +440,6 @@ class _CartScreenState extends State<CartScreen> {
                               ),
                               const SizedBox(width: 2),
                               Text("${subtotal.toInt()}"),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: defaultPadding / 2),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text("Tax (10%)"),
-                          Row(
-                            children: [
-                              SvgPicture.asset(
-                                'assets/icons/coin.svg',
-                                width: 14,
-                                height: 14,
-                              ),
-                              const SizedBox(width: 2),
-                              Text("${tax.toInt()}"),
                             ],
                           ),
                         ],

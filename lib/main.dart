@@ -21,7 +21,7 @@ void main() async {
   await wishlistService.initialize();
   
   // Sync wishlist with backend if user is logged in
-  if (authService.isLoggedIn) {
+  if (await authService.isLoggedIn()) {
     await wishlistService.syncWithBackend();
   }
   
@@ -29,7 +29,7 @@ void main() async {
   await cartService.initialize();
   
   // Sync cart with backend if user is logged in
-  if (authService.isLoggedIn) {
+  if (await authService.isLoggedIn()) {
     await cartService.syncWithBackend();
   }
   

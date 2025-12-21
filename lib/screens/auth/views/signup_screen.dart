@@ -159,19 +159,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         if (existingUser != null) {
                           if (mounted) {
                             Navigator.of(context).pop(); // Hide loading dialog
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text(
-                                    'Account already exists with this phone number'),
-                                backgroundColor: Colors.orange,
-                                action: SnackBarAction(
-                                  label: 'Login',
-                                  onPressed: () {
-                                    Navigator.pushReplacementNamed(
-                                        context, logInScreenRoute);
-                                  },
-                                ),
-                                duration: const Duration(seconds: 5),
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Already Registered'),
+                                content: const Text('An account already exists with this mobile number. Please log in instead.'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: const Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      Navigator.pushReplacementNamed(context, logInScreenRoute);
+                                    },
+                                    child: const Text('Login'),
+                                  ),
+                                ],
                               ),
                             );
                           }

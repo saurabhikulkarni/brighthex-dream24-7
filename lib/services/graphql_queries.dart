@@ -504,22 +504,17 @@ class GraphQLQueries {
             categoryName
           }
         }
-        size {
-          id
-          sizeName
-        }
       }
     }
   ''';
 
   // Add product to wishlist - creates new Wishlist record
   static const String addToWishlist = '''
-    mutation AddToWishlist(\$userId: ID!, \$productId: ID!, \$sizeId: ID) {
+    mutation AddToWishlistWithoutSize(\$userId: ID!, \$productId: ID!) {
       createWishlist(
         data: {
           userDetail: {connect: {id: \$userId}}
           product: {connect: {id: \$productId}}
-          size: {connect: {id: \$sizeId}}
         }
       ) {
         id

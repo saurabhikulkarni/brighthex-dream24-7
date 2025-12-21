@@ -72,17 +72,31 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   }
 
   Future<void> _checkWishlistStatus() async {
-    final isInWishlist = await wishlistService.isInWishlist(widget.product.id);
+    final isInWishlist = wishlistService.isInWishlist(widget.product.id!);
     setState(() {
       _isInWishlist = isInWishlist;
     });
   }
 
   Future<void> _toggleWishlist() async {
-    await wishlistService.toggleWishlist(widget.product.id);
+    final newState = await wishlistService.toggleWishlist(widget.product);
+    
     setState(() {
-      _isInWishlist = !_isInWishlist;
+      _isInWishlist = newState;
     });
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isInWishlist
+                ? '${widget.product.title} added to wishlist'
+                : '${widget.product.title} removed from wishlist',
+          ),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
   }
 
   Future<void> _loadWalletBalance() async {
@@ -361,7 +375,6 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
                     'assets/icons/coin.svg',
                     width: 18,
                     height: 18,
-                    colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                   ),
                   label: const Text('Redeem Now'),
                   style: ElevatedButton.styleFrom(
