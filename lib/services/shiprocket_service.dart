@@ -113,10 +113,19 @@ class ShiprocketService {
   static const String _baseUrl = ShiprocketConfig.baseUrl;
   static String? _authToken;
   static DateTime? _tokenExpiry;
+  static bool _authFailed = false; // Track if authentication has failed
 
   /// Authenticate with Shiprocket and get access token
   static Future<String?> authenticate() async {
+    // Don't retry if authentication already failed
+    if (_authFailed) {
+      return null;
+    }
+
     try {
+      // Note: Shiprocket API v2 uses different endpoint - try both
+      // v1 endpoint: /auth/login
+      // v2 endpoint might be different or require API key instead
       final response = await http.post(
         Uri.parse('$_baseUrl/auth/login'),
         headers: {
@@ -133,19 +142,27 @@ class ShiprocketService {
         _authToken = data['token'];
         // Token typically expires in 24 hours
         _tokenExpiry = DateTime.now().add(const Duration(hours: 23));
+        _authFailed = false; // Reset failure flag on success
         return _authToken;
       } else {
         print('Shiprocket Auth Error: ${response.statusCode} - ${response.body}');
+        _authFailed = true; // Mark as failed to prevent retries
         return null;
       }
     } catch (e) {
       print('Exception in authenticate: $e');
+      _authFailed = true; // Mark as failed to prevent retries
       return null;
     }
   }
 
   /// Get valid auth token (authenticates if needed)
   static Future<String?> _getAuthToken() async {
+    // Don't try if authentication already failed
+    if (_authFailed) {
+      return null;
+    }
+
     // Check if token exists and is not expired
     if (_authToken != null && 
         _tokenExpiry != null && 

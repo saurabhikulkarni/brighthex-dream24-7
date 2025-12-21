@@ -5,15 +5,12 @@ import 'package:shop/components/network_image_with_loader.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/models/order_models.dart';
-import 'package:shop/models/payment_model.dart';
 import 'package:shop/services/cart_service.dart';
 import 'package:shop/services/address_service.dart';
 import 'package:shop/services/order_service_graphql.dart';
-import 'package:shop/services/payment_service.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:shop/services/wallet_service.dart';
 import 'package:shop/services/user_service.dart';
-import 'package:shop/screens/checkout/views/order_confirmation_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -29,7 +26,6 @@ class _CartScreenState extends State<CartScreen> {
   final CartService cartService = CartService();
   final AddressService addressService = AddressService();
   final OrderServiceGraphQL orderServiceGraphQL = OrderServiceGraphQL();
-  final PaymentService paymentService = PaymentService();
   final WalletService walletService = WalletService();
 
   @override
@@ -175,11 +171,19 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-    // Sufficient tokens - create order
-    await _createOrderFromCart(totalTokensNeeded);
+    // Sufficient tokens - navigate to address selection
+    final selectedAddressId = await Navigator.pushNamed(
+      context,
+      addressSelectionScreenRoute,
+    );
+
+    // If user selected an address, proceed with order creation
+    if (selectedAddressId != null && selectedAddressId is String) {
+      await _createOrderFromCart(totalTokensNeeded, selectedAddressId);
+    }
   }
 
-  Future<void> _createOrderFromCart(int totalTokensNeeded) async {
+  Future<void> _createOrderFromCart(int totalTokensNeeded, String? shippingAddressId) async {
     // Show loading indicator
     showDialog(
       context: context,
@@ -193,9 +197,6 @@ class _CartScreenState extends State<CartScreen> {
       if (userId == null) {
         throw Exception('User not logged in');
       }
-
-      // Get default address
-      final defaultAddress = await addressService.getDefaultAddress(userId);
       
       // Convert cart items to OrderItemModel for GraphQL
       final orderItems = cartItems.map((cartItem) {
@@ -211,8 +212,8 @@ class _CartScreenState extends State<CartScreen> {
       final order = await orderServiceGraphQL.createOrder(
         items: orderItems,
         totalAmount: total.toDouble(),
-        shippingAddressId: defaultAddress?.id,
-        status: OrderStatus.confirmed,
+        shippingAddressId: shippingAddressId,
+        status: OrderStatus.pending,
       );
 
       // Deduct wallet balance
@@ -221,30 +222,18 @@ class _CartScreenState extends State<CartScreen> {
       // Update wallet balance in UI
       await _loadWalletBalance();
 
-      // Create payment record (using wallet payment)
-      await paymentService.createPayment(PaymentModel(
-        orderId: order.id ?? '',
-        amount: total.toDouble(),
-        razorpayOrderId: '', // Wallet payment doesn't have Razorpay order
-        paymentStatus: PaymentStatus.completed,
-        method: PaymentMethod.wallet,
-      ));
-
       // Clear cart
       cartService.clearLocalCart();
 
       if (!mounted) return;
       Navigator.pop(context); // Close loading dialog
 
-      // Navigate to order confirmation screen
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => OrderConfirmationScreen(
-            order: order,
-            orderId: order.orderNumber,
-            totalAmount: order.totalAmount,
-          ),
-        ),
+      // Navigate to order tracking screen
+      Navigator.of(context).pushReplacementNamed(
+        orderTrackingScreenRoute,
+        arguments: {
+          'orderId': order.id ?? order.orderNumber,
+        },
       );
     } catch (e) {
       if (!mounted) return;

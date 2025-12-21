@@ -330,6 +330,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           state: args?['state'],
         ),
       );
+    case addressSelectionScreenRoute:
+      return MaterialPageRoute(
+        builder: (context) => const AddressSelectionScreen(),
+      );
     case returnsScreenRoute:
       return MaterialPageRoute(
         builder: (context) => const ReturnsScreen(),

@@ -348,7 +348,7 @@ class GraphQLQueries {
     mutation CreateAddress(
       \$userId: ID!
       \$fullName: String!
-      \$phoneNumber: String!
+      \$phoneNumber: Int!
       \$pincode: String!
       \$addressLine1: String!
       \$addressLine2: String
@@ -390,7 +390,7 @@ class GraphQLQueries {
     mutation UpdateAddress(
       \$id: ID!
       \$fullName: String!
-      \$phoneNumber: String!
+      \$phoneNumber: Int!
       \$pincode: String!
       \$addressLine1: String!
       \$addressLine2: String
@@ -677,7 +677,7 @@ class GraphQLQueries {
           userDetail: {connect: {id: \$userId}}
           totalAmount: \$totalAmount
           orderStatus: \$orderStatus
-          shippingAddress: {connect: {id: \$shippingAddressId}}
+          address: {connect: {id: \$shippingAddressId}}
         }
       ) {
         id
@@ -695,7 +695,7 @@ class GraphQLQueries {
       \$orderId: ID!,
       \$productId: ID!,
       \$sizeId: ID!,
-      \$quantity: String!,
+      \$quantity: Int!,
       \$pricePerUnit: Float!,
       \$totalPrice: Float!
     ) {
@@ -722,7 +722,7 @@ class GraphQLQueries {
     mutation CreateOrderItemWithoutSize(
       \$orderId: ID!,
       \$productId: ID!,
-      \$quantity: String!,
+      \$quantity: Int!,
       \$pricePerUnit: Float!,
       \$totalPrice: Float!
     ) {

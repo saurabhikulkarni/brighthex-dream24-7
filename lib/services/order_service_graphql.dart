@@ -19,26 +19,26 @@ class OrderServiceGraphQL {
   final GraphQLClient _client = GraphQLService.getClient();
 
   // Convert OrderStatus enum to string for GraphQL
-  // Hygraph expects enum values to match the schema exactly
-  // Based on schema: PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED
+  // Hygraph expects enum values to match the schema exactly (lowercase)
+  // Based on schema: pending, confirmed, processing, shipped, delivered, cancelled, refunded
   String _orderStatusToString(OrderStatus status) {
     switch (status) {
       case OrderStatus.pending:
-        return 'PENDING';
+        return 'pending';
       case OrderStatus.confirmed:
-        return 'CONFIRMED';
+        return 'confirmed';
       case OrderStatus.processing:
-        return 'PROCESSING';
+        return 'processing';
       case OrderStatus.shipped:
-        return 'SHIPPED';
+        return 'shipped';
       case OrderStatus.delivered:
-        return 'DELIVERED';
+        return 'delivered';
       case OrderStatus.cancelled:
-        return 'CANCELLED';
+        return 'cancelled';
       case OrderStatus.refunded:
-        return 'REFUNDED';
+        return 'refunded';
       default:
-        return 'PENDING';
+        return 'pending';
     }
   }
 
@@ -255,12 +255,35 @@ class OrderServiceGraphQL {
       await _publishOrder(orderId);
       print('Order published successfully');
 
-      // Return full order by fetching it
-      final order = await getOrderById(orderId);
-      if (order == null) {
-        throw Exception('Failed to retrieve created order');
-      }
-      return order;
+      // Construct OrderModel directly from createOrder response and items we already have
+      // This avoids an extra GraphQL query which helps with rate limits
+      // Note: We don't fetch the full address here to save on API calls - it can be fetched later when needed
+      final List<OrderItemModel> orderItems = items.map((item) => OrderItemModel(
+        productId: item.productId,
+        product: item.product,
+        sizeId: item.sizeId,
+        size: item.size,
+        quantity: item.quantity,
+        pricePerUnit: item.pricePerUnit,
+        totalPrice: item.totalPrice,
+      )).toList();
+
+      return OrderModel(
+        id: orderId,
+        orderNumber: createdOrder['orderNumber']?.toString() ?? '',
+        userId: userId,
+        items: orderItems,
+        totalAmount: totalAmount,
+        orderStatus: status,
+        createdAt: createdOrder['createdAt'] != null
+            ? DateTime.parse(createdOrder['createdAt'])
+            : DateTime.now(),
+        updatedAt: createdOrder['updatedAt'] != null
+            ? DateTime.parse(createdOrder['updatedAt'])
+            : DateTime.now(),
+        shippingAddressId: shippingAddressId,
+        shippingAddress: null, // Don't fetch address here to save API calls - can be fetched later when needed
+      );
     } catch (e) {
       throw Exception('Error creating order: $e');
     }
@@ -455,7 +478,7 @@ class OrderServiceGraphQL {
               'orderId': orderId,
               'productId': productId,
               'sizeId': sizeId!,
-              'quantity': quantity.toString(),
+              'quantity': quantity,
               'pricePerUnit': pricePerUnit,
               'totalPrice': totalPrice,
             },
@@ -468,7 +491,7 @@ class OrderServiceGraphQL {
             variables: {
               'orderId': orderId,
               'productId': productId,
-              'quantity': quantity.toString(),
+              'quantity': quantity,
               'pricePerUnit': pricePerUnit,
               'totalPrice': totalPrice,
             },

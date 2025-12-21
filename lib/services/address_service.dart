@@ -106,13 +106,19 @@ class AddressService {
         await _unsetAllDefaultAddresses(userId);
       }
 
+      // Convert phone number string to integer (strip non-numeric characters first)
+      final phoneNumberInt = int.tryParse(phoneNumber.replaceAll(RegExp(r'[^\d]'), '')) ?? 0;
+      if (phoneNumberInt == 0) {
+        throw Exception('Invalid phone number format');
+      }
+
       final QueryResult result = await _client.mutate(
         MutationOptions(
           document: gql(GraphQLQueries.createAddress),
           variables: {
             'userId': userId,
             'fullName': fullName,
-            'phoneNumber': phoneNumber,
+            'phoneNumber': phoneNumberInt,
             'pincode': pincode,
             'addressLine1': addressLine1,
             'addressLine2': addressLine2,
@@ -174,13 +180,19 @@ class AddressService {
         await _unsetAllDefaultAddresses(existingAddress.userId);
       }
 
+      // Convert phone number string to integer (strip non-numeric characters first)
+      final phoneNumberInt = int.tryParse(phoneNumber.replaceAll(RegExp(r'[^\d]'), '')) ?? 0;
+      if (phoneNumberInt == 0) {
+        throw Exception('Invalid phone number format');
+      }
+
       final QueryResult result = await _client.mutate(
         MutationOptions(
           document: gql(GraphQLQueries.updateAddress),
           variables: {
             'id': addressId,
             'fullName': fullName,
-            'phoneNumber': phoneNumber,
+            'phoneNumber': phoneNumberInt,
             'pincode': pincode,
             'addressLine1': addressLine1,
             'addressLine2': addressLine2,
