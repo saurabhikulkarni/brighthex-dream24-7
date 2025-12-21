@@ -181,7 +181,7 @@ class _CartScreenState extends State<CartScreen> {
     // Sufficient tokens - navigate to address selection
     final selectedAddressId = await Navigator.pushNamed(
       context,
-      addressSelectionScreenRoute,
+      'addressSelectionScreen',
     );
 
     // If user selected an address, proceed with order creation

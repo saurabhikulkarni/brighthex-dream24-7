@@ -46,7 +46,7 @@ class RazorpayPlatform {
   }
 
   dynamic _createSuccessCallback() {
-    return js_interop.JSExportedDartFunction((js_interop.JSAny response) {
+    return ((js_interop.JSAny response) {
       _onSuccess?.call({
         'razorpay_payment_id': js_util.getProperty(response, 'razorpay_payment_id')?.toString() ?? '',
         'razorpay_order_id': js_util.getProperty(response, 'razorpay_order_id')?.toString() ?? '',
@@ -56,7 +56,7 @@ class RazorpayPlatform {
   }
 
   dynamic _createFailureCallback() {
-    return js_interop.JSExportedDartFunction((js_interop.JSAny error) {
+    return ((js_interop.JSAny error) {
       // Error is a JavaScript object with error details
       final description = js_util.getProperty(error, 'description')?.toString();
       final errorCode = js_util.getProperty(error, 'error')?.toString();
