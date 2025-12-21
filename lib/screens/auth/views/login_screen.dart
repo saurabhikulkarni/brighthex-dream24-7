@@ -17,24 +17,31 @@ class _LoginScreenState extends State<LoginScreen> {
   dynamic _loginFormState;
 
   @override
+  void initState() {
+    super.initState();
+    // Preload the welcome image to avoid loading delay
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      precacheImage(
+        const AssetImage("assets/images/welcome-min.jpg"),
+        context,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           children: [
             // Top hero image: render within SafeArea and avoid fixed cache sizes
-            SafeArea(
-              bottom: false,
-              child: Container(
-                height: MediaQuery.of(context).size.height * 0.35,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage("assets/images/welcome.jpg"),
-                    fit: BoxFit.cover,
-                    alignment: Alignment.topCenter,
-                  ),
-                ),
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.45,
+              width: double.infinity,
+              child: Image.asset(
+                "assets/images/welcome-min.jpg",
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
               ),
             ),
             Padding(

@@ -25,16 +25,28 @@ class ProductModel {
 
   /// Factory constructor to create ProductModel from GraphQL JSON response
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    // Handle image field - can be string or object with url property
+    String imageUrl = '';
+    if (json['image'] != null) {
+      if (json['image'] is String) {
+        imageUrl = json['image'] as String;
+      } else if (json['image'] is Map && json['image']['url'] != null) {
+        imageUrl = json['image']['url'] as String;
+      }
+    } else if (json['imageUrl'] != null) {
+      imageUrl = json['imageUrl'] as String;
+    }
+    
     return ProductModel(
       id: json['id']?.toString(),
-      productName: json['productName'] ?? json['product_name'] ?? '',
+      productName: json['productName'] ?? json['product_name'] ?? json['title'] ?? '',
       slug: json['slug'],
       description: json['description'],
       price: (json['price'] ?? 0).toDouble(),
       category: json['category'] != null
           ? CategoryModel.fromJson(json['category'] as Map<String, dynamic>)
           : null,
-      image: json['image']?['url'] ?? json['imageUrl'] ?? '',
+      image: imageUrl,
     );
   }
 
@@ -43,10 +55,14 @@ class ProductModel {
     return {
       'id': id,
       'productName': productName,
+      'title': productName, // Backward compatibility
       'slug': slug,
       'description': description,
       'price': price,
       'category': category?.toJson(),
+      'brandName': category?.categoryName ?? '', // Backward compatibility
+      'image': image, // Save as string for easier loading
+      'imageUrl': image, // Backward compatibility
     };
   }
 }

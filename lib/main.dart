@@ -20,8 +20,18 @@ void main() async {
   // Initialize Wishlist Service
   await wishlistService.initialize();
   
+  // Sync wishlist with backend if user is logged in
+  if (await authService.isLoggedIn()) {
+    await wishlistService.syncWithBackend();
+  }
+  
   // Initialize Cart Service
   await cartService.initialize();
+  
+  // Sync cart with backend if user is logged in
+  if (await authService.isLoggedIn()) {
+    await cartService.syncWithBackend();
+  }
   
   // Initialize Search Service
   await searchService.initialize();

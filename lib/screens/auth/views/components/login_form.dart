@@ -7,6 +7,8 @@ import 'package:shop/services/auth_service.dart';
 import 'package:shop/services/graphql_client.dart';
 import 'package:shop/services/graphql_queries.dart';
 import 'package:shop/services/msg91_service.dart';
+import 'package:shop/services/user_service.dart';
+import 'package:shop/route/route_constants.dart';
 
 import '../../../../constants.dart';
 
@@ -88,6 +90,58 @@ class _LogInFormState extends State<LogInForm> {
       barrierDismissible: false,
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
+
+    // Check if user exists in database
+    try {
+      print('Checking if user exists with phone: $phone');
+      final UserService userService = UserService();
+      final existingUser = await userService.getUserByMobileNumber(phone);
+      
+      if (existingUser == null) {
+        // User doesn't exist
+        if (mounted) {
+          Navigator.of(context).pop(); // Hide loading dialog
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Unregistered Number'),
+              content: const Text('This mobile number is not registered. Please sign up first to create an account.'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.pushReplacementNamed(context, signUpScreenRoute);
+                  },
+                  child: const Text('Sign Up'),
+                ),
+              ],
+            ),
+          );
+        }
+        print('User does not exist');
+        return;
+      }
+      
+      print('User exists, proceeding to send OTP');
+    } catch (e) {
+      print('Error checking user existence: $e');
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error checking user: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
 
     // Send OTP via MSG91 service (backend API)
     final result = await msg91Service.sendOtp(phone);

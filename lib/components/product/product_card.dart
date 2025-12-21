@@ -42,6 +42,15 @@ class _ProductCardState extends State<ProductCard> {
   }
 
   @override
+  void didUpdateWidget(ProductCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-check wishlist status when widget updates
+    if (oldWidget.productId != widget.productId || oldWidget.product != widget.product) {
+      _checkWishlistStatus();
+    }
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Re-check wishlist status when dependencies change

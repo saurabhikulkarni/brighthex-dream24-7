@@ -27,12 +27,17 @@ class CategoryBannerCard extends StatelessWidget {
       child: Stack(
         children: [
           // Background Image
-          AspectRatio(
-            aspectRatio: 2.0,
-            child: NetworkImageWithLoader(
-              image,
-              radius: defaultBorderRadious,
-            ),
+          Positioned.fill(
+            child: image.startsWith('http')
+                ? NetworkImageWithLoader(
+                    image,
+                    radius: defaultBorderRadious,
+                    fit: BoxFit.cover,
+                  )
+                : Image.asset(
+                    image,
+                    fit: BoxFit.cover,
+                  ),
           ),
           // Dark overlay
           Container(

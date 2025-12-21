@@ -1,4 +1,5 @@
 import 'dart:js' as js;
+import 'dart:js_interop' as js_interop;
 import 'dart:js_util' as js_util;
 
 /// Web implementation of Razorpay using JavaScript Checkout
@@ -45,26 +46,24 @@ class RazorpayPlatform {
   }
 
   dynamic _createSuccessCallback() {
-    return js.allowInterop((dynamic response) {
-      final jsResponse = response as js.JsObject;
+    return js_interop.JSExportedDartFunction((js_interop.JSAny response) {
       _onSuccess?.call({
-        'razorpay_payment_id': js_util.getProperty(jsResponse, 'razorpay_payment_id')?.toString() ?? '',
-        'razorpay_order_id': js_util.getProperty(jsResponse, 'razorpay_order_id')?.toString() ?? '',
-        'razorpay_signature': js_util.getProperty(jsResponse, 'razorpay_signature')?.toString() ?? '',
+        'razorpay_payment_id': js_util.getProperty(response, 'razorpay_payment_id')?.toString() ?? '',
+        'razorpay_order_id': js_util.getProperty(response, 'razorpay_order_id')?.toString() ?? '',
+        'razorpay_signature': js_util.getProperty(response, 'razorpay_signature')?.toString() ?? '',
       });
-    });
+    }.toJS);
   }
 
   dynamic _createFailureCallback() {
-    return js.allowInterop((dynamic error) {
+    return js_interop.JSExportedDartFunction((js_interop.JSAny error) {
       // Error is a JavaScript object with error details
-      final jsError = error as js.JsObject;
-      final description = js_util.getProperty(jsError, 'description')?.toString();
-      final errorCode = js_util.getProperty(jsError, 'error')?.toString();
-      final errorMessage = js_util.getProperty(jsError, 'error')?.toString();
-      final source = js_util.getProperty(jsError, 'source')?.toString();
-      final step = js_util.getProperty(jsError, 'step')?.toString();
-      final reason = js_util.getProperty(jsError, 'reason')?.toString();
+      final description = js_util.getProperty(error, 'description')?.toString();
+      final errorCode = js_util.getProperty(error, 'error')?.toString();
+      final errorMessage = js_util.getProperty(error, 'error')?.toString();
+      final source = js_util.getProperty(error, 'source')?.toString();
+      final step = js_util.getProperty(error, 'step')?.toString();
+      final reason = js_util.getProperty(error, 'reason')?.toString();
       
       final errorText = description ?? 
                        errorCode ?? 
@@ -73,7 +72,7 @@ class RazorpayPlatform {
                        'Payment failed. Please try again.';
       
       _onError?.call(errorText);
-    });
+    }.toJS);
   }
 
   void dispose() {

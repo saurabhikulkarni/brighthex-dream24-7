@@ -23,24 +23,31 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _privacyAccepted = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Preload the welcome image to avoid loading delay
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      precacheImage(
+        const AssetImage("assets/images/welcome-min.jpg"),
+        context,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           children: [
             // Top hero image: render within SafeArea and avoid fixed cache sizes
-            SafeArea(
-              bottom: false,
-              child: Container(
-                height: MediaQuery.of(context).size.height * 0.35,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage("assets/images/welcome.jpg"),
-                    fit: BoxFit.cover,
-                    alignment: Alignment.topCenter,
-                  ),
-                ),
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.45,
+              width: double.infinity,
+              child: Image.asset(
+                "assets/images/welcome-min.jpg",
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
               ),
             ),
             Padding(
@@ -152,19 +159,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         if (existingUser != null) {
                           if (mounted) {
                             Navigator.of(context).pop(); // Hide loading dialog
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text(
-                                    'Account already exists with this phone number'),
-                                backgroundColor: Colors.orange,
-                                action: SnackBarAction(
-                                  label: 'Login',
-                                  onPressed: () {
-                                    Navigator.pushReplacementNamed(
-                                        context, logInScreenRoute);
-                                  },
-                                ),
-                                duration: const Duration(seconds: 5),
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Already Registered'),
+                                content: const Text('An account already exists with this mobile number. Please log in instead.'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: const Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      Navigator.pushReplacementNamed(context, logInScreenRoute);
+                                    },
+                                    child: const Text('Login'),
+                                  ),
+                                ],
                               ),
                             );
                           }
