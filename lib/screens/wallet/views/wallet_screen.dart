@@ -3,9 +3,7 @@ import 'package:shop/constants.dart';
 import 'package:shop/services/razorpay_service.dart';
 import 'package:shop/services/user_service.dart';
 import 'package:shop/services/auth_service.dart';
-import 'package:uuid/uuid.dart';
 
-import 'components/transaction_history_card.dart';
 import 'components/wallet_balance_card.dart';
 
 class WalletScreen extends StatefulWidget {
@@ -90,9 +88,8 @@ class _WalletScreenState extends State<WalletScreen> {
           setState(() {
             walletBalance = newBalance;
             shoppingTokens = newBalance.toInt();
-            _selectedTopUpAmount = 0;
-            _amountController.clear();
           });
+          return;
         }
       } catch (e) {
         // If GraphQL update fails, update locally
@@ -100,18 +97,17 @@ class _WalletScreenState extends State<WalletScreen> {
           setState(() {
             walletBalance += amount;
             shoppingTokens += amount.toInt();
-            _selectedTopUpAmount = 0;
-            _amountController.clear();
           });
         }
+        return;
       }
-    } else {
-      // Local update if no user ID
+    }
+    
+    // Local update if no user ID
+    if (mounted) {
       setState(() {
         walletBalance += amount;
         shoppingTokens += amount.toInt();
-        _selectedTopUpAmount = 0;
-        _amountController.clear();
       });
     }
   }
@@ -152,7 +148,7 @@ class _WalletScreenState extends State<WalletScreen> {
       final userPhone = await authService.getUserPhone() ?? '+91 0000000000';
       final userName = await authService.getUserName() ?? 'Customer';
       // TODO: Get user email from user profile/backend when available
-      final userEmail = 'customer@dream247.com'; // Placeholder - update when email is available in user profile
+      const userEmail = 'customer@dream247.com'; // Placeholder - update when email is available in user profile
 
       final razorpayService = RazorpayService();
       
@@ -214,23 +210,28 @@ class _WalletScreenState extends State<WalletScreen> {
           // Payment verified, add money to wallet
           await _addMoney(_selectedTopUpAmount);
           
+          // Reload wallet balance from server to ensure it's updated
+          await _loadWalletBalance();
+          
           if (!mounted) return;
           
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                "Successfully added ₹${_selectedTopUpAmount.toStringAsFixed(2)} to wallet",
+                "Successfully added ₹${_selectedTopUpAmount.toStringAsFixed(0)} to wallet!\nNew balance: ₹${walletBalance.toStringAsFixed(0)} (${shoppingTokens} tokens)",
               ),
-              duration: const Duration(seconds: 2),
+              duration: const Duration(seconds: 3),
               backgroundColor: Colors.green,
             ),
           );
 
-          // Reset amount field
-          setState(() {
-            _selectedTopUpAmount = 0;
-            _amountController.clear();
-          });
+          // Reset amount field and update UI
+          if (mounted) {
+            setState(() {
+              _selectedTopUpAmount = 0;
+              _amountController.clear();
+            });
+          }
 
           // If returning to cart, pop with updated balance
           if (returnToCart) {

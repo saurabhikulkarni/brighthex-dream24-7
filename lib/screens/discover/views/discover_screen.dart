@@ -28,9 +28,16 @@ class DiscoverScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(defaultPadding),
-              child: SearchForm(),
+            Padding(
+              padding: const EdgeInsets.all(defaultPadding),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.pushNamed(context, searchScreenRoute);
+                },
+                child: AbsorbPointer(
+                  child: const SearchForm(isEnabled: false),
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(

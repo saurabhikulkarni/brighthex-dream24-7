@@ -160,12 +160,21 @@ class GraphQLQueries {
   // Search products by name
   static const String searchProducts = '''
     query SearchProducts(\$searchTerm: String!) {
-      products(where: {productName_contains: \$searchTerm}) {
+      products(
+        where: {
+          OR: [
+            {productName_contains: \$searchTerm}
+            {description_contains: \$searchTerm}
+            {category: {categoryName_contains: \$searchTerm}}
+          ]
+        }
+      ) {
         id
         productName
         slug
         description
         price
+        discountPrice
         image {
           url
         }

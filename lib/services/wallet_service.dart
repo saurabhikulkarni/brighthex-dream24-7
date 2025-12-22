@@ -104,25 +104,16 @@ class WalletService {
         return false; // Insufficient balance
       }
 
-      final newBalance = currentBalance - amount;
+      // Use UserService to deduct balance with proper decrement operation
+      final userService = UserService();
+      final newBalance = await userService.deductWalletBalance(userId, amount);
 
-      // Update via GraphQL mutation (convert to int for Hygraph)
-      final MutationOptions options = MutationOptions(
-        document: gql(GraphQLQueries.updateWalletBalance),
-        variables: {
-          'userId': userId,
-          'walletBalance': newBalance.toInt(),
-        },
-      );
-
-      final QueryResult result = await _graphQLClient.mutate(options);
-
-      if (result.hasException) {
-        print('Error deducting balance: ${result.exception}');
+      if (newBalance == null) {
+        print('Error: Failed to deduct balance from backend');
         return false;
       }
 
-      // Update local cache
+      // Update local cache with new balance
       await setBalance(newBalance);
       return true;
     } catch (e) {

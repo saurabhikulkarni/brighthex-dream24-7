@@ -13,6 +13,7 @@ import 'package:shop/services/cart_service.dart';
 import 'package:shop/services/order_service.dart';
 import 'package:shop/services/wallet_service.dart';
 import 'package:shop/services/wishlist_service.dart';
+import 'package:shop/services/user_service.dart';
 
 import '../../../constants.dart';
 import 'components/product_quantity.dart';
@@ -37,7 +38,9 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   int _quantity = 1;
   int _selectedSizeIndex = 0;
   double walletBalance = 0.0; // User's shopping tokens
+  int shoppingTokens = 0;
   bool _isInWishlist = false;
+  final UserService _userService = userService;
 
   // Default sizes if none from API
   static const List<String> _defaultSizes = ["S", "M", "L", "XL", "XXL"];
@@ -188,10 +191,29 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     );
 
     if (order != null) {
-      // Update wallet balance in UI
-      setState(() {
-        walletBalance -= totalPrice.toInt();
-      });
+      // Reload wallet balance from server after order
+      try {
+        final userId = UserService.getCurrentUserId();
+        if (userId != null) {
+          final newBalance = await _userService.getWalletBalance();
+          setState(() {
+            walletBalance = newBalance;
+            shoppingTokens = newBalance.toInt();
+          });
+        } else {
+          // Fallback: Update local state
+          setState(() {
+            walletBalance -= totalPrice.toInt();
+            shoppingTokens = walletBalance.toInt();
+          });
+        }
+      } catch (e) {
+        // Fallback: Update local state
+        setState(() {
+          walletBalance -= totalPrice.toInt();
+          shoppingTokens = walletBalance.toInt();
+        });
+      }
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
