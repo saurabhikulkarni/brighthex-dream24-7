@@ -284,7 +284,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           Card(
                             child: ListTile(
                               title: const Text("Standard Shipping"),
-                              subtitle: const Text("5-7 business days"),
+                              subtitle: const Text("15-20 business days"),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -295,25 +295,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                   ),
                                   const SizedBox(width: 2),
                                   const Text("0"),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Card(
-                            child: ListTile(
-                              title: const Text("Express Shipping"),
-                              subtitle: const Text("2-3 business days"),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  svg.SvgPicture.asset(
-                                    'assets/icons/coin.svg',
-                                    width: 14,
-                                    height: 14,
-                                  ),
-                                  const SizedBox(width: 2),
-                                  const Text("50"),
                                 ],
                               ),
                             ),
