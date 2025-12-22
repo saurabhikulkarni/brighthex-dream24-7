@@ -2,6 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'graphql_client.dart';
 import 'graphql_queries.dart';
+import 'user_service.dart';
 
 class WalletService {
   static final WalletService _instance = WalletService._internal();
