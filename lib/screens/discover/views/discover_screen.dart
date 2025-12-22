@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/models/category_model.dart';
+import 'package:shop/route/route_constants.dart';
 import 'package:shop/screens/search/views/components/search_form.dart';
-
-import 'components/expansion_category.dart';
 
 class DiscoverScreen extends StatelessWidget {
   const DiscoverScreen({super.key});
@@ -47,12 +47,47 @@ class DiscoverScreen extends StatelessWidget {
             Expanded(
               child: ListView.builder(
                 itemCount: demoCategories.length,
-                itemBuilder: (context, index) => ExpansionCategory(
-                  svgSrc: demoCategories[index].svgSrc!,
-                  title: demoCategories[index].title,
-                  categoryId: _getCategoryId(demoCategories[index].title),
-                  subCategory: demoCategories[index].subCategories!,
-                ),
+                itemBuilder: (context, index) {
+                  final category = demoCategories[index];
+                  final categoryId = _getCategoryId(category.title);
+                  
+                  return Column(
+                    children: [
+                      ListTile(
+                        leading: SvgPicture.asset(
+                          category.svgSrc!,
+                          height: 24,
+                          width: 24,
+                          colorFilter: ColorFilter.mode(
+                            Theme.of(context).iconTheme.color!,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                        title: Text(
+                          category.title,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        trailing: Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: Theme.of(context).iconTheme.color,
+                        ),
+                        onTap: () {
+                          Navigator.pushNamed(
+                            context,
+                            categoryProductsScreenRoute,
+                            arguments: {
+                              'categoryName': category.title,
+                              'categoryId': categoryId,
+                            },
+                          );
+                        },
+                      ),
+                      if (index < demoCategories.length - 1) 
+                        const Divider(height: 1),
+                    ],
+                  );
+                },
               ),
             )
           ],
