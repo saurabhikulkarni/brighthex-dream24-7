@@ -250,6 +250,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             userId: userId,
                           );
                           
+                          // Sync wishlist and cart from backend after successful signup
+                          await wishlistService.syncWithBackend();
+                          await cartService.syncWithBackend();
+                          
                           print('Login session saved for user: $userId');
                           
                           if (!mounted) return;

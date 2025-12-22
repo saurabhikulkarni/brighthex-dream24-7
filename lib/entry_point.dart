@@ -39,9 +39,11 @@ class _EntryPointState extends State<EntryPoint> {
 
   Future<void> _loadWalletBalance() async {
     final userId = UserService.getCurrentUserId();
+    print('Loading wallet balance for userId: $userId'); // Debug log
     if (userId != null) {
       try {
         final balance = await _userService.getWalletBalance();
+        print('Wallet balance loaded: $balance'); // Debug log
         if (mounted) {
           setState(() {
             walletBalance = balance;
@@ -49,8 +51,11 @@ class _EntryPointState extends State<EntryPoint> {
           });
         }
       } catch (e) {
+        print('Error loading wallet balance: $e'); // Debug log
         // Silently fail, keep current values
       }
+    } else {
+      print('No userId found, skipping wallet balance load'); // Debug log
     }
   }
 
@@ -71,12 +76,12 @@ class _EntryPointState extends State<EntryPoint> {
     // Responsive sizing based on screen width
     final screenWidth = MediaQuery.of(context).size.width;
     final double iconSize = (screenWidth * 0.055).clamp(20.0, 24.0);
-    final double iconPadding = (screenWidth * 0.02).clamp(6.0, 10.0);
+    final double iconPadding = (screenWidth * 0.015).clamp(4.0, 8.0); // Reduced padding
     final double badgeFontSize = (screenWidth * 0.022).clamp(8.0, 10.0);
     final double tokenIconSize = (screenWidth * 0.05).clamp(18.0, 22.0);
     final double tokenFontSize = (screenWidth * 0.032).clamp(12.0, 14.0);
     final double tokenSpacing = (screenWidth * 0.008).clamp(2.0, 4.0);
-    final double rightPadding = (screenWidth * 0.025).clamp(8.0, 16.0);
+    final double rightPadding = (screenWidth * 0.04).clamp(12.0, 20.0); // Increased to bring tokens inside
 
     return Scaffold(
       appBar: PreferredSize(

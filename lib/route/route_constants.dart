@@ -58,4 +58,3 @@ const String thanksForOrderScreenRoute = "thanks_order";
 const String categoryProductsScreenRoute = "category_products";
 const String addAddressScreenRoute = "add_address";
 const String addressSelectionScreenRoute = "address_selection";
-const String returnsScreenRoute = "returns";

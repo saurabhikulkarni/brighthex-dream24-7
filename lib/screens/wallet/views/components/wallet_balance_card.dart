@@ -71,7 +71,7 @@ class WalletBalanceCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          "\$${balance.toStringAsFixed(0)}",
+                          "₹${balance.toStringAsFixed(0)}",
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,

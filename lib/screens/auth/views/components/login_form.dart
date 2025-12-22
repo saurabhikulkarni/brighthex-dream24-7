@@ -8,6 +8,8 @@ import 'package:shop/services/graphql_client.dart';
 import 'package:shop/services/graphql_queries.dart';
 import 'package:shop/services/msg91_service.dart';
 import 'package:shop/services/user_service.dart';
+import 'package:shop/services/wishlist_service.dart';
+import 'package:shop/services/cart_service.dart';
 import 'package:shop/route/route_constants.dart';
 
 import '../../../../constants.dart';
@@ -313,6 +315,12 @@ class _LogInFormState extends State<LogInForm> {
             phoneVerified: true,
             userId: userId,
           );
+          
+          // Sync wishlist and cart from backend after successful login
+          print('[LOGIN] Syncing wishlist and cart from backend...');
+          await wishlistService.syncWithBackend();
+          await cartService.syncWithBackend();
+          print('[LOGIN] Sync completed');
         } else {
           print('Error: Could not extract user ID from response');
           if (mounted) {

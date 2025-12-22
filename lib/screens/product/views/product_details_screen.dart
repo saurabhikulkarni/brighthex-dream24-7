@@ -7,7 +7,6 @@ import 'package:shop/constants.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/services/product_service.dart';
 import 'package:shop/services/wishlist_service.dart';
-import 'package:shop/screens/product/views/product_returns_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart' as svg;
 import 'package:shop/route/screen_export.dart';
 
@@ -323,18 +322,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       ),
                     ),
                   ),
-                );
-              },
-            ),
-            ProductListTile(
-              svgSrc: "assets/icons/Return.svg",
-              title: "Returns",
-              isShowBottomBorder: true,
-              press: () {
-                customModalBottomSheet(
-                  context,
-                  height: MediaQuery.of(context).size.height * 0.92,
-                  child: const ProductReturnsScreen(),
                 );
               },
             ),

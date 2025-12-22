@@ -153,30 +153,51 @@ class UserService {
   // Add money to wallet (increment)
   Future<double?> addWalletBalance(String userId, double amount) async {
     try {
+      print('Adding wallet balance: userId=$userId, amount=$amount'); // Debug
+      
+      // First, get current balance
+      final user = await getUserById(userId);
+      if (user == null) {
+        throw Exception('User not found');
+      }
+      
+      final currentBalance = user.walletBalance;
+      final newBalance = (currentBalance + amount).toInt();
+      print('Current balance: $currentBalance, New balance: $newBalance'); // Debug
+      
+      // Update with new calculated balance
       final QueryResult result = await _client.mutate(
         MutationOptions(
-          document: gql(GraphQLQueries.addWalletBalance),
+          document: gql(GraphQLQueries.updateWalletBalance),
           variables: {
             'userId': userId,
-            'amount': amount,
+            'walletBalance': newBalance,
           },
         ),
       );
 
       if (result.hasException) {
+        print('Error in addWalletBalance: ${result.exception}'); // Debug
         throw Exception(result.exception.toString());
       }
+
+      print('Mutation result data: ${result.data}'); // Debug
 
       // Publish the update
       if (result.data != null && result.data!['updateUserDetail'] != null) {
         final updatedUser = result.data!['updateUserDetail'];
         final updatedUserId = updatedUser['id'];
+        final returnedBalance = (updatedUser['walletBalance'] ?? 0).toDouble();
+        print('New wallet balance from backend: $returnedBalance'); // Debug
+        
         await _publishUser(updatedUserId);
-        return (updatedUser['walletBalance'] ?? 0).toDouble();
+        return returnedBalance;
       }
 
+      print('No data returned from mutation'); // Debug
       return null;
     } catch (e) {
+      print('Exception in addWalletBalance: $e'); // Debug
       throw Exception('Error adding wallet balance: $e');
     }
   }
@@ -184,12 +205,27 @@ class UserService {
   // Deduct money from wallet (decrement)
   Future<double?> deductWalletBalance(String userId, double amount) async {
     try {
+      // First, get current balance
+      final user = await getUserById(userId);
+      if (user == null) {
+        throw Exception('User not found');
+      }
+      
+      final currentBalance = user.walletBalance;
+      final newBalance = (currentBalance - amount).toInt();
+      
+      // Don't allow negative balance
+      if (newBalance < 0) {
+        throw Exception('Insufficient wallet balance');
+      }
+      
+      // Update with new calculated balance
       final QueryResult result = await _client.mutate(
         MutationOptions(
-          document: gql(GraphQLQueries.deductWalletBalance),
+          document: gql(GraphQLQueries.updateWalletBalance),
           variables: {
             'userId': userId,
-            'amount': amount,
+            'walletBalance': newBalance,
           },
         ),
       );

@@ -334,10 +334,6 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => const AddressSelectionScreen(),
       );
-    case returnsScreenRoute:
-      return MaterialPageRoute(
-        builder: (context) => const ReturnsScreen(),
-      );
     // case paymentMethodScreenRoute:
     //   return MaterialPageRoute(
     //     builder: (context) => const PaymentMethodScreen(),

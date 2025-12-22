@@ -90,13 +90,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
           ),
           ProfileMenuListTile(
-            text: "Returns",
-            svgSrc: "assets/icons/Return.svg",
-            press: () {
-              Navigator.pushNamed(context, returnsScreenRoute);
-            },
-          ),
-          ProfileMenuListTile(
             text: "Wishlist",
             svgSrc: "assets/icons/Wishlist.svg",
             press: () {

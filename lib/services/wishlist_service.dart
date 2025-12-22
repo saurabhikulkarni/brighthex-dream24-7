@@ -4,6 +4,7 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 import 'dart:convert';
 import 'graphql_client.dart';
 import 'graphql_queries.dart';
+import 'user_service.dart';
 
 class WishlistService {
   static final WishlistService _instance = WishlistService._internal();
@@ -26,6 +27,7 @@ class WishlistService {
   // Set current user ID for backend operations
   void setUserId(String userId) {
     _currentUserId = userId;
+    UserService.setCurrentUserId(userId);
     SharedPreferences.getInstance().then((prefs) {
       prefs.setString(_userIdKey, userId);
       print('✓ Wishlist service: User ID set to $userId');
@@ -40,8 +42,8 @@ class WishlistService {
       final prefs = await SharedPreferences.getInstance();
       final wishlistJson = prefs.getStringList(_wishlistKey) ?? [];
       
-      // Load user ID if exists
-      _currentUserId = prefs.getString(_userIdKey);
+      // Load user ID from UserService (central source) or fallback to local storage
+      _currentUserId = UserService.getCurrentUserId() ?? prefs.getString(_userIdKey);
       if (_currentUserId != null) {
         print('✓ Wishlist initialized with user ID: $_currentUserId');
       } else {
@@ -171,13 +173,15 @@ class WishlistService {
   // Sync wishlist with backend via GraphQL
   Future<bool> syncWithBackend() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString(_userIdKey);
+      // Get userId from UserService (central source)
+      final userId = UserService.getCurrentUserId();
       
       if (userId == null || userId.isEmpty) {
         print('⚠️ Cannot sync wishlist: User ID not found');
         return false;
       }
+      
+      _currentUserId = userId;
 
       print('📡 Syncing wishlist for user: $userId');
 
@@ -254,8 +258,8 @@ class WishlistService {
   // Add to wishlist on backend via GraphQL (creates new Wishlist record)
   Future<bool> addToWishlistOnBackend(String productId, {String? sizeId}) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString(_userIdKey);
+      // Get userId from UserService (central source)
+      final userId = UserService.getCurrentUserId();
       
       if (userId == null || userId.isEmpty) {
         print('❌ Cannot add to wishlist backend: User ID not found');
@@ -337,13 +341,14 @@ class WishlistService {
     }
   }
 
-  // Clear wishlist (logout)
+  // Clear wishlist (logout) - only clear memory, keep local storage for offline access
   Future<void> clear() async {
     try {
+      // Clear in-memory list but keep SharedPreferences
+      // Data will be synced from backend on next login
       _wishlist.clear();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_wishlistKey);
-      await prefs.remove(_userIdKey);
+      _currentUserId = null;
+      print('✓ Wishlist memory cleared (local storage preserved for sync)');
     } catch (e) {
       print('Error clearing wishlist: $e');
     }

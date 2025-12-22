@@ -54,12 +54,14 @@ class _WalletScreenState extends State<WalletScreen> {
 
   Future<void> _loadWalletBalance() async {
     final userId = UserService.getCurrentUserId();
+    print('Wallet screen _loadWalletBalance: userId=$userId'); // Debug
     if (userId != null) {
       setState(() {
         _isLoading = true;
       });
       try {
         final balance = await _userService.getWalletBalance();
+        print('Wallet balance loaded from backend: $balance'); // Debug
         if (mounted) {
           setState(() {
             walletBalance = balance;
@@ -68,6 +70,7 @@ class _WalletScreenState extends State<WalletScreen> {
           });
         }
       } catch (e) {
+        print('Error loading wallet balance: $e'); // Debug
         if (mounted) {
           setState(() {
             _isLoading = false;
@@ -79,25 +82,30 @@ class _WalletScreenState extends State<WalletScreen> {
 
   Future<void> _addMoney(double amount) async {
     final userId = UserService.getCurrentUserId();
+    print('_addMoney called: userId=$userId, amount=$amount'); // Debug
     
     if (userId != null) {
       // Update balance in GraphQL
       try {
         final newBalance = await _userService.addWalletBalance(userId, amount);
+        print('addWalletBalance returned: $newBalance'); // Debug
         if (newBalance != null && mounted) {
           setState(() {
             walletBalance = newBalance;
             shoppingTokens = newBalance.toInt();
           });
+          print('Wallet balance updated in UI: $walletBalance'); // Debug
           return;
         }
       } catch (e) {
+        print('Error in _addMoney: $e'); // Debug
         // If GraphQL update fails, update locally
         if (mounted) {
           setState(() {
             walletBalance += amount;
             shoppingTokens += amount.toInt();
           });
+          print('Wallet balance updated locally: $walletBalance'); // Debug
         }
         return;
       }
@@ -109,6 +117,7 @@ class _WalletScreenState extends State<WalletScreen> {
         walletBalance += amount;
         shoppingTokens += amount.toInt();
       });
+      print('Wallet balance updated locally (no userId): $walletBalance'); // Debug
     }
   }
 
@@ -210,7 +219,9 @@ class _WalletScreenState extends State<WalletScreen> {
           // Payment verified, add money to wallet
           await _addMoney(_selectedTopUpAmount);
           
-          // Reload wallet balance from server to ensure it's updated
+          // No need to reload - _addMoney already updates the balance from backend
+          // Adding small delay then reload to ensure Hygraph publish is complete
+          await Future.delayed(const Duration(milliseconds: 500));
           await _loadWalletBalance();
           
           if (!mounted) return;

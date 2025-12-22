@@ -9,10 +9,14 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
+            // Add spacing after top navigation bar
+            SliverToBoxAdapter(
+              child: SizedBox(height: 16),
+            ),
             // Category Banners Carousel at Top
             SliverToBoxAdapter(child: CategoryBannersCarousel()),
             SliverToBoxAdapter(child: PopularProducts()),
