@@ -7,6 +7,8 @@ import 'package:shop/services/auth_service.dart';
 import 'package:shop/services/graphql_client.dart';
 import 'package:shop/services/graphql_queries.dart';
 import 'package:shop/services/user_service.dart';
+import 'package:shop/services/wishlist_service.dart';
+import 'package:shop/services/cart_service.dart';
 
 import '../../../constants.dart';
 
@@ -21,6 +23,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   dynamic _signUpFormState;
   bool _privacyAccepted = false;
+  
+  final WishlistService wishlistService = WishlistService();
+  final CartService cartService = CartService();
 
   @override
   void initState() {
