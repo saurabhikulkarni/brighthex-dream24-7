@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/components/custom_modal_bottom_sheet.dart';
 import 'package:shop/components/network_image_with_loader.dart';
 import 'package:shop/models/product_model.dart';
+import 'package:shop/models/order_models.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:shop/screens/product/views/added_to_cart_message_screen.dart';
 import 'package:shop/screens/product/views/components/product_list_tile.dart';
@@ -11,6 +12,7 @@ import 'package:shop/screens/product/views/size_guide_screen.dart';
 import 'package:shop/screens/checkout/views/order_confirmation_screen.dart';
 import 'package:shop/services/cart_service.dart';
 import 'package:shop/services/order_service.dart';
+import 'package:shop/services/order_service_graphql.dart';
 import 'package:shop/services/wallet_service.dart';
 import 'package:shop/services/wishlist_service.dart';
 import 'package:shop/services/user_service.dart';
@@ -41,6 +43,7 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   int shoppingTokens = 0;
   bool _isInWishlist = false;
   final UserService _userService = userService;
+  final OrderServiceGraphQL _orderServiceGraphQL = OrderServiceGraphQL();
 
   // Default sizes if none from API
   static const List<String> _defaultSizes = ["S", "M", "L", "XL", "XXL"];
@@ -244,11 +247,12 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   }
 
   void _handleRedeemNow() {
+    print('[REDEEM] _handleRedeemNow called');
     // Show confirmation dialog
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add to Cart & Checkout'),
+        title: const Text('Redeem Now'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,15 +277,19 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              print('[REDEEM] User cancelled');
+              Navigator.pop(context);
+            },
             child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () {
+              print('[REDEEM] User confirmed - proceeding');
               Navigator.pop(context);
               _processRedeemNow();
             },
-            child: const Text('Yes, Proceed'),
+            child: const Text('Yes, Add to Cart'),
           ),
         ],
       ),
@@ -289,11 +297,14 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   }
 
   void _processRedeemNow() async {
+    print('[REDEEM] _processRedeemNow called');
     final int productPrice = totalPrice.toInt();
+    print('[REDEEM] Product price: $productPrice, Wallet balance: $walletBalance');
 
     if (walletBalance >= productPrice) {
-      // Sufficient balance - add to cart and redirect to cart screen
-      await _addToCartAndProceed();
+      print('[REDEEM] Sufficient balance - adding to cart and navigating to cart screen');
+      // Sufficient balance - add to cart and navigate to cart screen
+      await _addToCartAndNavigate();
     } else {
       // Insufficient balance - show dialog
       final tokensShort = productPrice - walletBalance.toInt();
@@ -367,6 +378,209 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     }
   }
 
+  Future<void> _addToCartAndNavigate() async {
+    final userId = UserService.getCurrentUserId();
+    print('[REDEEM] _addToCartAndNavigate - userId: $userId');
+    
+    if (userId == null) {
+      print('[REDEEM] No userId found - showing login message');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please login to continue'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      print('[REDEEM] Adding to cart - userId: $userId, productId: ${widget.product.id}, sizeId: ${selectedSize?.id}, quantity: $_quantity');
+      
+      // Add to cart
+      await cartService.addToCart(
+        userId: userId,
+        productId: widget.product.id!,
+        sizeId: selectedSize?.id,
+        quantity: _quantity,
+      );
+
+      print('[REDEEM] Product added to cart successfully');
+
+      if (!mounted) return;
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Product added to cart! Proceeding to checkout...'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 1),
+        ),
+      );
+
+      // Navigate to cart screen after a brief delay
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (!mounted) return;
+      
+      // Close the product buy now modal first
+      Navigator.pop(context);
+      
+      // Then navigate to cart screen
+      Navigator.pushNamed(context, cartScreenRoute);
+      
+    } catch (e) {
+      print('[REDEEM] Error adding to cart: $e');
+      
+      if (!mounted) return;
+      
+      // Close loading dialog
+      Navigator.pop(context);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error adding to cart: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _proceedToOrderCreation() async {
+    final userId = UserService.getCurrentUserId();
+    print('[REDEEM] _proceedToOrderCreation - userId: $userId');
+    
+    if (userId == null) {
+      print('[REDEEM] No userId found - showing login message');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please login to continue'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    print('[REDEEM] Navigating to address selection screen: $addressSelectionScreenRoute');
+    
+    // Navigate to address selection using route constant
+    final selectedAddressId = await Navigator.pushNamed(
+      context,
+      addressSelectionScreenRoute,
+    );
+
+    print('[REDEEM] Returned from address selection - selectedAddressId: $selectedAddressId');
+
+    // If user selected an address, proceed with order creation
+    if (selectedAddressId != null && selectedAddressId is String) {
+      print('[REDEEM] Creating order with address: $selectedAddressId');
+      await _createOrderWithAddress(selectedAddressId);
+    } else {
+      print('[REDEEM] No address selected - user cancelled or error occurred');
+    }
+  }
+
+  Future<void> _createOrderWithAddress(String shippingAddressId) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      print('[REDEEM] Creating order with address: $shippingAddressId');
+      
+      // Prepare order items using OrderItemModel for GraphQL
+      final orderItems = [
+        OrderItemModel(
+          productId: widget.product.id!,
+          sizeId: selectedSize?.id,
+          quantity: _quantity,
+          pricePerUnit: widget.product.price,
+        ),
+      ];
+
+      // Deduct tokens from wallet first
+      print('[REDEEM] Deducting ${totalPrice.toInt()} tokens from wallet');
+      final deductionSuccess = await walletService.deductBalance(totalPrice.toDouble());
+      
+      if (!deductionSuccess) {
+        throw Exception('Failed to deduct tokens from wallet');
+      }
+
+      // Create order via GraphQL with shipping address
+      print('[REDEEM] Creating order in backend with addressId: $shippingAddressId');
+      final order = await _orderServiceGraphQL.createOrder(
+        items: orderItems,
+        totalAmount: totalPrice.toDouble(),
+        addressId: shippingAddressId,
+        status: OrderStatus.pending,
+      );
+
+      print('[REDEEM] Order created successfully: ${order.id}');
+
+      if (!mounted) return;
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      // Reload wallet balance after order
+      try {
+        final newBalance = await _userService.getWalletBalance();
+        setState(() {
+          walletBalance = newBalance;
+          shoppingTokens = newBalance.toInt();
+        });
+      } catch (e) {
+        print('[REDEEM] Error reloading balance: $e');
+      }
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Order placed successfully! Order #${order.orderNumber}'),
+          backgroundColor: Colors.green,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // Navigate to order confirmation screen
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const OrderConfirmationScreen(order: null),
+            ),
+          );
+        }
+      });
+    } catch (e) {
+      print('[REDEEM] Error creating order: $e');
+      
+      if (!mounted) return;
+      
+      // Close loading dialog
+      Navigator.pop(context);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   Future<void> _addToCartAndProceed() async {
     final userId = UserService.getCurrentUserId();
     print('[REDEEM] Getting user ID: $userId');
@@ -406,8 +620,8 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
       // Close loading dialog
       Navigator.pop(context);
 
-      // Navigate to cart screen
-      Navigator.pushReplacementNamed(context, cartScreenRoute);
+      // Navigate to cart screen (use pushNamed to preserve navigation stack)
+      Navigator.pushNamed(context, cartScreenRoute);
       
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

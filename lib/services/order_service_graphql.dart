@@ -20,25 +20,25 @@ class OrderServiceGraphQL {
 
   // Convert OrderStatus enum to string for GraphQL
   // Hygraph expects enum values to match the schema exactly
-  // Based on schema: PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED
+  // Try lowercase first as that's a common pattern
   String _orderStatusToString(OrderStatus status) {
     switch (status) {
       case OrderStatus.pending:
-        return 'PENDING';
+        return 'pending';
       case OrderStatus.confirmed:
-        return 'CONFIRMED';
+        return 'confirmed';
       case OrderStatus.processing:
-        return 'PROCESSING';
+        return 'processing';
       case OrderStatus.shipped:
-        return 'SHIPPED';
+        return 'shipped';
       case OrderStatus.delivered:
-        return 'DELIVERED';
+        return 'delivered';
       case OrderStatus.cancelled:
-        return 'CANCELLED';
+        return 'cancelled';
       case OrderStatus.refunded:
-        return 'REFUNDED';
+        return 'refunded';
       default:
-        return 'PENDING';
+        return 'pending';
     }
   }
 
@@ -201,6 +201,11 @@ class OrderServiceGraphQL {
       final List<String> createdItemIds = [];
       try {
         for (final item in items) {
+          // Add small delay between items to avoid rate limiting (Hygraph free tier)
+          if (createdItemIds.isNotEmpty) {
+            await Future.delayed(const Duration(milliseconds: 500));
+          }
+          
           // Validate required fields and use defaults if needed
           final productId = item.productId.isNotEmpty 
             ? item.productId 
@@ -233,6 +238,9 @@ class OrderServiceGraphQL {
           if (itemId == null) {
             throw Exception('Failed to create order item - no ID returned');
           }
+          
+          // Small delay before publishing to avoid rate limit
+          await Future.delayed(const Duration(milliseconds: 300));
           
           // Publish order item
           print('Publishing order item: $itemId');
@@ -461,7 +469,7 @@ class OrderServiceGraphQL {
               'orderId': orderId,
               'productId': productId,
               'sizeId': sizeId,
-              'quantity': quantity.toString(),
+              'quantity': quantity,
               'pricePerUnit': pricePerUnit,
               'totalPrice': totalPrice,
             },
@@ -474,7 +482,7 @@ class OrderServiceGraphQL {
             variables: {
               'orderId': orderId,
               'productId': productId,
-              'quantity': quantity.toString(),
+              'quantity': quantity,
               'pricePerUnit': pricePerUnit,
               'totalPrice': totalPrice,
             },

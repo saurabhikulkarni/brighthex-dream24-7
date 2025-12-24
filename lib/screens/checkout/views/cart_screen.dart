@@ -181,7 +181,7 @@ class _CartScreenState extends State<CartScreen> {
     // Sufficient tokens - navigate to address selection
     final selectedAddressId = await Navigator.pushNamed(
       context,
-      'addressSelectionScreen',
+      addressSelectionScreenRoute,
     );
 
     // If user selected an address, proceed with order creation
@@ -236,7 +236,7 @@ class _CartScreenState extends State<CartScreen> {
       Navigator.pop(context); // Close loading dialog
 
       // Navigate to order tracking screen
-      Navigator.of(context).pushReplacementNamed(
+      Navigator.of(context).pushNamed(
         orderTrackingScreenRoute,
         arguments: {
           'orderId': order.id ?? order.orderNumber,
