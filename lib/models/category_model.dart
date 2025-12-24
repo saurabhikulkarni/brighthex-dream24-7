@@ -62,11 +62,11 @@ final List<CategoryModel> demoCategoriesWithImage = [
 
 final List<CategoryModel> demoCategories = [
   CategoryModel(
-    title: "Men's",
+    title: "Men's Collection",
     svgSrc: "assets/icons/Man&Woman.svg",
   ),
   CategoryModel(
-    title: "Women's",
+    title: "Women's Collection",
     svgSrc: "assets/icons/Woman.svg",
   ),
   CategoryModel(

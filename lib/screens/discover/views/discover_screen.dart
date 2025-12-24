@@ -9,7 +9,8 @@ class DiscoverScreen extends StatelessWidget {
   const DiscoverScreen({super.key});
 
   String? _getCategoryId(String categoryTitle) {
-    if (categoryTitle.toLowerCase().contains("men")) {
+    if (categoryTitle.toLowerCase().contains("men") && 
+        !categoryTitle.toLowerCase().contains("women")) {
       return "mens";
     } else if (categoryTitle.toLowerCase().contains("women")) {
       return "womens";
@@ -34,8 +35,8 @@ class DiscoverScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.pushNamed(context, searchScreenRoute);
                 },
-                child: AbsorbPointer(
-                  child: const SearchForm(isEnabled: false),
+                child: const AbsorbPointer(
+                  child: SearchForm(isEnabled: false),
                 ),
               ),
             ),

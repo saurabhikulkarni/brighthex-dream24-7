@@ -68,7 +68,7 @@ class _PaymentMethodSelectionScreenState
     final userPhone = await authService.getUserPhone() ?? '+91 0000000000';
     final userName = await authService.getUserName() ?? 'Customer';
     // TODO: Get user email from user profile/backend when available
-    final userEmail = 'customer@dream247.com'; // Placeholder - update when email is available in user profile
+    const userEmail = 'customer@dream247.com'; // Placeholder - update when email is available in user profile
 
     // Simulate delay for order creation on backend
     Future.delayed(const Duration(seconds: 2), () {

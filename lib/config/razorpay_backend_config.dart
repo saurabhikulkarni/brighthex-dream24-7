@@ -8,6 +8,7 @@
 /// - POST /api/payments/verify-signature - Verify payment signature
 /// 
 /// See BACKEND_SERVER_SETUP.md for backend implementation details.
+library;
 
 class RazorpayBackendConfig {
   // TODO: Update this URL to your deployed backend server

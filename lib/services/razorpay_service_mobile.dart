@@ -1,6 +1,4 @@
 import 'package:razorpay_flutter/razorpay_flutter.dart';
-import 'package:shop/models/payment_model.dart';
-import 'package:shop/config/razorpay_config.dart';
 
 /// Mobile (Android/iOS) implementation of Razorpay
 class RazorpayPlatform {
