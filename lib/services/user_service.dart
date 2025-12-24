@@ -119,28 +119,31 @@ class UserService {
       final prefs = await SharedPreferences.getInstance();
       final cachedBalance = prefs.getDouble('wallet_balance');
       
-      print('Getting wallet balance for userId: $_currentUserId');
-      print('Cached balance from SharedPreferences: $cachedBalance');
+      print('[USER_SERVICE] Getting wallet balance for userId: $_currentUserId');
+      print('[USER_SERVICE] Cached balance from SharedPreferences: $cachedBalance');
       
       // Try to get from backend
       try {
         final user = await getUserById(_currentUserId!);
         final backendBalance = user?.walletBalance ?? 0.0;
-        print('Backend balance: $backendBalance');
+        print('[USER_SERVICE] Backend balance: $backendBalance');
         
-        // Update cache with backend value
+        // Update cache with backend value if it's valid
         if (backendBalance > 0) {
           await prefs.setDouble('wallet_balance', backendBalance);
+          print('[USER_SERVICE] Updated cache with backend balance: $backendBalance');
           return backendBalance;
         }
       } catch (e) {
-        print('Error fetching from backend, using cached: $e');
+        print('[USER_SERVICE] Error fetching from backend, using cached: $e');
       }
       
       // Return cached balance if backend fails or returns 0
-      return cachedBalance ?? 0.0;
+      final finalBalance = cachedBalance ?? 0.0;
+      print('[USER_SERVICE] Returning final balance: $finalBalance');
+      return finalBalance;
     } catch (e) {
-      print('Error in getWalletBalance: $e');
+      print('[USER_SERVICE] Error in getWalletBalance: $e');
       return 0.0;
     }
   }
@@ -178,17 +181,22 @@ class UserService {
   // Add money to wallet (increment)
   Future<double?> addWalletBalance(String userId, double amount) async {
     try {
-      print('Adding wallet balance: userId=$userId, amount=$amount'); // Debug
+      print('[USER_SERVICE] Adding wallet balance: userId=$userId, amount=$amount');
       
       // Get current balance from cache first
       final prefs = await SharedPreferences.getInstance();
       final currentBalance = await getWalletBalance();
       final newBalance = currentBalance + amount;
       
-      print('Current balance: $currentBalance, New balance: $newBalance'); // Debug
+      print('[USER_SERVICE] Current balance: $currentBalance, New balance: $newBalance');
       
       // Update cache immediately
       await prefs.setDouble('wallet_balance', newBalance);
+      print('[USER_SERVICE] Updated SharedPreferences wallet_balance to: $newBalance');
+      
+      // Verify it was saved
+      final verifyBalance = prefs.getDouble('wallet_balance');
+      print('[USER_SERVICE] Verified SharedPreferences wallet_balance: $verifyBalance');
       
       // Try to update backend (will fail for test users, but that's OK)
       try {
@@ -209,7 +217,7 @@ class UserService {
             final updatedUser = result.data!['updateUserDetail'];
             final updatedUserId = updatedUser['id'];
             final returnedBalance = (updatedUser['walletBalance'] ?? 0).toDouble();
-            print('New wallet balance from backend: $returnedBalance'); // Debug
+            print('[USER_SERVICE] New wallet balance from backend: $returnedBalance');
             
             await _publishUser(updatedUserId);
             await prefs.setDouble('wallet_balance', returnedBalance);
@@ -217,11 +225,11 @@ class UserService {
           }
         }
       } catch (e) {
-        print('Backend update failed (expected for test user): $e'); // Debug
+        print('[USER_SERVICE] Backend update failed (expected for test user): $e');
       }
 
       // Return the new balance from cache
-      print('Returning cached balance: $newBalance'); // Debug
+      print('[USER_SERVICE] Returning cached balance: $newBalance');
       return newBalance;
     } catch (e) {
       print('Exception in addWalletBalance: $e'); // Debug

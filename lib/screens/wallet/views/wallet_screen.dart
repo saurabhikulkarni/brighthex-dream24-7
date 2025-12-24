@@ -217,14 +217,16 @@ class _WalletScreenState extends State<WalletScreen> {
           }
 
           // Payment verified, add money to wallet
+          print('[WALLET] Adding money: $_selectedTopUpAmount');
           await _addMoney(_selectedTopUpAmount);
           
-          // No need to reload - _addMoney already updates the balance from backend
-          // Adding small delay then reload to ensure Hygraph publish is complete
-          await Future.delayed(const Duration(milliseconds: 500));
+          // Reload balance to ensure we have the latest value
+          print('[WALLET] Reloading balance after add money');
           await _loadWalletBalance();
           
           if (!mounted) return;
+          
+          print('[WALLET] Final balance after reload: $walletBalance tokens: $shoppingTokens');
           
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
