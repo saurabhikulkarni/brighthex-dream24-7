@@ -41,10 +41,17 @@ class _AddressesScreenState extends State<AddressesScreen> {
       }
 
       final fetchedAddresses = await addressService.getAddressesByUserId(userId);
-      setState(() {
-        addresses = fetchedAddresses;
-        _isLoading = false;
-      });
+      print('Fetched ${fetchedAddresses.length} addresses from service');
+      if (mounted) {
+        setState(() {
+          addresses = fetchedAddresses;
+          _isLoading = false;
+          _errorMessage = null;
+        });
+        print('Updated UI with ${addresses.length} addresses');
+      } else {
+        print('Widget not mounted, skipping setState');
+      }
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -265,8 +272,10 @@ class _AddressesScreenState extends State<AddressesScreen> {
                             ),
                           ),
                         const SizedBox(height: defaultPadding / 2),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          alignment: WrapAlignment.end,
                           children: [
                             if (!address.isDefault && address.id != null)
                               ElevatedButton(
