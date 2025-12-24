@@ -55,7 +55,7 @@ class OrderItemModel {
           ? ProductModel.fromJson(json['product'] as Map<String, dynamic>)
           : null,
       sizeId: json['sizeId']?.toString() ?? json['size']?['id']?.toString(),
-      size: json['size'] != null
+      size: (json['size'] != null && json['size'] is Map && (json['size'] as Map).isNotEmpty)
           ? SizeModel.fromJson(json['size'] as Map<String, dynamic>)
           : null,
       quantity: quantity,
@@ -176,10 +176,19 @@ class OrderModel {
 
   String get orderSummary {
     if (items.isEmpty) return 'No items';
-    if (items.length == 1) {
-      return '${items.first.product?.productName ?? 'Item'} x${items.first.quantity}';
+    try {
+      if (items.length == 1) {
+        final productName = items.first.product?.productName;
+        final quantity = items.first.quantity;
+        if (productName != null && productName.isNotEmpty) {
+          return '$productName x$quantity';
+        }
+        return 'Item x$quantity';
+      }
+      return '${items.length} items';
+    } catch (e) {
+      return '${items.length} items';
     }
-    return '${items.length} items';
   }
 
   OrderModel copyWith({

@@ -4,6 +4,7 @@ import 'package:shop/services/shiprocket_service.dart';
 import 'package:shop/config/shiprocket_config.dart';
 import '../components/delivery_partner_card.dart';
 import '../components/tracking_timeline.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class OrderTrackingScreen extends StatefulWidget {
   final String orderId;
@@ -31,31 +32,52 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       // Check if credentials are configured
       const isConfigured = ShiprocketConfig.email != 'YOUR_SHIPROCKET_EMAIL';
       
+      print('Shiprocket configured: $isConfigured');
+      print('Fetching tracking for order ID: ${widget.orderId}');
+      
       if (isConfigured) {
         // Try to fetch real tracking data from Shiprocket by Order ID
+        print('Attempting to fetch from Shiprocket API...');
         var trackingData = await ShiprocketService.getOrderTracking(widget.orderId);
         
         // If order ID tracking fails, try AWB code (if available in orderId)
         if (trackingData == null && widget.orderId.length >= 10) {
+          print('Order ID tracking failed, trying AWB code...');
           // Might be an AWB code, try tracking by AWB
           trackingData = await ShiprocketService.getTrackingByAWB(widget.orderId);
         }
         
         if (trackingData != null) {
+          print('✅ Successfully fetched real Shiprocket data');
           return trackingData;
         }
         
-        // API configured but tracking failed - fall back to mock data instead of showing error
-        // This allows users to see order tracking UI even if Shiprocket API is not available
-        print('Shiprocket API failed, using mock data for order: ${widget.orderId}');
+        // API configured but tracking failed - show error instead of silent fallback
+        print('❌ Shiprocket API failed for order: ${widget.orderId}');
+        if (kIsWeb) {
+          print('⚠️ CORS Error: Shiprocket API cannot be called directly from browser');
+          print('   This is expected on Flutter Web');
+          print('   Solutions:');
+          print('   1. Test on mobile device (Android/iOS)');
+          print('   2. Use a backend proxy server');
+        } else {
+          print('This could mean:');
+          print('  1. Order ID does not exist in Shiprocket');
+          print('  2. Order has not been created in Shiprocket yet');
+          print('  3. API authentication failed');
+        }
+        // Still return mock data for UI, but log the issue
+        print('⚠️ Using mock data as fallback');
         return ShiprocketService.getMockOrderTracking(widget.orderId);
       } else {
         // Credentials not configured, use mock data for development
+        print('⚠️ Shiprocket credentials not configured, using mock data');
         return ShiprocketService.getMockOrderTracking(widget.orderId);
       }
     } catch (e) {
-      print('Error fetching tracking data: $e');
+      print('❌ Exception fetching tracking data: $e');
       // Fall back to mock data if API fails
+      print('⚠️ Using mock data as fallback due to exception');
       return ShiprocketService.getMockOrderTracking(widget.orderId);
     }
   }

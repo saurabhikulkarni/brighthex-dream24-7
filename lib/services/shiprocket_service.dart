@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shop/config/shiprocket_config.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ShiprocketOrderData {
   final String orderId;
@@ -111,23 +112,54 @@ class DeliveryPartner {
 
 class ShiprocketService {
   static const String _baseUrl = ShiprocketConfig.baseUrl;
+  static String? _proxyUrl = ShiprocketConfig.proxyUrl;
   static String? _authToken;
   static DateTime? _tokenExpiry;
   static bool _authFailed = false; // Track if authentication has failed
+  
+  /// Get the actual URL to use (proxy if available and on web, otherwise direct)
+  static String _getApiUrl(String endpoint) {
+    // Use proxy if configured and on web, otherwise use direct API
+    if (kIsWeb && _proxyUrl != null && _proxyUrl!.isNotEmpty) {
+      // Proxy should forward to the full endpoint
+      print('🌐 Using proxy URL for web: $_proxyUrl$endpoint');
+      return '$_proxyUrl$endpoint';
+    }
+    return '$_baseUrl$endpoint';
+  }
+  
+  /// Check if we should attempt API calls on web
+  static bool _shouldAttemptApiCall() {
+    if (kIsWeb) {
+      if (_proxyUrl != null && _proxyUrl!.isNotEmpty) {
+        return true; // Proxy configured, should work
+      }
+      // No proxy on web - will fail due to CORS
+      return false;
+    }
+    return true; // Mobile/desktop - no CORS issues
+  }
 
   /// Authenticate with Shiprocket and get access token
   static Future<String?> authenticate() async {
     // Don't retry if authentication already failed
     if (_authFailed) {
+      print('⚠️ Authentication previously failed, skipping retry');
       return null;
     }
 
     try {
-      // Note: Shiprocket API v2 uses different endpoint - try both
-      // v1 endpoint: /auth/login
-      // v2 endpoint might be different or require API key instead
+      print('🔐 Attempting Shiprocket authentication...');
+      print('   Endpoint: $_baseUrl/auth/login');
+      print('   API User Email: ${ShiprocketConfig.email}');
+      print('   Note: Using API User credentials (not main account)');
+      
+      // Shiprocket API v2 authentication endpoint
+      // Reference: https://shiprocket.freshdesk.com/support/solutions/articles/43000337456-api-document-helpsheet
+      // POST: https://apiv2.shiprocket.in/v1/external/auth/login
+      // Must use API User credentials (email different from registered email)
       final response = await http.post(
-        Uri.parse('$_baseUrl/auth/login'),
+        Uri.parse(_getApiUrl('/auth/login')),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -137,33 +169,94 @@ class ShiprocketService {
         }),
       ).timeout(const Duration(seconds: 10));
 
+      print('📡 Authentication response: ${response.statusCode}');
+      
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         _authToken = data['token'];
-        // Token typically expires in 24 hours
-        _tokenExpiry = DateTime.now().add(const Duration(hours: 23));
+        // Token is valid for 240 hours (10 days) according to Shiprocket API docs
+        // Reference: https://shiprocket.freshdesk.com/support/solutions/articles/43000337456-api-document-helpsheet
+        _tokenExpiry = DateTime.now().add(const Duration(hours: 240));
         _authFailed = false; // Reset failure flag on success
+        print('✅ Shiprocket authentication successful');
+        print('   Token expires at: $_tokenExpiry (240 hours / 10 days)');
         return _authToken;
       } else {
-        print('Shiprocket Auth Error: ${response.statusCode} - ${response.body}');
+        final errorBody = response.body;
+        print('❌ Shiprocket Auth Error: ${response.statusCode}');
+        
+        try {
+          final errorData = jsonDecode(errorBody);
+          print('   Error message: ${errorData['message']}');
+          if (errorData['errors'] != null) {
+            print('   Errors: ${errorData['errors']}');
+          }
+        } catch (e) {
+          print('   Response body: $errorBody');
+        }
+        
+        // Check for specific error types
+        if (response.statusCode == 403) {
+          print('⚠️ 403 Forbidden - Possible causes:');
+          print('   1. Using main Shiprocket account credentials instead of API User credentials');
+          print('   2. API User email is the same as your registered Shiprocket email');
+          print('   3. Invalid API User email or password');
+          print('   4. API User account is suspended or inactive');
+          print('   5. IP address not whitelisted in Shiprocket');
+          print('');
+          print('💡 Solutions:');
+          print('   - Create an API User at: https://app.shiprocket.in/settings/api');
+          print('   - Use API User credentials (NOT your main account credentials)');
+          print('   - API User email MUST be different from your registered email');
+          print('   - See: https://shiprocket.freshdesk.com/support/solutions/articles/43000337456-api-document-helpsheet');
+          print('   - Contact Shiprocket support if issue persists');
+        } else if (response.statusCode == 401) {
+          print('⚠️ 401 Unauthorized - Invalid credentials');
+          print('   Please check your API User email and password');
+          print('   Remember: Use API User credentials, NOT your main account!');
+        } else if (response.statusCode == 404) {
+          print('⚠️ 404 Not Found - Endpoint might be incorrect');
+          print('   Current endpoint: $_baseUrl/auth/login');
+          print('   Expected: https://apiv2.shiprocket.in/v1/external/auth/login');
+          print('   See: https://shiprocket.freshdesk.com/support/solutions/articles/43000337456-api-document-helpsheet');
+        }
+        
         _authFailed = true; // Mark as failed to prevent retries
         return null;
       }
     } catch (e) {
-      print('Exception in authenticate: $e');
+      print('❌ Exception in authenticate: $e');
       _authFailed = true; // Mark as failed to prevent retries
       return null;
     }
   }
 
+  /// Reset authentication failure flag (allows retry)
+  static void resetAuthFailure() {
+    _authFailed = false;
+    _authToken = null;
+    _tokenExpiry = null;
+    print('🔄 Shiprocket authentication reset - will retry on next call');
+  }
+
   /// Get valid auth token (authenticates if needed)
   static Future<String?> _getAuthToken() async {
+    // OPTION 1: Use direct API token from config (if provided) - RECOMMENDED
+    // This skips the login process and uses the token directly from dashboard
+    if (ShiprocketConfig.apiToken != null && ShiprocketConfig.apiToken!.isNotEmpty) {
+      print('🔑 Using direct API token from config (skipping login)');
+      return ShiprocketConfig.apiToken;
+    }
+    
+    // OPTION 2: Use email/password authentication (fallback)
     // Don't try if authentication already failed
     if (_authFailed) {
+      print('⚠️ Authentication previously failed. Call resetAuthFailure() to retry.');
       return null;
     }
 
     // Check if token exists and is not expired
+    // Token is valid for 240 hours (10 days) according to Shiprocket docs
     if (_authToken != null && 
         _tokenExpiry != null && 
         DateTime.now().isBefore(_tokenExpiry!)) {
@@ -175,7 +268,19 @@ class ShiprocketService {
   }
 
   /// Get order tracking details by Shiprocket Order ID
+  /// 
+  /// API Endpoint: GET https://apiv2.shiprocket.in/v1/external/orders/show/{order_id}
+  /// Reference: https://shiprocket.freshdesk.com/support/solutions/articles/43000337456-api-document-helpsheet
+  /// 
+  /// Note: CORS restrictions apply on Flutter web. For web, consider using a backend proxy.
   static Future<ShiprocketOrderData?> getOrderTracking(String orderId) async {
+    // Check if we should attempt API call (web without proxy will fail)
+    if (!_shouldAttemptApiCall()) {
+      print('⚠️ Flutter Web detected without proxy - skipping API call (CORS will block)');
+      print('💡 To fix: Set ShiprocketConfig.proxyUrl or test on mobile device');
+      return null;
+    }
+    
     try {
       final token = await _getAuthToken();
       if (token == null) {
@@ -187,7 +292,7 @@ class ShiprocketService {
       final cleanOrderId = orderId.replaceAll('#', '');
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/orders/show/$cleanOrderId'),
+        Uri.parse(_getApiUrl('/orders/show/$cleanOrderId')),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -198,17 +303,71 @@ class ShiprocketService {
         final data = jsonDecode(response.body);
         return ShiprocketOrderData.fromJson(data['data'] ?? data);
       } else {
-        print('Error: ${response.statusCode} - ${response.body}');
+        final errorBody = response.body;
+        print('❌ Shiprocket API Error: ${response.statusCode}');
+        try {
+          final errorData = jsonDecode(errorBody);
+          print('Error message: ${errorData['message']}');
+        } catch (e) {
+          print('Error response: $errorBody');
+        }
+        
+        // Check for CORS-related errors (common on web)
+        if (kIsWeb && (errorBody.contains('CORS') || errorBody.contains('cors') || 
+            errorBody.contains('Access-Control') || response.statusCode == 0)) {
+          print('⚠️ CORS Error detected on Flutter Web');
+          print('💡 Shiprocket API does not allow direct browser requests');
+          print('   Solutions:');
+          print('   1. Test on mobile device (Android/iOS)');
+          print('   2. Use a backend proxy server to make API calls');
+          print('   3. Configure CORS on your backend server');
+        }
+        
+        // Check for 403 Forbidden
+        if (response.statusCode == 403) {
+          print('⚠️ 403 Forbidden - Possible causes:');
+          print('  1. Invalid or expired authentication token');
+          print('  2. IP address not whitelisted in Shiprocket');
+          print('  3. API permissions not enabled for your account');
+          print('  4. Order ID does not belong to your account');
+          print('  5. Account suspended or inactive');
+          
+          // Clear token to force re-authentication on next call
+          _authToken = null;
+          _tokenExpiry = null;
+          _authFailed = false; // Allow retry
+        }
+        
         return null;
       }
     } catch (e) {
       print('Exception in getOrderTracking: $e');
+      
+      // Check if it's a CORS error
+      if (kIsWeb && (e.toString().contains('CORS') || e.toString().contains('cors') || 
+          e.toString().contains('XMLHttpRequest') || e.toString().contains('Failed to load'))) {
+        print('⚠️ CORS Error: Shiprocket API cannot be called directly from browser');
+        print('💡 This is expected on Flutter Web. Use mobile app or backend proxy.');
+      }
+      
       return null;
     }
   }
 
   /// Get tracking details by AWB (Airway Bill) code
+  /// 
+  /// API Endpoint: GET https://apiv2.shiprocket.in/v1/external/courier/track/awb/{awb_code}
+  /// Reference: https://shiprocket.freshdesk.com/support/solutions/articles/43000337456-api-document-helpsheet
+  /// 
+  /// Note: CORS restrictions apply on Flutter web. For web, consider using a backend proxy.
   static Future<ShiprocketOrderData?> getTrackingByAWB(String awbCode) async {
+    // Check if we should attempt API call (web without proxy will fail)
+    if (!_shouldAttemptApiCall()) {
+      print('⚠️ Flutter Web detected without proxy - skipping API call (CORS will block)');
+      print('💡 To fix: Set ShiprocketConfig.proxyUrl or test on mobile device');
+      return null;
+    }
+    
     try {
       final token = await _getAuthToken();
       if (token == null) {
@@ -217,7 +376,7 @@ class ShiprocketService {
       }
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/courier/track/awb/$awbCode'),
+        Uri.parse(_getApiUrl('/courier/track/awb/$awbCode')),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -228,11 +387,45 @@ class ShiprocketService {
         final data = jsonDecode(response.body);
         return ShiprocketOrderData.fromJson(data['data'] ?? data);
       } else {
-        print('Error: ${response.statusCode} - ${response.body}');
+        final errorBody = response.body;
+        print('❌ Shiprocket AWB Tracking Error: ${response.statusCode}');
+        try {
+          final errorData = jsonDecode(errorBody);
+          print('Error message: ${errorData['message']}');
+        } catch (e) {
+          print('Error response: $errorBody');
+        }
+        
+        // Check for CORS-related errors (common on web)
+        if (kIsWeb && (errorBody.contains('CORS') || errorBody.contains('cors') || 
+            errorBody.contains('Access-Control') || response.statusCode == 0)) {
+          print('⚠️ CORS Error detected on Flutter Web');
+          print('💡 Shiprocket API does not allow direct browser requests');
+          print('   Solutions:');
+          print('   1. Test on mobile device (Android/iOS)');
+          print('   2. Use a backend proxy server to make API calls');
+          print('   3. Configure CORS on your backend server');
+        }
+        
+        if (response.statusCode == 403) {
+          print('⚠️ 403 Forbidden - Clearing auth token for retry');
+          _authToken = null;
+          _tokenExpiry = null;
+          _authFailed = false;
+        }
+        
         return null;
       }
     } catch (e) {
       print('Exception in getTrackingByAWB: $e');
+      
+      // Check if it's a CORS error
+      if (kIsWeb && (e.toString().contains('CORS') || e.toString().contains('cors') || 
+          e.toString().contains('XMLHttpRequest') || e.toString().contains('Failed to load'))) {
+        print('⚠️ CORS Error: Shiprocket API cannot be called directly from browser');
+        print('💡 This is expected on Flutter Web. Use mobile app or backend proxy.');
+      }
+      
       return null;
     }
   }
@@ -249,7 +442,7 @@ class ShiprocketService {
       final cleanOrderId = orderId.replaceAll('#', '');
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/orders/show/$cleanOrderId'),
+        Uri.parse(_getApiUrl('/orders/show/$cleanOrderId')),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -285,7 +478,7 @@ class ShiprocketService {
       final cleanOrderId = orderId.replaceAll('#', '');
 
       final response = await http.get(
-        Uri.parse('$_baseUrl/orders/show/$cleanOrderId'),
+        Uri.parse(_getApiUrl('/orders/show/$cleanOrderId')),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -398,7 +591,7 @@ class ShiprocketService {
       if (weight != null) shipmentData['weight'] = weight;
 
       final response = await http.post(
-        Uri.parse('$_baseUrl/orders/create/adhoc'),
+        Uri.parse(_getApiUrl('/orders/create/adhoc')),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

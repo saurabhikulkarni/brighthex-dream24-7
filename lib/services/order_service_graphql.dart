@@ -17,6 +17,15 @@ class OrderServiceGraphQL {
   OrderServiceGraphQL._internal();
 
   final GraphQLClient _client = GraphQLService.getClient();
+  
+  // Cache to prevent duplicate requests for order items
+  final Map<String, List<OrderItemModel>> _orderItemsCache = {};
+  final Map<String, DateTime> _cacheTimestamps = {};
+  static const Duration _cacheExpiry = Duration(minutes: 5);
+  
+  // Rate limiting - track last request time to avoid hitting limits
+  DateTime? _lastRequestTime;
+  static const Duration _minRequestInterval = Duration(milliseconds: 800); // 800ms between requests to avoid rate limits
 
   // Convert OrderStatus enum to string for GraphQL
   // Hygraph expects enum values to match the schema exactly
@@ -88,10 +97,47 @@ class OrderServiceGraphQL {
 
       final List<dynamic> ordersJson = result.data!['orders'] as List<dynamic>;
       final List<OrderModel> orders = [];
-      for (final json in ordersJson) {
-        final order = await _orderFromGraphQL(json as Map<String, dynamic>, userId);
-        orders.add(order);
+      
+      // Fetch orders sequentially with delays to avoid rate limiting
+      // Hygraph free tier has strict rate limits, so we need to throttle requests
+      for (int i = 0; i < ordersJson.length; i++) {
+        final json = ordersJson[i];
+        
+        // Add delay between requests to avoid rate limiting (except for first request)
+        if (i > 0) {
+          await Future.delayed(_minRequestInterval);
+        }
+        
+        try {
+          final order = await _orderFromGraphQL(json as Map<String, dynamic>, userId);
+          orders.add(order);
+        } catch (e) {
+          print('Error fetching order ${json['id']}: $e');
+          // Continue with other orders even if one fails
+          // Create a minimal order model to keep the list consistent
+          try {
+            final minimalOrder = OrderModel(
+              id: json['id']?.toString(),
+              orderNumber: json['orderNumber'] ?? json['order_number'] ?? 'N/A',
+              userId: userId,
+              items: [], // Empty items if fetch fails
+              totalAmount: (json['totalAmount'] ?? json['total_amount'] ?? 0).toDouble(),
+              orderStatus: _stringToOrderStatus(json['orderStatus']?.toString() ?? 'pending'),
+              createdAt: json['createdAt'] != null
+                  ? DateTime.parse(json['createdAt'])
+                  : DateTime.now(),
+              updatedAt: json['updatedAt'] != null
+                  ? DateTime.parse(json['updatedAt'])
+                  : DateTime.now(),
+            );
+            orders.add(minimalOrder);
+          } catch (parseError) {
+            print('Error creating minimal order: $parseError');
+            // Skip this order if we can't even create a minimal version
+          }
+        }
       }
+      
       return orders;
     } catch (e) {
       throw Exception('Error fetching orders: $e');
@@ -372,34 +418,107 @@ class OrderServiceGraphQL {
     }
   }
 
-  // Helper: Fetch order items separately
+  // Helper: Fetch order items separately with caching and rate limiting
   Future<List<OrderItemModel>> _fetchOrderItems(String orderId) async {
     try {
+      // Check cache first
+      final cacheKey = orderId;
+      final cachedItems = _orderItemsCache[cacheKey];
+      final cacheTime = _cacheTimestamps[cacheKey];
+      
+      if (cachedItems != null && cacheTime != null) {
+        final age = DateTime.now().difference(cacheTime);
+        if (age < _cacheExpiry) {
+          print('Using cached order items for order: $orderId');
+          return cachedItems;
+        } else {
+          // Cache expired, remove it
+          _orderItemsCache.remove(cacheKey);
+          _cacheTimestamps.remove(cacheKey);
+        }
+      }
+      
+      // Rate limiting - wait if needed
+      if (_lastRequestTime != null) {
+        final timeSinceLastRequest = DateTime.now().difference(_lastRequestTime!);
+        if (timeSinceLastRequest < _minRequestInterval) {
+          final waitTime = _minRequestInterval - timeSinceLastRequest;
+          print('Rate limiting: waiting ${waitTime.inMilliseconds}ms before next request');
+          await Future.delayed(waitTime);
+        }
+      }
+      
+      print('Fetching order items for order: $orderId');
+      _lastRequestTime = DateTime.now();
+      
       final QueryResult result = await _client.query(
         QueryOptions(
           document: gql(GraphQLQueries.getOrderItemsByOrderId),
           variables: {'orderId': orderId},
-          fetchPolicy: FetchPolicy.networkOnly,
+          fetchPolicy: FetchPolicy.cacheFirst, // Use cache first to reduce requests
         ),
       );
 
       if (result.hasException) {
         print('Error fetching order items: ${result.exception}');
+        
+        // Check if it's a rate limit error
+        final errorMessage = result.exception.toString().toLowerCase();
+        if (errorMessage.contains('too many requests') || errorMessage.contains('rate limit')) {
+          print('⚠️ Rate limit hit! Returning cached data or empty list');
+          // Return cached data if available even if expired
+          if (cachedItems != null) {
+            print('Returning expired cache due to rate limit');
+            return cachedItems;
+          }
+          // Return empty list to prevent further errors
+          return [];
+        }
+        
+        // Return cached data if available even if expired
+        if (cachedItems != null) {
+          print('Returning expired cache due to error');
+          return cachedItems;
+        }
         return [];
       }
 
       if (result.data == null || result.data!['orderItems'] == null) {
+        // Return cached data if available
+        if (cachedItems != null) {
+          print('No data returned, using cached items');
+          return cachedItems;
+        }
         return [];
       }
 
       final List<dynamic> itemsJson = result.data!['orderItems'] as List<dynamic>;
-      return itemsJson
+      final items = itemsJson
           .map((itemJson) => OrderItemModel.fromJson(itemJson as Map<String, dynamic>))
           .toList();
+      
+      // Cache the results
+      _orderItemsCache[cacheKey] = items;
+      _cacheTimestamps[cacheKey] = DateTime.now();
+      print('Cached ${items.length} order items for order: $orderId');
+      
+      return items;
     } catch (e) {
       print('Error fetching order items: $e');
+      // Return cached data if available
+      final cachedItems = _orderItemsCache[orderId];
+      if (cachedItems != null) {
+        print('Exception occurred, returning cached items');
+        return cachedItems;
+      }
       return [];
     }
+  }
+  
+  // Clear cache (useful for testing or when data changes)
+  void clearOrderItemsCache() {
+    _orderItemsCache.clear();
+    _cacheTimestamps.clear();
   }
 
   // Helper: Convert GraphQL JSON to OrderModel

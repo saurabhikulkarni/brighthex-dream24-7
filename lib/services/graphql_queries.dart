@@ -633,10 +633,6 @@ class GraphQLQueries {
             url
           }
         }
-        size {
-          id
-          sizeName
-        }
       }
     }
   ''';
