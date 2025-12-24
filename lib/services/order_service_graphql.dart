@@ -19,26 +19,26 @@ class OrderServiceGraphQL {
   final GraphQLClient _client = GraphQLService.getClient();
 
   // Convert OrderStatus enum to string for GraphQL
-  // Hygraph expects enum values to match the schema exactly (lowercase)
-  // Based on schema: pending, confirmed, processing, shipped, delivered, cancelled, refunded
+  // Hygraph expects enum values to match the schema exactly
+  // Based on schema: PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED
   String _orderStatusToString(OrderStatus status) {
     switch (status) {
       case OrderStatus.pending:
-        return 'pending';
+        return 'PENDING';
       case OrderStatus.confirmed:
-        return 'confirmed';
+        return 'CONFIRMED';
       case OrderStatus.processing:
-        return 'processing';
+        return 'PROCESSING';
       case OrderStatus.shipped:
-        return 'shipped';
+        return 'SHIPPED';
       case OrderStatus.delivered:
-        return 'delivered';
+        return 'DELIVERED';
       case OrderStatus.cancelled:
-        return 'cancelled';
+        return 'CANCELLED';
       case OrderStatus.refunded:
-        return 'refunded';
+        return 'REFUNDED';
       default:
-        return 'pending';
+        return 'PENDING';
     }
   }
 
@@ -165,7 +165,7 @@ class OrderServiceGraphQL {
           'orderNumber': orderNumber,
           'totalAmount': totalAmount,
           'orderStatus': _orderStatusToString(status),
-          if (hasAddress) 'shippingAddressId': shippingAddressId!,
+          if (hasAddress) 'shippingAddressId': shippingAddressId,
         },
       );
 
@@ -255,35 +255,12 @@ class OrderServiceGraphQL {
       await _publishOrder(orderId);
       print('Order published successfully');
 
-      // Construct OrderModel directly from createOrder response and items we already have
-      // This avoids an extra GraphQL query which helps with rate limits
-      // Note: We don't fetch the full address here to save on API calls - it can be fetched later when needed
-      final List<OrderItemModel> orderItems = items.map((item) => OrderItemModel(
-        productId: item.productId,
-        product: item.product,
-        sizeId: item.sizeId,
-        size: item.size,
-        quantity: item.quantity,
-        pricePerUnit: item.pricePerUnit,
-        totalPrice: item.totalPrice,
-      )).toList();
-
-      return OrderModel(
-        id: orderId,
-        orderNumber: createdOrder['orderNumber']?.toString() ?? '',
-        userId: userId,
-        items: orderItems,
-        totalAmount: totalAmount,
-        orderStatus: status,
-        createdAt: createdOrder['createdAt'] != null
-            ? DateTime.parse(createdOrder['createdAt'])
-            : DateTime.now(),
-        updatedAt: createdOrder['updatedAt'] != null
-            ? DateTime.parse(createdOrder['updatedAt'])
-            : DateTime.now(),
-        shippingAddressId: shippingAddressId,
-        shippingAddress: null, // Don't fetch address here to save API calls - can be fetched later when needed
-      );
+      // Return full order by fetching it
+      final order = await getOrderById(orderId);
+      if (order == null) {
+        throw Exception('Failed to retrieve created order');
+      }
+      return order;
     } catch (e) {
       throw Exception('Error creating order: $e');
     }
@@ -477,8 +454,8 @@ class OrderServiceGraphQL {
             variables: {
               'orderId': orderId,
               'productId': productId,
-              'sizeId': sizeId!,
-              'quantity': quantity,
+              'sizeId': sizeId,
+              'quantity': quantity.toString(),
               'pricePerUnit': pricePerUnit,
               'totalPrice': totalPrice,
             },
@@ -491,7 +468,7 @@ class OrderServiceGraphQL {
             variables: {
               'orderId': orderId,
               'productId': productId,
-              'quantity': quantity,
+              'quantity': quantity.toString(),
               'pricePerUnit': pricePerUnit,
               'totalPrice': totalPrice,
             },

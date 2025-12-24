@@ -1,6 +1,4 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:crypto/crypto.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'dart:convert';
 import 'package:shop/config/razorpay_config.dart';
 import 'package:shop/models/payment_model.dart';

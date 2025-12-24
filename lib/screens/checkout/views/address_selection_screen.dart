@@ -224,7 +224,7 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                                                         color: primaryColor.withOpacity(0.1),
                                                         borderRadius: BorderRadius.circular(4),
                                                       ),
-                                                      child: Text(
+                                                      child: const Text(
                                                         "Default",
                                                         style: TextStyle(
                                                           fontSize: 12,

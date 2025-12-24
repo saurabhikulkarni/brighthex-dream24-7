@@ -229,7 +229,7 @@ class _WalletScreenState extends State<WalletScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                "Successfully added ₹${_selectedTopUpAmount.toStringAsFixed(0)} to wallet!\nNew balance: ₹${walletBalance.toStringAsFixed(0)} (${shoppingTokens} tokens)",
+                "Successfully added ₹${_selectedTopUpAmount.toStringAsFixed(0)} to wallet!\nNew balance: ₹${walletBalance.toStringAsFixed(0)} ($shoppingTokens tokens)",
               ),
               duration: const Duration(seconds: 3),
               backgroundColor: Colors.green,
