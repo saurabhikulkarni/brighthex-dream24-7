@@ -248,12 +248,12 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Order Now'),
+        title: const Text('Add to Cart & Checkout'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Do you want to order this product now?'),
+            const Text('Add this product to cart and proceed to checkout?'),
             const SizedBox(height: defaultPadding / 2),
             Row(
               children: [
@@ -281,7 +281,7 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
               Navigator.pop(context);
               _processRedeemNow();
             },
-            child: const Text('Yes, Order Now'),
+            child: const Text('Yes, Proceed'),
           ),
         ],
       ),
@@ -292,8 +292,8 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     final int productPrice = totalPrice.toInt();
 
     if (walletBalance >= productPrice) {
-      // Sufficient balance - use unified order creation flow
-      _createOrder();
+      // Sufficient balance - add to cart and redirect to cart screen
+      await _addToCartAndProceed();
     } else {
       // Insufficient balance - show dialog
       final tokensShort = productPrice - walletBalance.toInt();
@@ -362,6 +362,72 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
               child: const Text('Add Tokens to Wallet'),
             ),
           ],
+        ),
+      );
+    }
+  }
+
+  Future<void> _addToCartAndProceed() async {
+    final userId = UserService.getCurrentUserId();
+    print('[REDEEM] Getting user ID: $userId');
+    
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please login to continue'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      print('[REDEEM] Adding to cart - userId: $userId, productId: ${widget.product.id}, sizeId: ${selectedSize?.id}, quantity: $_quantity');
+      
+      // Add to cart
+      await cartService.addToCart(
+        userId: userId,
+        productId: widget.product.id!,
+        sizeId: selectedSize?.id,
+        quantity: _quantity,
+      );
+
+      print('[REDEEM] Product added to cart successfully');
+
+      if (!mounted) return;
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      // Navigate to cart screen
+      Navigator.pushReplacementNamed(context, cartScreenRoute);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Product added to cart! Proceed to checkout.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      print('[REDEEM] Error adding to cart: $e');
+      
+      if (!mounted) return;
+      
+      // Close loading dialog
+      Navigator.pop(context);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error adding to cart: ${e.toString()}'),
+          backgroundColor: Colors.red,
         ),
       );
     }

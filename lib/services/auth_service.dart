@@ -41,7 +41,7 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       final userId = prefs.getString(_userIdKey);
       if (userId != null && userId.isNotEmpty) {
-        UserService.setCurrentUserId(userId);
+        await UserService.setCurrentUserId(userId);
       }
     } catch (e) {
       print('Error initializing UserService userId: $e');
@@ -113,7 +113,7 @@ class AuthService {
       await prefs.setString(_lastLoginKey, DateTime.now().toIso8601String());
       
       // Set current user ID in UserService
-      UserService.setCurrentUserId(testUserId);
+      await UserService.setCurrentUserId(testUserId);
       
       print('✅ Test user logged in successfully');
       print('User ID: $testUserId');
@@ -160,7 +160,7 @@ class AuthService {
         walletService.setUserId(userId);
         wishlistService.setUserId(userId);
         cartService.setUserId(userId);
-        UserService.setCurrentUserId(userId);
+        await UserService.setCurrentUserId(userId);
       }
     } catch (e) {
       print('Error saving login session: $e');
@@ -195,7 +195,7 @@ class AuthService {
       walletService.clear();
       wishlistService.clear();
       cartService.clear();
-      UserService.setCurrentUserId(''); // Clear userId in UserService
+      await UserService.setCurrentUserId(''); // Clear userId in UserService
     } catch (e) {
       print('Error during logout: $e');
     }

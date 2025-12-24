@@ -9,14 +9,40 @@ class UserService {
 
   // For now, using a local user ID - in production, get from auth state
   static String? _currentUserId;
+  static SharedPreferences? _prefs;
 
-  // Set current user ID (call this after login)
-  static void setCurrentUserId(String userId) {
-    _currentUserId = userId.isEmpty ? null : userId;
+  // Initialize UserService (call on app startup)
+  static Future<void> initialize() async {
+    _prefs = await SharedPreferences.getInstance();
+    _currentUserId = _prefs?.getString('user_id');
+    print('[USER_SERVICE] Initialized - userId from prefs: $_currentUserId');
   }
 
-  // Get current user ID
+  // Set current user ID (call this after login)
+  static Future<void> setCurrentUserId(String userId) async {
+    _currentUserId = userId.isEmpty ? null : userId;
+    // Also persist to SharedPreferences
+    if (_prefs != null) {
+      if (userId.isNotEmpty) {
+        await _prefs!.setString('user_id', userId);
+      } else {
+        await _prefs!.remove('user_id');
+      }
+    }
+  }
+
+  // Get current user ID - checks SharedPreferences if static var is null (e.g., after hot reload)
   static String? getCurrentUserId() {
+    // Return static variable if set
+    if (_currentUserId != null && _currentUserId!.isNotEmpty) {
+      return _currentUserId;
+    }
+    
+    // Fall back to SharedPreferences if available
+    if (_prefs != null) {
+      _currentUserId = _prefs!.getString('user_id');
+    }
+    
     return _currentUserId;
   }
 

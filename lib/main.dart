@@ -7,12 +7,16 @@ import 'package:shop/services/wishlist_service.dart';
 import 'package:shop/services/auth_service.dart';
 import 'package:shop/services/cart_service.dart';
 import 'package:shop/services/search_service.dart';
+import 'package:shop/services/user_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize Hive for GraphQL caching
   await initHiveForFlutter();
+  
+  // Initialize User Service (loads userId from SharedPreferences)
+  await UserService.initialize();
   
   // Initialize Auth Service for session persistence
   await authService.initialize();

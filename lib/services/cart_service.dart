@@ -312,16 +312,25 @@ class CartService {
 
   // Sync cart with backend (fetch latest from GraphQL)
   Future<void> syncWithBackend() async {
-    if (_userId == null || _userId!.isEmpty) {
+    // Try to get userId from internal variable or UserService
+    final userId = _userId ?? UserService.getCurrentUserId();
+    
+    print('[CART_SERVICE] Syncing cart - _userId: $_userId, UserService ID: ${UserService.getCurrentUserId()}, Final userId: $userId');
+    
+    if (userId == null || userId.isEmpty) {
       print('⚠️ Cannot sync cart: User ID not found');
       return;
     }
 
     try {
-      final backendCart = await getCartByUser(_userId!);
+      print('[CART_SERVICE] Fetching cart from backend for user: $userId');
+      final backendCart = await getCartByUser(userId);
+      print('[CART_SERVICE] Backend cart items: ${backendCart.length}');
       _localCart = backendCart;
       await _saveToSharedPreferences();
+      print('[CART_SERVICE] Cart synced successfully');
     } catch (e) {
+      print('[CART_SERVICE] Error syncing cart: $e');
       // Keep existing local cart on error
     }
   }

@@ -27,7 +27,7 @@ class WishlistService {
   // Set current user ID for backend operations
   void setUserId(String userId) {
     _currentUserId = userId;
-    UserService.setCurrentUserId(userId);
+    UserService.setCurrentUserId(userId); // Fire and forget - no need to await
     SharedPreferences.getInstance().then((prefs) {
       prefs.setString(_userIdKey, userId);
       print('✓ Wishlist service: User ID set to $userId');
