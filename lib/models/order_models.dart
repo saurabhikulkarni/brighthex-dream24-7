@@ -86,8 +86,8 @@ class OrderModel {
   final OrderStatus orderStatus;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final String? shippingAddressId;
-  final AddressModel? shippingAddress;
+  final String? addressId;
+  final AddressModel? address;
   final String? trackingNumber;
   final String? courierName;
   final String? shiprocketOrderId;
@@ -102,8 +102,8 @@ class OrderModel {
     this.orderStatus = OrderStatus.pending,
     DateTime? createdAt,
     DateTime? updatedAt,
-    this.shippingAddressId,
-    this.shippingAddress,
+    this.addressId,
+    this.address,
     this.trackingNumber,
     this.courierName,
     this.shiprocketOrderId,
@@ -142,10 +142,12 @@ class OrderModel {
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : DateTime.now(),
-      shippingAddressId: json['shippingAddress']?['id']?.toString(),
-      shippingAddress: json['shippingAddress'] != null
-          ? AddressModel.fromJson(json['shippingAddress'] as Map<String, dynamic>)
-          : null,
+      addressId: json['address']?['id']?.toString() ?? json['shippingAddress']?['id']?.toString(),
+      address: json['address'] != null
+          ? AddressModel.fromJson(json['address'] as Map<String, dynamic>)
+          : (json['shippingAddress'] != null
+              ? AddressModel.fromJson(json['shippingAddress'] as Map<String, dynamic>)
+              : null),
       trackingNumber: json['trackingNumber'] ?? json['tracking_number'],
       courierName: json['courierName'] ?? json['courier_name'],
       shiprocketOrderId: json['shiprocketOrderId'] ?? json['shiprocket_order_id'],
@@ -189,8 +191,8 @@ class OrderModel {
     OrderStatus? orderStatus,
     DateTime? createdAt,
     DateTime? updatedAt,
-    String? shippingAddressId,
-    AddressModel? shippingAddress,
+    String? addressId,
+    AddressModel? address,
     String? trackingNumber,
     String? courierName,
     String? shiprocketOrderId,
@@ -205,8 +207,8 @@ class OrderModel {
       orderStatus: orderStatus ?? this.orderStatus,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      shippingAddressId: shippingAddressId ?? this.shippingAddressId,
-      shippingAddress: shippingAddress ?? this.shippingAddress,
+      addressId: addressId ?? this.addressId,
+      address: address ?? this.address,
       trackingNumber: trackingNumber ?? this.trackingNumber,
       courierName: courierName ?? this.courierName,
       shiprocketOrderId: shiprocketOrderId ?? this.shiprocketOrderId,

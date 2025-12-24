@@ -132,7 +132,7 @@ class OrderServiceGraphQL {
   Future<OrderModel> createOrder({
     required List<OrderItemModel> items,
     required double totalAmount,
-    String? shippingAddressId,
+    String? addressId,
     OrderStatus status = OrderStatus.pending,
   }) async {
     try {
@@ -154,7 +154,7 @@ class OrderServiceGraphQL {
       final orderNumber = _generateOrderNumber();
       
       // Create order - use different mutation based on whether address is provided
-      final bool hasAddress = shippingAddressId != null && shippingAddressId.isNotEmpty;
+      final bool hasAddress = addressId != null && addressId.isNotEmpty;
       
       final MutationOptions options = MutationOptions(
         document: gql(hasAddress 
@@ -165,7 +165,7 @@ class OrderServiceGraphQL {
           'orderNumber': orderNumber,
           'totalAmount': totalAmount,
           'orderStatus': _orderStatusToString(status),
-          if (hasAddress) 'shippingAddressId': shippingAddressId,
+          if (hasAddress) 'addressId': addressId,
         },
       );
 
@@ -401,10 +401,16 @@ class OrderServiceGraphQL {
     // Fetch items separately
     final items = await _fetchOrderItems(orderId);
 
-    // Parse shipping address if present
-    AddressModel? shippingAddress;
-    if (json['shippingAddress'] != null) {
-      shippingAddress = AddressModel.fromJson({
+    // Parse address if present
+    AddressModel? address;
+    if (json['address'] != null) {
+      address = AddressModel.fromJson({
+        ...json['address'] as Map<String, dynamic>,
+        'userId': userId,
+      });
+    } else if (json['shippingAddress'] != null) {
+      // Fallback for backward compatibility
+      address = AddressModel.fromJson({
         ...json['shippingAddress'] as Map<String, dynamic>,
         'userId': userId,
       });
@@ -423,8 +429,8 @@ class OrderServiceGraphQL {
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : DateTime.now(),
-      shippingAddressId: shippingAddress?.id,
-      shippingAddress: shippingAddress,
+      addressId: address?.id,
+      address: address,
       trackingNumber: json['trackingNumber'] ?? json['tracking_number'],
       courierName: json['courierName'] ?? json['courier_name'],
       shiprocketOrderId: json['shiprocketOrderId'] ?? json['shiprocket_order_id'],

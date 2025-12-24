@@ -339,7 +339,7 @@ class ShiprocketService {
     required String billingPhone,
     bool shippingIsBilling = true,
     String? shippingCustomerName,
-    String? shippingAddress,
+    String? address,
     String? shippingCity,
     String? shippingPincode,
     String? shippingState,
@@ -382,7 +382,7 @@ class ShiprocketService {
       // Add shipping address if different from billing
       if (!shippingIsBilling) {
         shipmentData['shipping_customer_name'] = shippingCustomerName ?? billingCustomerName;
-        shipmentData['shipping_address'] = shippingAddress ?? billingAddress;
+        shipmentData['shipping_address'] = address ?? billingAddress;
         shipmentData['shipping_city'] = shippingCity ?? billingCity;
         shipmentData['shipping_pincode'] = shippingPincode ?? billingPincode;
         shipmentData['shipping_state'] = shippingState ?? billingState;

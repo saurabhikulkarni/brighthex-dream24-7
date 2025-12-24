@@ -190,7 +190,7 @@ class _CartScreenState extends State<CartScreen> {
     }
   }
 
-  Future<void> _createOrderFromCart(int totalTokensNeeded, String? shippingAddressId) async {
+  Future<void> _createOrderFromCart(int totalTokensNeeded, String? addressId) async {
     // Show loading indicator
     showDialog(
       context: context,
@@ -219,7 +219,7 @@ class _CartScreenState extends State<CartScreen> {
       final order = await orderServiceGraphQL.createOrder(
         items: orderItems,
         totalAmount: total.toDouble(),
-        shippingAddressId: shippingAddressId,
+        addressId: addressId,
         status: OrderStatus.pending,
       );
 

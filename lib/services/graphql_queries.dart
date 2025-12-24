@@ -574,7 +574,7 @@ class GraphQLQueries {
         trackingNumber
         courierName
         shiprocketOrderId
-        shippingAddress {
+        address {
           id
           fullName
           phoneNumber
@@ -673,7 +673,7 @@ class GraphQLQueries {
       \$orderNumber: String!,
       \$totalAmount: Float!,
       \$orderStatus: OrderStatus!,
-      \$shippingAddressId: ID!
+      \$addressId: ID!
     ) {
       createOrder(
         data: {
@@ -681,7 +681,7 @@ class GraphQLQueries {
           userDetail: {connect: {id: \$userId}}
           totalAmount: \$totalAmount
           orderStatus: \$orderStatus
-          address: {connect: {id: \$shippingAddressId}}
+          address: {connect: {id: \$addressId}}
         }
       ) {
         id
