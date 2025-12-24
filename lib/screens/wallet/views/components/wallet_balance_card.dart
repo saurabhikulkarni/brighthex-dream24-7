@@ -36,91 +36,37 @@ class WalletBalanceCard extends StatelessWidget {
             ),
           ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Top - Available Balance Text
+              // Available Shopping Token Text
               const Text(
-                "Available Balance",
+                "Available Shopping Tokens",
                 style: TextStyle(
                     color: whileColor80,
                     fontWeight: FontWeight.w500,
                     fontSize: 16),
               ),
-              const SizedBox(height: 12),
-              // Bottom - White Card with Balance and Tokens
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: defaultPadding, vertical: defaultPadding / 1.5),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // Wallet Balance
-                    Column(
-                      children: [
-                        const Text(
-                          "Wallet Balance",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF2A0845),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "₹${balance.toStringAsFixed(0)}",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2A0845),
-                          ),
-                        ),
-                      ],
+              const SizedBox(height: 20),
+              // Shopping Tokens - Centered
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    'assets/icons/coin.svg',
+                    width: 28,
+                    height: 28,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    shoppingTokens.toString(),
+                    style: const TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
-                    // Divider
-                    Container(
-                      width: 1,
-                      height: 50,
-                      color: Colors.grey[300],
-                    ),
-                    // Shopping Tokens
-                    Column(
-                      children: [
-                        const Text(
-                          "Shopping Tokens",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF2A0845),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SvgPicture.asset(
-                              'assets/icons/coin.svg',
-                              width: 18,
-                              height: 18,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              shoppingTokens.toString(),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF2A0845),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),

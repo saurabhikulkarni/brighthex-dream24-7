@@ -413,7 +413,7 @@ class _WalletScreenState extends State<WalletScreen> {
                               const SizedBox(height: defaultPadding * 2),
                               // Add Top-up Section
                               Text(
-                                "Add Top-up",
+                                "Add Top-up to get Shopping Tokens",
                                 style: Theme.of(context).textTheme.titleSmall,
                               ),
                               const SizedBox(height: defaultPadding),
