@@ -6,6 +6,7 @@ import 'package:shop/services/wallet_service.dart';
 import 'package:shop/services/wishlist_service.dart';
 import 'package:shop/services/cart_service.dart';
 import 'package:shop/services/user_service.dart';
+import 'package:shop/constants.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -88,6 +89,41 @@ class AuthService {
     } catch (e) {
       print('Error getting user name: $e');
       return null;
+    }
+  }
+
+  // Check if phone number is test user
+  bool isTestUser(String phone) {
+    if (!enableTestUser) return false;
+    return phone.replaceAll(RegExp(r'[^\d]'), '') == testUserPhone;
+  }
+
+  // Login test user directly (bypass OTP)
+  Future<bool> loginTestUser() async {
+    if (!enableTestUser) return false;
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_userIdKey, testUserId);
+      await prefs.setString(_userPhoneKey, testUserPhone);
+      await prefs.setString(_userNameKey, testUserName);
+      await prefs.setBool(_isLoggedInKey, true);
+      await prefs.setBool(_phoneVerifiedKey, true);
+      await prefs.setDouble(_walletBalanceKey, testUserWalletBalance);
+      await prefs.setString(_lastLoginKey, DateTime.now().toIso8601String());
+      
+      // Set current user ID in UserService
+      UserService.setCurrentUserId(testUserId);
+      
+      print('✅ Test user logged in successfully');
+      print('User ID: $testUserId');
+      print('Phone: $testUserPhone');
+      print('Wallet: $testUserWalletBalance');
+      
+      return true;
+    } catch (e) {
+      print('Error logging in test user: $e');
+      return false;
     }
   }
 

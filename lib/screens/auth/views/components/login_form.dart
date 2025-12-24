@@ -75,8 +75,27 @@ class _LogInFormState extends State<LogInForm> {
     // Validate Indian mobile number before sending OTP
     String phone = _phoneController.text.replaceAll(RegExp(r'[^\d]'), '');
     
+    // Check if it's test user - bypass OTP
+    final authService = AuthService();
+    if (authService.isTestUser(phone)) {
+      setState(() {
+        _otpSent = true;
+        _otpController.text = "0000"; // Auto-fill with dummy OTP
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🧪 Test user detected - OTP bypassed (use 0000)'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+    
     // Check if it's a valid Indian mobile number (10 digits, starts with 6-9)
-    if (!RegExp(r'^[6-9]\d{9}$').hasMatch(phone)) {
+    if (!RegExp(r'^[6-9]\\d{9}\$').hasMatch(phone)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a valid Indian mobile number'),
@@ -201,6 +220,21 @@ class _LogInFormState extends State<LogInForm> {
       return false;
     }
 
+    // Check if it's test user - bypass OTP verification
+    final authService = AuthService();
+    if (authService.isTestUser(phone)) {
+      if (otp == "0000") {
+        return true; // Accept any OTP for test user
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Test user OTP should be 0000'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return false;
+    }
+
     // Show loading indicator
     showDialog(
       context: context,
@@ -237,6 +271,22 @@ class _LogInFormState extends State<LogInForm> {
     final phone = getVerifiedPhone();
     if (phone != null) {
       final authService = AuthService();
+      
+      // Check if it's test user - use direct login
+      if (authService.isTestUser(phone)) {
+        print('[TEST USER] Logging in test user directly');
+        final success = await authService.loginTestUser();
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('🧪 Test user logged in successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+        return;
+      }
+      
       final name = getUserName();
       
       print('[LOGIN] Starting login session with phone: $phone');
@@ -246,7 +296,7 @@ class _LogInFormState extends State<LogInForm> {
         final graphQLClient = GraphQLService.getClient();
         
         // Clean phone number (remove non-digit characters)
-        final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+        final cleanPhone = phone.replaceAll(RegExp(r'[^\\d]'), '');
         
         // Query for existing user
         final QueryOptions queryOptions = QueryOptions(

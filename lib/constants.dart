@@ -48,6 +48,13 @@ const Color blackColor80 = Color(0xFF45454B);
 const Color blackColor60 = Color(0xFF737378);
 const Color blackColor40 = Color(0xFFA2A2A5);
 const Color blackColor20 = Color(0xFFD0D0D2);
+
+// Test User Configuration (for development/testing only)
+const bool enableTestUser = true; // Set to false in production
+const String testUserPhone = "9876543210";
+const String testUserId = "test_user_razorpay_001";
+const String testUserName = "Test User";
+const double testUserWalletBalance = 10000.0;
 const Color blackColor10 = Color(0xFFE8E8E9);
 const Color blackColor5 = Color(0xFFF3F3F4);
 
