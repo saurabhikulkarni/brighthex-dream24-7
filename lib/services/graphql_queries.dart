@@ -703,7 +703,7 @@ class GraphQLQueries {
         data: {
           order: {connect: {id: \$orderId}}
           product: {connect: {id: \$productId}}
-          size: {connect: {id: \$sizeId}}
+          sizes: {connect: {id: \$sizeId}}
           quantity: \$quantity
           pricePerUnit: \$pricePerUnit
           totalPrice: \$totalPrice
