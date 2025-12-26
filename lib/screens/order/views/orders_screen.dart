@@ -47,7 +47,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
         print('✅ UI Updated: _orders.length=${_orders.length}, _isLoading=$_isLoading');
       }
     } catch (e) {
-      print('Error loading orders: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -187,10 +186,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         Text(
                           order.items.isEmpty ? 'No items' : order.orderSummary,
                           style: Theme.of(context).textTheme.bodyMedium,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: defaultPadding / 2),
                         // Show tracking info if available
-                        if (order.trackingNumber != null || order.courierName != null)
+                        if ((order.trackingNumber != null && order.trackingNumber!.isNotEmpty) || 
+                            (order.courierName != null && order.courierName!.isNotEmpty))
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

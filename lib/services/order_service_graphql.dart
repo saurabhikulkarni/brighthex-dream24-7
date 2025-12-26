@@ -4,6 +4,7 @@ import 'package:shop/models/address_model.dart';
 import 'package:shop/services/graphql_client.dart';
 import 'package:shop/services/graphql_queries.dart';
 import 'package:shop/services/user_service.dart';
+import 'package:shop/services/stock_service.dart';
 import 'package:uuid/uuid.dart';
 
 /// OrderService with GraphQL integration
@@ -46,8 +47,6 @@ class OrderServiceGraphQL {
         return 'cancelled';
       case OrderStatus.refunded:
         return 'refunded';
-      default:
-        return 'pending';
     }
   }
 
@@ -184,12 +183,8 @@ class OrderServiceGraphQL {
     try {
       final userId = UserService.getCurrentUserId();
       if (userId == null || userId.isEmpty) {
-        print('Error: userId is null or empty when creating order');
-        print('UserService.getCurrentUserId() returned: $userId');
         throw Exception('User not logged in. Please log in to create an order.');
       }
-      
-      print('Creating order with userId: $userId');
 
       // Ensure totalAmount is valid (should be >= 0)
       if (totalAmount < 0) {
@@ -218,19 +213,13 @@ class OrderServiceGraphQL {
       final QueryResult result = await _client.mutate(options);
 
       if (result.hasException) {
-        print('Error creating order: ${result.exception}');
-        print('GraphQL errors: ${result.exception?.graphqlErrors}');
         throw Exception(result.exception.toString());
       }
 
-      print('Create order response: ${result.data}');
       final createdOrder = result.data?['createOrder'];
       if (createdOrder == null) {
-        print('Error: createOrder response is null. Full data: ${result.data}');
         throw Exception('Failed to create order - no data returned');
       }
-      
-      print('Order created successfully: ${createdOrder['id']}');
 
       // Create order items
       final orderId = createdOrder['id']?.toString();
@@ -289,25 +278,20 @@ class OrderServiceGraphQL {
           await Future.delayed(const Duration(milliseconds: 300));
           
           // Publish order item
-          print('Publishing order item: $itemId');
           await _publishOrderItem(itemId);
           createdItemIds.add(itemId);
-          print('Order item created and published successfully: $itemId');
         }
       } catch (e) {
         // If any item creation fails, we should ideally rollback
-        // For now, log the error and throw to prevent order completion
-        print('Critical error creating order items: $e');
-        print('Created ${createdItemIds.length} out of ${items.length} items');
-        // Note: In a production system, you might want to delete the order here
-        // if some items fail. For now, we'll throw to prevent incomplete orders.
+        // For now, throw to prevent order completion
         throw Exception('Failed to create all order items: $e');
       }
 
       // Publish order
-      print('Publishing order: $orderId');
       await _publishOrder(orderId);
-      print('Order published successfully');
+
+      // Update stock for all items with sizes
+      await _updateStockForOrder(items);
 
       // Return full order by fetching it
       final order = await getOrderById(orderId);
@@ -615,7 +599,6 @@ class OrderServiceGraphQL {
 
       return result.data?['createOrderItem']?['id']?.toString();
     } catch (e) {
-      print('Error creating order item: $e');
       // Re-throw as this is critical
       throw Exception('Failed to create order item: $e');
     }
@@ -632,12 +615,9 @@ class OrderServiceGraphQL {
       );
       
       if (result.hasException) {
-        print('Error publishing order item: ${result.exception}');
         throw Exception('Failed to publish order item: ${result.exception}');
       }
-      print('Order item published successfully: $itemId');
     } catch (e) {
-      print('Error publishing order item: $e');
       // Re-throw as this is critical for order creation
       rethrow;
     }
@@ -654,14 +634,30 @@ class OrderServiceGraphQL {
       );
       
       if (result.hasException) {
-        print('Error publishing order: ${result.exception}');
         throw Exception('Failed to publish order: ${result.exception}');
       }
-      print('Order published successfully: $orderId');
     } catch (e) {
-      print('Error publishing order: $e');
       // Re-throw as this is critical for order creation
       rethrow;
+    }
+  }
+
+  // Helper: Update stock for order items
+  Future<void> _updateStockForOrder(List<OrderItemModel> items) async {
+    final stockService = StockService();
+    
+    for (final item in items) {
+      // Only update stock if item has a size
+      if (item.sizeId != null && item.sizeId!.isNotEmpty) {
+        try {
+          await stockService.reduceStock(
+            sizeId: item.sizeId!,
+            quantityToReduce: item.quantity,
+          );
+        } catch (e) {
+          // Silently handle stock reduction errors
+        }
+      }
     }
   }
 }

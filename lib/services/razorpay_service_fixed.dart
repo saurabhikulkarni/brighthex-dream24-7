@@ -1,6 +1,7 @@
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'dart:convert';
 import 'package:shop/config/razorpay_config.dart';
+import 'package:shop/config/razorpay_backend_config.dart';
 import 'package:shop/models/payment_model.dart';
 import 'package:http/http.dart' as http;
 
@@ -211,10 +212,9 @@ class RazorpayService {
     String? reason,
   }) async {
     try {
-      // This should call your backend API to process refund
-      // Example: POST /api/payments/refund
+      // Call backend API to process refund
       final response = await http.post(
-        Uri.parse('YOUR_BACKEND_URL/api/payments/refund'),
+        Uri.parse('${RazorpayBackendConfig.baseUrl}/payments/refund'),
         headers: {
           'Content-Type': 'application/json',
         },

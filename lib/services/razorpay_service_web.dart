@@ -1,12 +1,9 @@
 import 'dart:js' as js;
-import 'dart:js_interop' as js_interop;
-import 'dart:js_util' as js_util;
 
 /// Web implementation of Razorpay using JavaScript Checkout
 class RazorpayPlatform {
   Function(Map<String, dynamic>)? _onSuccess;
   Function(String)? _onError;
-  Function()? _onDismiss;
 
   void init({
     required Function(Map<String, dynamic>) onSuccess,
@@ -15,7 +12,6 @@ class RazorpayPlatform {
   }) {
     _onSuccess = onSuccess;
     _onError = onError;
-    _onDismiss = onDismiss;
   }
 
   void open(Map<String, dynamic> options) {
@@ -29,12 +25,20 @@ class RazorpayPlatform {
       // Convert Dart Map to JavaScript object
       final jsOptions = js.JsObject.jsify(Map<String, dynamic>.from(options));
 
-      // Add handler callbacks to options
-      final handler = js.JsObject.jsify({
-        'success': _createSuccessCallback(),
-        'failure': _createFailureCallback(),
+      // Create JavaScript functions for callbacks
+      final successCallback = js.JsFunction.withThis((thisArg, response) {
+        _handleSuccess(response);
       });
-      js_util.setProperty(jsOptions, 'handler', handler);
+      
+      final failureCallback = js.JsFunction.withThis((thisArg, error) {
+        _handleFailure(error);
+      });
+
+      // Add handler callbacks to options
+      jsOptions['handler'] = js.JsObject.jsify({
+        'success': successCallback,
+        'failure': failureCallback,
+      });
 
       // Create Razorpay instance and open checkout
       final RazorpayConstructor = js.context['Razorpay'] as js.JsFunction;
@@ -45,25 +49,33 @@ class RazorpayPlatform {
     }
   }
 
-  dynamic _createSuccessCallback() {
-    return ((js_interop.JSAny response) {
+  void _handleSuccess(dynamic response) {
+    try {
+      final jsResponse = response as js.JsObject;
       _onSuccess?.call({
-        'razorpay_payment_id': js_util.getProperty(response, 'razorpay_payment_id')?.toString() ?? '',
-        'razorpay_order_id': js_util.getProperty(response, 'razorpay_order_id')?.toString() ?? '',
-        'razorpay_signature': js_util.getProperty(response, 'razorpay_signature')?.toString() ?? '',
+        'razorpay_payment_id': jsResponse['razorpay_payment_id']?.toString() ?? '',
+        'razorpay_order_id': jsResponse['razorpay_order_id']?.toString() ?? '',
+        'razorpay_signature': jsResponse['razorpay_signature']?.toString() ?? '',
       });
-    }.toJS);
+    } catch (e) {
+      _onError?.call('Error processing payment response: $e');
+    }
   }
 
-  dynamic _createFailureCallback() {
-    return ((js_interop.JSAny error) {
-      // Error is a JavaScript object with error details
-      final description = js_util.getProperty(error, 'description')?.toString();
-      final errorCode = js_util.getProperty(error, 'error')?.toString();
-      final errorMessage = js_util.getProperty(error, 'error')?.toString();
-      final source = js_util.getProperty(error, 'source')?.toString();
-      final step = js_util.getProperty(error, 'step')?.toString();
-      final reason = js_util.getProperty(error, 'reason')?.toString();
+  void _handleFailure(dynamic error) {
+    try {
+      final jsError = error as js.JsObject;
+      final description = jsError['description']?.toString();
+      final errorObj = jsError['error'];
+      String? errorCode;
+      String? errorMessage;
+      
+      if (errorObj != null && errorObj is js.JsObject) {
+        errorCode = errorObj['code']?.toString();
+        errorMessage = errorObj['description']?.toString();
+      }
+      
+      final reason = jsError['reason']?.toString();
       
       final errorText = description ?? 
                        errorCode ?? 
@@ -72,12 +84,13 @@ class RazorpayPlatform {
                        'Payment failed. Please try again.';
       
       _onError?.call(errorText);
-    }.toJS);
+    } catch (e) {
+      _onError?.call('Payment failed. Please try again.');
+    }
   }
 
   void dispose() {
     _onSuccess = null;
     _onError = null;
-    _onDismiss = null;
   }
 }

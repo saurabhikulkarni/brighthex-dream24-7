@@ -27,7 +27,10 @@ class _EntryPointState extends State<EntryPoint> {
     const ProfileScreen(),
   ];
 
-  int get _cartItemCount => cartService.getLocalCart().length;
+  int get _cartItemCount {
+    // Force refresh by calling getLocalCart each time
+    return CartService().getLocalCart().length;
+  }
 
   int get _wishlistItemCount => wishlistService.getWishlistCount();
 
@@ -39,11 +42,9 @@ class _EntryPointState extends State<EntryPoint> {
 
   Future<void> _loadWalletBalance() async {
     final userId = UserService.getCurrentUserId();
-    print('Loading wallet balance for userId: $userId'); // Debug log
     if (userId != null) {
       try {
         final balance = await _userService.getWalletBalance();
-        print('Wallet balance loaded: $balance'); // Debug log
         if (mounted) {
           setState(() {
             walletBalance = balance;
@@ -51,11 +52,8 @@ class _EntryPointState extends State<EntryPoint> {
           });
         }
       } catch (e) {
-        print('Error loading wallet balance: $e'); // Debug log
         // Silently fail, keep current values
       }
-    } else {
-      print('No userId found, skipping wallet balance load'); // Debug log
     }
   }
 
@@ -130,8 +128,12 @@ class _EntryPointState extends State<EntryPoint> {
               IconButton(
                 padding: EdgeInsets.symmetric(horizontal: iconPadding),
                 constraints: const BoxConstraints(),
-                onPressed: () {
-                  Navigator.pushNamed(context, checkoutScreenRoute);
+                onPressed: () async {
+                  await Navigator.pushNamed(context, checkoutScreenRoute);
+                  // Refresh cart count after returning from cart
+                  if (mounted) {
+                    setState(() {});
+                  }
                 },
                 icon: SvgPicture.asset(
                   "assets/icons/Bag.svg",

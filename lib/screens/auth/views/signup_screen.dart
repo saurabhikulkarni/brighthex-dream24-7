@@ -157,7 +157,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                       try {
                         // Check if user already exists with this phone number
-                        print('Checking if user exists with phone: $phone');
                         final UserService userService = UserService();
                         final existingUser = await userService.getUserByMobileNumber(phone);
                         
@@ -187,11 +186,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             );
                           }
-                          print('User already exists: ${existingUser.id}');
                           return;
                         }
-
-                        print('User does not exist, proceeding with account creation');
 
                         // Extract first and last name from full name
                         final nameParts = name.split(' ');
@@ -213,7 +209,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           },
                         );
                         
-                        print('Creating user with phone: $phone, firstName: $firstName, lastName: $lastName');
                         final QueryResult result = await graphQLClient.mutate(options);
                         
                         if (result.hasException) {
@@ -226,13 +221,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             );
                           }
-                          print('GraphQL Error: ${result.exception}');
                           return;
                         }
                         
                         // Extract userId from response
                         final userId = result.data?['createUserDetail']?['id']?.toString();
-                        print('User created with ID: $userId, Response: ${result.data}');
 
                         if (userId != null && userId.isNotEmpty) {
                           // Publish user (required for Hygraph)
@@ -242,9 +235,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               variables: {'id': userId},
                             );
                             await graphQLClient.mutate(publishOptions);
-                            print('User published: $userId');
                           } catch (e) {
-                            print('Error publishing user: $e');
+                            // Publishing failed, but user is created
                           }
                           // Save login session with userId from Hygraph
                           final authService = AuthService();
@@ -258,8 +250,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           // Sync wishlist and cart from backend after successful signup
                           await wishlistService.syncWithBackend();
                           await cartService.syncWithBackend();
-                          
-                          print('Login session saved for user: $userId');
                           
                           if (!mounted) return;
                           Navigator.of(context).pop(); // Hide loading
@@ -275,10 +265,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             );
                           }
-                          print('Error: userId is null or empty');
                         }
                       } catch (e) {
-                        print('Exception in signup: $e');
                         if (mounted) {
                           Navigator.of(context).pop(); // Hide loading
                           ScaffoldMessenger.of(context).showSnackBar(

@@ -86,6 +86,21 @@ const double defaultPadding = 16.0;
 const double defaultBorderRadious = 12.0;
 const Duration defaultDuration = Duration(milliseconds: 300);
 
+// Standard size names that don't require user selection
+const List<String> standardFreeSizes = [
+  'FREE_SIZE',
+  'FREE SIZE',
+  'ONE_SIZE',
+  'ONE SIZE',
+  'NO_SIZE',
+  'NO SIZE',
+  'FREESIZE',
+  'ONESIZE',
+  'NOSIZE',
+  'FREE',
+  'ONE',
+];
+
 final passwordValidator = MultiValidator([
   RequiredValidator(errorText: 'Password is required'),
   MinLengthValidator(8, errorText: 'password must be at least 8 digits long'),

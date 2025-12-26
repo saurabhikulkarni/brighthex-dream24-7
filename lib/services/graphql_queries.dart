@@ -958,4 +958,45 @@ class GraphQLQueries {
       }
     }
   ''';
+
+  // ============ Stock/Size Update Queries ============
+  
+  // Update size quantity (stock)
+  static const String updateSizeQuantity = '''
+    mutation UpdateSizeQuantity(\$id: ID!, \$quantity: Int!) {
+      updateSize(
+        where: {id: \$id}
+        data: {quantity: \$quantity}
+      ) {
+        id
+        sizeName
+        quantity
+        updatedAt
+      }
+    }
+  ''';
+
+  // Publish size after update
+  static const String publishSize = '''
+    mutation PublishSize(\$id: ID!) {
+      publishSize(where: {id: \$id}) {
+        id
+      }
+    }
+  ''';
+
+  // Get size by ID
+  static const String getSizeById = '''
+    query GetSizeById(\$id: ID!) {
+      size(where: {id: \$id}) {
+        id
+        sizeName
+        quantity
+        product {
+          id
+          productName
+        }
+      }
+    }
+  ''';
 }

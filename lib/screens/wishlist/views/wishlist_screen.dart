@@ -62,8 +62,29 @@ class _WishlistScreenState extends State<WishlistScreen> {
     }
   }
 
+  // Check if product has stock (checking all sizes)
+  bool _hasStock(ProductModel product) {
+    // If no size information, assume in stock
+    // You might need to add sizes field to ProductModel or fetch separately
+    return true; // Implement proper stock checking based on your data model
+  }
+
   Future<void> _addToCart(ProductModel product) async {
     try {
+      // Check stock before adding
+      if (!_hasStock(product)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('This product is out of stock'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
+
       // Add to cart without size (you can modify this if you want to show size selection)
       await cartService.addToLocalCart(product, null, 1);
       

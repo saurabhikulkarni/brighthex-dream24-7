@@ -114,7 +114,6 @@ class _LogInFormState extends State<LogInForm> {
 
     // Check if user exists in database
     try {
-      print('Checking if user exists with phone: $phone');
       final UserService userService = UserService();
       final existingUser = await userService.getUserByMobileNumber(phone);
       
@@ -145,13 +144,9 @@ class _LogInFormState extends State<LogInForm> {
             ),
           );
         }
-        print('User does not exist');
         return;
       }
-      
-      print('User exists, proceeding to send OTP');
     } catch (e) {
-      print('Error checking user existence: $e');
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -274,7 +269,6 @@ class _LogInFormState extends State<LogInForm> {
       
       // Check if it's test user - use direct login
       if (authService.isTestUser(phone)) {
-        print('[TEST USER] Logging in test user directly');
         final success = await authService.loginTestUser();
         if (success && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -288,8 +282,6 @@ class _LogInFormState extends State<LogInForm> {
       }
       
       final name = getUserName();
-      
-      print('[LOGIN] Starting login session with phone: $phone');
       
       try {
         // First, try to find existing user by mobile number
@@ -329,7 +321,6 @@ class _LogInFormState extends State<LogInForm> {
           final QueryResult result = await graphQLClient.mutate(options);
           
           if (result.hasException) {
-            print('Error creating user: ${result.exception}');
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -352,7 +343,7 @@ class _LogInFormState extends State<LogInForm> {
               );
               await graphQLClient.mutate(publishOptions);
             } catch (e) {
-              print('Error publishing user: $e');
+              // Publishing failed, but user is created
             }
           }
         }
@@ -367,12 +358,9 @@ class _LogInFormState extends State<LogInForm> {
           );
           
           // Sync wishlist and cart from backend after successful login
-          print('[LOGIN] Syncing wishlist and cart from backend...');
           await wishlistService.syncWithBackend();
           await cartService.syncWithBackend();
-          print('[LOGIN] Sync completed');
         } else {
-          print('Error: Could not extract user ID from response');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -383,7 +371,6 @@ class _LogInFormState extends State<LogInForm> {
           }
         }
       } catch (e) {
-        print('Exception in saveLoginSession: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

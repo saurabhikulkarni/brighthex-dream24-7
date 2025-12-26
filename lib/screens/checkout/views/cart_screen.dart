@@ -51,7 +51,7 @@ class _CartScreenState extends State<CartScreen> {
         });
       }
     } catch (e) {
-      print('Error loading wallet balance: $e');
+      // Silently handle error
     }
   }
 
@@ -59,6 +59,14 @@ class _CartScreenState extends State<CartScreen> {
 
   double get subtotal => cartService.getCartTotal();
   double get total => subtotal;
+
+  // Check if a size name represents a free size product
+  bool _isFreeSizeProduct(String sizeName) {
+    final upperSizeName = sizeName.toUpperCase().replaceAll(' ', '');
+    return standardFreeSizes.any((freeSize) => 
+      freeSize.toUpperCase().replaceAll(' ', '') == upperSizeName
+    );
+  }
 
   void _removeItem(String cartItemId) async {
     try {
@@ -105,6 +113,29 @@ class _CartScreenState extends State<CartScreen> {
     if (cartItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Your cart is empty')),
+      );
+      return;
+    }
+
+    // Validate size selection for all items that require sizes
+    final itemsWithoutSize = cartItems.where((item) {
+      // Skip validation if product has free size
+      if (item.size != null && _isFreeSizeProduct(item.size!.sizeName)) {
+        return false;
+      }
+      // Check if size is missing for products that need it
+      return item.product != null && item.size == null;
+    }).toList();
+
+    if (itemsWithoutSize.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Please select size for ${itemsWithoutSize.length} item(s) before checkout'
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
       );
       return;
     }
@@ -337,10 +368,39 @@ class _CartScreenState extends State<CartScreen> {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 4),
-                                        if (item.size != null)
+                                        if (item.size != null) ...[
                                           Text(
                                             'Size: ${item.size!.sizeName}',
                                             style: Theme.of(context).textTheme.bodySmall,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          // Show stock availability
+                                          if (item.size!.quantity > 0)
+                                            Text(
+                                              'Stock: ${item.size!.quantity} available',
+                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                color: item.size!.quantity < 5 
+                                                  ? Colors.orange 
+                                                  : Colors.green,
+                                                fontSize: 11,
+                                              ),
+                                            )
+                                          else
+                                            Text(
+                                              'Out of Stock',
+                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                color: Colors.red,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                        ] else
+                                          Text(
+                                            'Size not selected',
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Colors.red,
+                                              fontStyle: FontStyle.italic,
+                                            ),
                                           ),
                                         const SizedBox(height: 4),
                                         Row(
