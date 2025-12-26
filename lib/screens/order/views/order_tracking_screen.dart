@@ -54,17 +54,24 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         
         // API configured but tracking failed - show error instead of silent fallback
         print('❌ Shiprocket API failed for order: ${widget.orderId}');
-        if (kIsWeb) {
+        
+        // Check if backend proxy is configured
+        final hasProxy = ShiprocketConfig.proxyUrl != null && ShiprocketConfig.proxyUrl!.isNotEmpty;
+        
+        if (kIsWeb && !hasProxy) {
           print('⚠️ CORS Error: Shiprocket API cannot be called directly from browser');
-          print('   This is expected on Flutter Web');
+          print('   This is expected on Flutter Web without backend proxy');
           print('   Solutions:');
           print('   1. Test on mobile device (Android/iOS)');
-          print('   2. Use a backend proxy server');
+          print('   2. Use a backend proxy server (set ShiprocketConfig.proxyUrl)');
         } else {
           print('This could mean:');
           print('  1. Order ID does not exist in Shiprocket');
           print('  2. Order has not been created in Shiprocket yet');
-          print('  3. API authentication failed');
+          print('  3. API authentication failed on backend');
+          if (hasProxy) {
+            print('  4. Backend server might be down or unreachable');
+          }
         }
         // Still return mock data for UI, but log the issue
         print('⚠️ Using mock data as fallback');

@@ -265,48 +265,108 @@ class UserService {
 
   // Deduct money from wallet (decrement)
   Future<double?> deductWalletBalance(String userId, double amount) async {
-    try {
-      // First, get current balance
-      final user = await getUserById(userId);
-      if (user == null) {
-        throw Exception('User not found');
-      }
-      
-      final currentBalance = user.walletBalance;
-      final newBalance = (currentBalance - amount).toInt();
-      
-      // Don't allow negative balance
-      if (newBalance < 0) {
-        throw Exception('Insufficient wallet balance');
-      }
-      
-      // Update with new calculated balance
-      final QueryResult result = await _client.mutate(
-        MutationOptions(
-          document: gql(GraphQLQueries.updateWalletBalance),
-          variables: {
-            'userId': userId,
-            'walletBalance': newBalance,
-          },
-        ),
-      );
+    const maxRetries = 3;
+    const baseDelay = Duration(seconds: 2);
+    
+    for (int attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // First, get current balance
+        final user = await getUserById(userId);
+        if (user == null) {
+          throw Exception('User not found');
+        }
+        
+        final currentBalance = user.walletBalance;
+        final newBalance = (currentBalance - amount).toInt();
+        
+        // Don't allow negative balance
+        if (newBalance < 0) {
+          throw Exception('Insufficient wallet balance');
+        }
+        
+        // Add delay between requests to avoid rate limiting (except for first attempt)
+        if (attempt > 0) {
+          final delay = baseDelay * (attempt + 1); // Exponential backoff
+          print('⏳ Rate limit retry: waiting ${delay.inSeconds}s before attempt ${attempt + 1}');
+          await Future.delayed(delay);
+        }
+        
+        // Update with new calculated balance
+        final QueryResult result = await _client.mutate(
+          MutationOptions(
+            document: gql(GraphQLQueries.updateWalletBalance),
+            variables: {
+              'userId': userId,
+              'walletBalance': newBalance,
+            },
+            fetchPolicy: FetchPolicy.noCache, // Don't use cache for mutations
+          ),
+        );
 
-      if (result.hasException) {
-        throw Exception(result.exception.toString());
-      }
+        if (result.hasException) {
+          final errorMessage = result.exception.toString().toLowerCase();
+          
+          // Check if it's a rate limit error
+          if (errorMessage.contains('too many requests') || 
+              errorMessage.contains('rate limit')) {
+            if (attempt < maxRetries - 1) {
+              print('⚠️ Rate limit hit on wallet deduction, will retry...');
+              continue; // Retry
+            } else {
+              print('❌ Rate limit hit after $maxRetries attempts. Using current balance.');
+              // Return current balance instead of failing
+              return currentBalance;
+            }
+          }
+          
+          // For other errors, throw immediately
+          throw Exception(result.exception.toString());
+        }
 
-      // Publish the update
-      if (result.data != null && result.data!['updateUserDetail'] != null) {
-        final updatedUser = result.data!['updateUserDetail'];
-        final updatedUserId = updatedUser['id'];
-        await _publishUser(updatedUserId);
-        return (updatedUser['walletBalance'] ?? 0).toDouble();
-      }
+        // Publish the update (with retry logic for rate limits)
+        if (result.data != null && result.data!['updateUserDetail'] != null) {
+          final updatedUser = result.data!['updateUserDetail'];
+          final updatedUserId = updatedUser['id'];
+          
+          // Try to publish, but don't fail if rate limited
+          try {
+            await _publishUser(updatedUserId);
+          } catch (publishError) {
+            final publishErrorMsg = publishError.toString().toLowerCase();
+            if (publishErrorMsg.contains('too many requests') || 
+                publishErrorMsg.contains('rate limit')) {
+              print('⚠️ Rate limit on publish, but balance updated successfully');
+              // Balance was updated, just publishing failed - that's okay
+            } else {
+              print('⚠️ Publish failed (non-rate-limit): $publishError');
+            }
+          }
+          
+          return (updatedUser['walletBalance'] ?? 0).toDouble();
+        }
 
-      return null;
-    } catch (e) {
-      throw Exception('Error deducting wallet balance: $e');
+        return null;
+      } catch (e) {
+        final errorMessage = e.toString().toLowerCase();
+        
+        // Check if it's a rate limit error
+        if ((errorMessage.contains('too many requests') || 
+             errorMessage.contains('rate limit')) && 
+            attempt < maxRetries - 1) {
+          print('⚠️ Rate limit error, retrying... (attempt ${attempt + 1}/$maxRetries)');
+          continue; // Retry
+        }
+        
+        // If it's the last attempt or not a rate limit error, throw
+        if (attempt == maxRetries - 1) {
+          throw Exception('Error deducting wallet balance after $maxRetries attempts: $e');
+        }
+        throw Exception('Error deducting wallet balance: $e');
+      }
     }
+    
+    // Should never reach here, but just in case
+    throw Exception('Error deducting wallet balance: Max retries exceeded');
   }
 
   // Publish user (required for Hygraph)

@@ -25,16 +25,48 @@ class ShiprocketOrderData {
   });
 
   factory ShiprocketOrderData.fromJson(Map<String, dynamic> json) {
+    // Handle tracking_data - it can be a List, Map, or null
+    List<TrackingEvent> trackingHistory = [];
+    final trackingData = json['tracking_data'];
+    if (trackingData != null) {
+      if (trackingData is List) {
+        // If it's already a list, map it directly
+        trackingHistory = trackingData
+            .map((e) => TrackingEvent.fromJson(e as Map<String, dynamic>))
+            .toList();
+      } else if (trackingData is Map) {
+        // If it's a map, check for common Shiprocket API structures
+        // Some APIs return tracking_data as { "shipment_track": [...], "tracking": [...] }
+        if (trackingData['shipment_track'] is List) {
+          trackingHistory = (trackingData['shipment_track'] as List)
+              .map((e) => TrackingEvent.fromJson(e as Map<String, dynamic>))
+              .toList();
+        } else if (trackingData['tracking'] is List) {
+          trackingHistory = (trackingData['tracking'] as List)
+              .map((e) => TrackingEvent.fromJson(e as Map<String, dynamic>))
+              .toList();
+        } else if (trackingData['tracking_data'] is List) {
+          trackingHistory = (trackingData['tracking_data'] as List)
+              .map((e) => TrackingEvent.fromJson(e as Map<String, dynamic>))
+              .toList();
+        } else {
+          // If it's a single object, try to convert it
+          try {
+            trackingHistory = [TrackingEvent.fromJson(trackingData as Map<String, dynamic>)];
+          } catch (e) {
+            print('⚠️ Could not parse tracking_data: $e');
+          }
+        }
+      }
+    }
+
     return ShiprocketOrderData(
       orderId: json['order_id']?.toString() ?? json['shipment_id']?.toString() ?? '',
       orderStatus: _mapStatus(json['status'] ?? json['current_status'] ?? 'Unknown'),
       courierName: json['courier_name'] ?? json['carrier_name'],
       trackingNumber: json['awb_code'] ?? json['tracking_number'] ?? json['tracking_id'],
       estimatedDeliveryDate: json['estimated_delivery_date'] ?? json['edd'],
-      trackingHistory: (json['tracking_data'] as List?)
-              ?.map((e) => TrackingEvent.fromJson(e))
-              .toList() ??
-          [],
+      trackingHistory: trackingHistory,
       deliveryPartner: json['delivery_partner'] != null
           ? DeliveryPartner.fromJson(json['delivery_partner'])
           : null,
@@ -117,25 +149,40 @@ class ShiprocketService {
   static DateTime? _tokenExpiry;
   static bool _authFailed = false; // Track if authentication has failed
   
-  /// Get the actual URL to use (proxy if available and on web, otherwise direct)
+  /// Get the actual URL to use (backend proxy if configured, otherwise direct API)
   static String _getApiUrl(String endpoint) {
-    // Use proxy if configured and on web, otherwise use direct API
-    if (kIsWeb && _proxyUrl != null && _proxyUrl!.isNotEmpty) {
-      // Proxy should forward to the full endpoint
-      print('🌐 Using proxy URL for web: $_proxyUrl$endpoint');
+    // Use backend proxy if configured (for all platforms to avoid CORS and keep credentials secure)
+    if (_proxyUrl != null && _proxyUrl!.isNotEmpty) {
+      // Map Shiprocket endpoints to backend endpoints
+      if (endpoint.startsWith('/orders/show/')) {
+        final orderId = endpoint.replaceAll('/orders/show/', '');
+        print('🌐 Using backend proxy: $_proxyUrl/track/$orderId');
+        return '$_proxyUrl/track/$orderId';
+      } else if (endpoint.startsWith('/courier/track/awb/')) {
+        final awbCode = endpoint.replaceAll('/courier/track/awb/', '');
+        print('🌐 Using backend proxy: $_proxyUrl/track-awb/$awbCode');
+        return '$_proxyUrl/track-awb/$awbCode';
+      } else if (endpoint.startsWith('/orders/create/adhoc')) {
+        print('🌐 Using backend proxy: $_proxyUrl/create-shipment');
+        return '$_proxyUrl/create-shipment';
+      }
+      // For other endpoints, use proxy with original endpoint
+      print('🌐 Using backend proxy: $_proxyUrl$endpoint');
       return '$_proxyUrl$endpoint';
     }
+    // Direct API call (will fail on web due to CORS)
     return '$_baseUrl$endpoint';
   }
   
-  /// Check if we should attempt API calls on web
+  /// Check if we should attempt API calls
   static bool _shouldAttemptApiCall() {
+    // If backend proxy is configured, always use it (works on all platforms)
+    if (_proxyUrl != null && _proxyUrl!.isNotEmpty) {
+      return true;
+    }
+    // Without proxy, only attempt on mobile/desktop (web will fail due to CORS)
     if (kIsWeb) {
-      if (_proxyUrl != null && _proxyUrl!.isNotEmpty) {
-        return true; // Proxy configured, should work
-      }
-      // No proxy on web - will fail due to CORS
-      return false;
+      return false; // No proxy on web - will fail due to CORS
     }
     return true; // Mobile/desktop - no CORS issues
   }
@@ -269,10 +316,8 @@ class ShiprocketService {
 
   /// Get order tracking details by Shiprocket Order ID
   /// 
-  /// API Endpoint: GET https://apiv2.shiprocket.in/v1/external/orders/show/{order_id}
-  /// Reference: https://shiprocket.freshdesk.com/support/solutions/articles/43000337456-api-document-helpsheet
-  /// 
-  /// Note: CORS restrictions apply on Flutter web. For web, consider using a backend proxy.
+  /// Uses backend API proxy to avoid CORS issues and keep credentials secure
+  /// Backend endpoint: GET /api/shiprocket/track/:orderId
   static Future<ShiprocketOrderData?> getOrderTracking(String orderId) async {
     // Check if we should attempt API call (web without proxy will fail)
     if (!_shouldAttemptApiCall()) {
@@ -282,38 +327,57 @@ class ShiprocketService {
     }
     
     try {
-      final token = await _getAuthToken();
-      if (token == null) {
-        print('Failed to authenticate with Shiprocket');
-        return null;
-      }
-
       // Remove # if present in order ID
       final cleanOrderId = orderId.replaceAll('#', '');
 
+      // Use backend API (authentication handled by backend)
       final response = await http.get(
         Uri.parse(_getApiUrl('/orders/show/$cleanOrderId')),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return ShiprocketOrderData.fromJson(data['data'] ?? data);
+        // Backend returns { success: true, data: {...} }
+        final trackingData = data['data'] ?? data;
+        
+        // Validate that trackingData is a Map before parsing
+        if (trackingData is! Map<String, dynamic>) {
+          print('⚠️ Invalid response format: expected Map, got ${trackingData.runtimeType}');
+          return null;
+        }
+        
+        try {
+          return ShiprocketOrderData.fromJson(trackingData);
+        } catch (e) {
+          print('❌ Error parsing Shiprocket order data: $e');
+          print('   Response data: $trackingData');
+          return null;
+        }
       } else {
         final errorBody = response.body;
         print('❌ Shiprocket API Error: ${response.statusCode}');
         try {
           final errorData = jsonDecode(errorBody);
-          print('Error message: ${errorData['message']}');
+          final message = errorData['message'] ?? 'Unknown error';
+          print('Error message: $message');
+          
+          // Don't show CORS error for 404 (order not found)
+          if (response.statusCode == 404) {
+            print('💡 Order not found in Shiprocket. This might mean:');
+            print('   1. Order ID does not exist in Shiprocket');
+            print('   2. Order has not been created in Shiprocket yet');
+            print('   3. Order belongs to a different Shiprocket account');
+          }
         } catch (e) {
           print('Error response: $errorBody');
         }
         
-        // Check for CORS-related errors (common on web)
-        if (kIsWeb && (errorBody.contains('CORS') || errorBody.contains('cors') || 
+        // Check for CORS-related errors (common on web without proxy)
+        if (kIsWeb && response.statusCode != 404 && 
+            (errorBody.contains('CORS') || errorBody.contains('cors') || 
             errorBody.contains('Access-Control') || response.statusCode == 0)) {
           print('⚠️ CORS Error detected on Flutter Web');
           print('💡 Shiprocket API does not allow direct browser requests');
@@ -321,21 +385,6 @@ class ShiprocketService {
           print('   1. Test on mobile device (Android/iOS)');
           print('   2. Use a backend proxy server to make API calls');
           print('   3. Configure CORS on your backend server');
-        }
-        
-        // Check for 403 Forbidden
-        if (response.statusCode == 403) {
-          print('⚠️ 403 Forbidden - Possible causes:');
-          print('  1. Invalid or expired authentication token');
-          print('  2. IP address not whitelisted in Shiprocket');
-          print('  3. API permissions not enabled for your account');
-          print('  4. Order ID does not belong to your account');
-          print('  5. Account suspended or inactive');
-          
-          // Clear token to force re-authentication on next call
-          _authToken = null;
-          _tokenExpiry = null;
-          _authFailed = false; // Allow retry
         }
         
         return null;
@@ -356,10 +405,8 @@ class ShiprocketService {
 
   /// Get tracking details by AWB (Airway Bill) code
   /// 
-  /// API Endpoint: GET https://apiv2.shiprocket.in/v1/external/courier/track/awb/{awb_code}
-  /// Reference: https://shiprocket.freshdesk.com/support/solutions/articles/43000337456-api-document-helpsheet
-  /// 
-  /// Note: CORS restrictions apply on Flutter web. For web, consider using a backend proxy.
+  /// Uses backend API proxy to avoid CORS issues and keep credentials secure
+  /// Backend endpoint: GET /api/shiprocket/track-awb/:awbCode
   static Future<ShiprocketOrderData?> getTrackingByAWB(String awbCode) async {
     // Check if we should attempt API call (web without proxy will fail)
     if (!_shouldAttemptApiCall()) {
@@ -369,35 +416,53 @@ class ShiprocketService {
     }
     
     try {
-      final token = await _getAuthToken();
-      if (token == null) {
-        print('Failed to authenticate with Shiprocket');
-        return null;
-      }
-
+      // Use backend API (authentication handled by backend)
       final response = await http.get(
         Uri.parse(_getApiUrl('/courier/track/awb/$awbCode')),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
         },
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return ShiprocketOrderData.fromJson(data['data'] ?? data);
+        // Backend returns { success: true, data: {...} }
+        final trackingData = data['data'] ?? data;
+        
+        // Validate that trackingData is a Map before parsing
+        if (trackingData is! Map<String, dynamic>) {
+          print('⚠️ Invalid response format: expected Map, got ${trackingData.runtimeType}');
+          return null;
+        }
+        
+        try {
+          return ShiprocketOrderData.fromJson(trackingData);
+        } catch (e) {
+          print('❌ Error parsing Shiprocket AWB tracking data: $e');
+          print('   Response data: $trackingData');
+          return null;
+        }
       } else {
         final errorBody = response.body;
         print('❌ Shiprocket AWB Tracking Error: ${response.statusCode}');
         try {
           final errorData = jsonDecode(errorBody);
-          print('Error message: ${errorData['message']}');
+          final message = errorData['message'] ?? 'Unknown error';
+          print('Error message: $message');
+          
+          // Don't show CORS error for 404 (AWB not found)
+          if (response.statusCode == 404) {
+            print('💡 AWB code not found in Shiprocket. This might mean:');
+            print('   1. AWB code does not exist');
+            print('   2. AWB code belongs to a different Shiprocket account');
+          }
         } catch (e) {
           print('Error response: $errorBody');
         }
         
-        // Check for CORS-related errors (common on web)
-        if (kIsWeb && (errorBody.contains('CORS') || errorBody.contains('cors') || 
+        // Check for CORS-related errors (common on web without proxy)
+        if (kIsWeb && response.statusCode != 404 && 
+            (errorBody.contains('CORS') || errorBody.contains('cors') || 
             errorBody.contains('Access-Control') || response.statusCode == 0)) {
           print('⚠️ CORS Error detected on Flutter Web');
           print('💡 Shiprocket API does not allow direct browser requests');
@@ -407,17 +472,16 @@ class ShiprocketService {
           print('   3. Configure CORS on your backend server');
         }
         
-        if (response.statusCode == 403) {
-          print('⚠️ 403 Forbidden - Clearing auth token for retry');
-          _authToken = null;
-          _tokenExpiry = null;
-          _authFailed = false;
-        }
-        
         return null;
       }
     } catch (e) {
       print('Exception in getTrackingByAWB: $e');
+      
+      // Check if it's a type error (the one we're fixing)
+      if (e.toString().contains('is not a subtype of type')) {
+        print('⚠️ Type error parsing response. This might be due to unexpected API response format.');
+        print('   Error: $e');
+      }
       
       // Check if it's a CORS error
       if (kIsWeb && (e.toString().contains('CORS') || e.toString().contains('cors') || 
@@ -516,7 +580,8 @@ class ShiprocketService {
   }
 
   /// Create a shipment order in Shiprocket
-  /// Note: This method should ideally be called from your backend server for security
+  /// Uses backend API proxy to keep credentials secure
+  /// Backend endpoint: POST /api/shiprocket/create-shipment
   /// Parameters match Shiprocket API requirements
   static Future<Map<String, dynamic>?> createShipment({
     required String orderId,
@@ -548,9 +613,9 @@ class ShiprocketService {
     double? weight,
   }) async {
     try {
-      final token = await _getAuthToken();
-      if (token == null) {
-        print('Failed to authenticate with Shiprocket');
+      // Check if we should attempt API call
+      if (!_shouldAttemptApiCall()) {
+        print('⚠️ Cannot create shipment without backend proxy (CORS will block)');
         return null;
       }
 
@@ -590,19 +655,21 @@ class ShiprocketService {
       if (height != null) shipmentData['height'] = height;
       if (weight != null) shipmentData['weight'] = weight;
 
+      // Use backend API (authentication handled by backend)
       final response = await http.post(
         Uri.parse(_getApiUrl('/orders/create/adhoc')),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
         },
         body: jsonEncode(shipmentData),
       ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        print('Shiprocket shipment created successfully: ${data['order_id']}');
-        return data;
+        // Backend returns { success: true, data: {...} }
+        final result = data['data'] ?? data;
+        print('Shiprocket shipment created successfully: ${result['order_id']}');
+        return result;
       } else {
         print('Error creating Shiprocket shipment: ${response.statusCode} - ${response.body}');
         return null;
