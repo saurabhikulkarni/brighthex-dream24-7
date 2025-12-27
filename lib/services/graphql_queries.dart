@@ -2,7 +2,7 @@ class GraphQLQueries {
   // Query to fetch all products
   static const String getAllProducts = '''
     query GetAllProducts {
-      products {
+      products(first: 1000) {
         id
         productName
         slug
@@ -44,7 +44,7 @@ class GraphQLQueries {
   // Query to fetch products by category
   static const String getProductsByCategory = '''
     query GetProductsByCategory(\$categoryName: String!) {
-      products(where: {category: {categoryName: \$categoryName}}) {
+      products(first: 1000, where: {category: {categoryName: \$categoryName}}) {
         id
         productName
         slug
@@ -65,7 +65,7 @@ class GraphQLQueries {
   // Query to fetch all categories
   static const String getAllCategories = '''
     query GetAllCategories {
-      categories {
+      categories(first: 1000) {
         id
         categoryName
         slug
@@ -76,7 +76,7 @@ class GraphQLQueries {
   // Query to fetch sizes for a product
   static const String getSizesByProduct = '''
     query GetSizesByProduct(\$productId: ID!) {
-      sizes(where: {product: {id: \$productId}}) {
+      sizes(first: 1000, where: {product: {id: \$productId}}) {
         id
         sizeName
         quantity
@@ -90,7 +90,7 @@ class GraphQLQueries {
   // Query to fetch cart items for a user
   static const String getCartByUser = '''
     query GetCartByUser(\$userId: ID!) {
-      carts(where: {userDetail: {id: \$userId}}) {
+      carts(first: 1000, where: {userDetail: {id: \$userId}}) {
         id
         quantity
         product {
@@ -162,6 +162,7 @@ class GraphQLQueries {
   static const String searchProducts = '''
     query SearchProducts(\$searchTerm: String!) {
       products(
+        first: 1000,
         where: {
           OR: [
             {productName_contains: \$searchTerm}
@@ -175,7 +176,6 @@ class GraphQLQueries {
         slug
         description
         price
-        discountPrice
         image {
           url
         }
@@ -313,7 +313,7 @@ class GraphQLQueries {
   // Get all addresses for a user
   static const String getAddressesByUser = '''
     query GetAddressesByUser(\$userId: ID!) {
-      addresses(where: {userDetail: {id: \$userId}}) {
+      addresses(first: 1000, where: {userDetail: {id: \$userId}}) {
         id
         fullName
         phoneNumber
@@ -498,7 +498,7 @@ class GraphQLQueries {
   // Get user wishlist from separate Wishlist collection
   static const String getUserWishlist = '''
     query GetUserWishlist(\$userId: ID!) {
-      wishlists(where: {userDetail: {id: \$userId}}) {
+      wishlists(first: 1000, where: {userDetail: {id: \$userId}}) {
         id
         product {
           id
@@ -565,7 +565,7 @@ class GraphQLQueries {
   // Get all orders for a user
   static const String getUserOrders = '''
     query GetUserOrders(\$userId: ID!) {
-      orders(where: {userDetail: {id: \$userId}}, orderBy: createdAt_DESC) {
+      orders(first: 1000, where: {userDetail: {id: \$userId}}, orderBy: createdAt_DESC) {
         id
         orderNumber
         totalAmount

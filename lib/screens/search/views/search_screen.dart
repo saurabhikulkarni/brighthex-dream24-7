@@ -4,6 +4,7 @@ import 'package:shop/models/product_model.dart';
 import 'package:shop/services/search_service.dart';
 import 'package:shop/components/network_image_with_loader.dart';
 import 'package:shop/route/screen_export.dart';
+import 'dart:async';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -16,6 +17,8 @@ class _SearchScreenState extends State<SearchScreen> {
   late TextEditingController _searchController;
   List<ProductModel> _searchResults = [];
   bool _isSearching = false;
+  String? _errorMessage;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -26,26 +29,48 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _debounceTimer?.cancel();
     super.dispose();
   }
 
   void _performSearch(String query) async {
+    // Cancel previous timer
+    _debounceTimer?.cancel();
+    
     if (query.isEmpty) {
       setState(() {
         _searchResults = [];
         _isSearching = false;
+        _errorMessage = null;
       });
       return;
     }
 
     setState(() {
       _isSearching = true;
+      _errorMessage = null;
     });
 
-    final results = await searchService.searchProducts(query);
-    setState(() {
-      _searchResults = results;
-      _isSearching = false;
+    // Debounce: wait 500ms before searching
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () async {
+      try {
+        final results = await searchService.searchProducts(query);
+        if (mounted) {
+          setState(() {
+            _searchResults = results;
+            _isSearching = false;
+            _errorMessage = null;
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _searchResults = [];
+            _isSearching = false;
+            _errorMessage = 'Search failed. Please try again.';
+          });
+        }
+      }
     });
   }
 
@@ -129,11 +154,33 @@ class _SearchScreenState extends State<SearchScreen> {
                               )),
                         ],
                       )
+                    : _errorMessage != null
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                                const SizedBox(height: defaultPadding),
+                                Text(
+                                  _errorMessage!,
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                          )
                     : _searchResults.isEmpty
                         ? Center(
-                            child: Text(
-                              "No products found",
-                              style: Theme.of(context).textTheme.bodyMedium,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.search_off, size: 60, color: Colors.grey),
+                                const SizedBox(height: defaultPadding),
+                                Text(
+                                  'No products found for "${_searchController.text}"',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
                           )
                         : ListView.builder(

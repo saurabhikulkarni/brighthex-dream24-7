@@ -33,7 +33,8 @@ class _PopularProductsState extends State<PopularProducts> {
       final products = await _productService.getPopularProducts();
       if (mounted) {
         setState(() {
-          _products = products;
+          // Shuffle and take only 6 random products
+          _products = (products..shuffle()).take(6).toList();
           _isLoading = false;
         });
       }

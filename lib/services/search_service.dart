@@ -101,12 +101,15 @@ class SearchService {
       }
 
       final List<dynamic> productsJson = result.data!['products'] as List<dynamic>;
+      
       final products = productsJson
           .map((json) => ProductModel.fromJson(json as Map<String, dynamic>))
           .toList();
 
       // Add to search history after successful search
-      addToSearchHistory(searchTerm);
+      if (products.isNotEmpty) {
+        addToSearchHistory(searchTerm);
+      }
 
       return products;
     } catch (e) {

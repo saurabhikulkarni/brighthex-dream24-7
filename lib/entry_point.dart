@@ -136,7 +136,7 @@ class _EntryPointState extends State<EntryPoint> {
                   }
                 },
                 icon: Icon(
-                  Icons.shopping_cart,
+                  Icons.shopping_cart_outlined,
                   size: iconSize,
                   color: Colors.white,
                 ),

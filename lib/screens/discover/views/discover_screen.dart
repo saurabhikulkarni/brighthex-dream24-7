@@ -8,20 +8,6 @@ import 'package:shop/screens/search/views/components/search_form.dart';
 class DiscoverScreen extends StatelessWidget {
   const DiscoverScreen({super.key});
 
-  String? _getCategoryId(String categoryTitle) {
-    if (categoryTitle.toLowerCase().contains("men") && 
-        !categoryTitle.toLowerCase().contains("women")) {
-      return "mens";
-    } else if (categoryTitle.toLowerCase().contains("women")) {
-      return "womens";
-    } else if (categoryTitle.toLowerCase().contains("accessor")) {
-      return "accessories";
-    } else if (categoryTitle.toLowerCase().contains("electron")) {
-      return "electronics";
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,7 +43,6 @@ class DiscoverScreen extends StatelessWidget {
                 itemCount: demoCategories.length,
                 itemBuilder: (context, index) {
                   final category = demoCategories[index];
-                  final categoryId = _getCategoryId(category.title);
                   
                   return Column(
                     children: [
@@ -86,7 +71,7 @@ class DiscoverScreen extends StatelessWidget {
                             categoryProductsScreenRoute,
                             arguments: {
                               'categoryName': category.title,
-                              'categoryId': categoryId,
+                              'categoryId': category.title.toLowerCase(),
                             },
                           );
                         },

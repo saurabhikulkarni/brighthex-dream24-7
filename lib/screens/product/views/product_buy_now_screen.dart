@@ -521,7 +521,7 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: _addToCart,
-                  icon: const Icon(Icons.shopping_cart),
+                  icon: const Icon(Icons.shopping_cart_outlined),
                   label: const Text('Add to Cart'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey[300],

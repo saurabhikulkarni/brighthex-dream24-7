@@ -79,6 +79,7 @@ class ProductService {
       }
 
       final List<dynamic> productsJson = result.data!['products'] as List<dynamic>;
+      
       return productsJson
           .map((json) => ProductModel.fromJson(json as Map<String, dynamic>))
           .toList();

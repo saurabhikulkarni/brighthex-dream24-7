@@ -18,6 +18,7 @@ class WishlistScreen extends StatefulWidget {
 class _WishlistScreenState extends State<WishlistScreen> {
   List<ProductModel> _wishlistItems = [];
   bool _isLoading = true;
+  bool _isEditMode = false;
   final CartService cartService = CartService();
 
   @override
@@ -165,14 +166,31 @@ class _WishlistScreenState extends State<WishlistScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            // Check if we can pop, otherwise navigate to home
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, entryPointScreenRoute);
+            }
+          },
         ),
         actions: [
           if (_wishlistItems.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.shopping_cart),
+              icon: const Icon(Icons.shopping_cart_outlined),
               onPressed: _moveAllToCart,
               tooltip: 'Move All to Cart',
+            ),
+          if (_wishlistItems.isNotEmpty)
+            IconButton(
+              icon: Icon(_isEditMode ? Icons.check : Icons.edit_outlined),
+              onPressed: () {
+                setState(() {
+                  _isEditMode = !_isEditMode;
+                });
+              },
+              tooltip: _isEditMode ? 'Done' : 'Edit',
             ),
           if (_wishlistItems.isNotEmpty)
             IconButton(
@@ -284,45 +302,47 @@ class _WishlistScreenState extends State<WishlistScreen> {
                                       );
                                     },
                                   ),
-                                  Positioned(
-                                    top: 8,
-                                    right: 8,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(20),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(0.1),
-                                            blurRadius: 8,
-                                          ),
-                                        ],
-                                      ),
-                                      child: IconButton(
-                                        icon: const Icon(
-                                          Icons.close,
-                                          size: 18,
+                                  if (_isEditMode && product.id != null)
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius: BorderRadius.circular(20),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.2),
+                                              blurRadius: 8,
+                                            ),
+                                          ],
                                         ),
-                                        onPressed: () {
-                                          _removeFromWishlist(product.id!);
-                                        },
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(
-                                          minWidth: 36,
-                                          minHeight: 36,
+                                        child: IconButton(
+                                          icon: const Icon(
+                                            Icons.close,
+                                            size: 18,
+                                            color: Colors.white,
+                                          ),
+                                          onPressed: () {
+                                            _removeFromWishlist(product.id!);
+                                          },
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(
+                                            minWidth: 36,
+                                            minHeight: 36,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 2),
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton.icon(
                                 onPressed: () => _addToCart(product),
-                                icon: const Icon(Icons.shopping_cart, size: 16),
+                                icon: const Icon(Icons.shopping_cart_outlined, size: 16),
                                 label: const Text('Add to Cart', style: TextStyle(fontSize: 12)),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: primaryColor,
