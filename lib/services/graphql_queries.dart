@@ -110,6 +110,7 @@ class GraphQLQueries {
         size {
           id
           sizeName
+          quantity
         }
       }
     }

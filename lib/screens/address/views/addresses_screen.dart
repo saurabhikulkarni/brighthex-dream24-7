@@ -40,19 +40,22 @@ class _AddressesScreenState extends State<AddressesScreen> {
         return;
       }
 
+      print('[ADDRESSES_SCREEN] Fetching addresses for user: $userId');
       final fetchedAddresses = await addressService.getAddressesByUserId(userId);
-      print('Fetched ${fetchedAddresses.length} addresses from service');
+      print('[ADDRESSES_SCREEN] Fetched ${fetchedAddresses.length} addresses from service');
+      
       if (mounted) {
         setState(() {
           addresses = fetchedAddresses;
           _isLoading = false;
           _errorMessage = null;
         });
-        print('Updated UI with ${addresses.length} addresses');
+        print('[ADDRESSES_SCREEN] Updated UI with ${addresses.length} addresses');
       } else {
-        print('Widget not mounted, skipping setState');
+        print('[ADDRESSES_SCREEN] Widget not mounted, skipping setState');
       }
     } catch (e) {
+      print('[ADDRESSES_SCREEN] Error loading addresses: $e');
       setState(() {
         _isLoading = false;
         _errorMessage = 'Failed to load addresses: ${e.toString()}';
@@ -154,12 +157,13 @@ class _AddressesScreenState extends State<AddressesScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.pushNamed(context, addAddressScreenRoute).then((result) {
-                if (result != null && result is Map && result['success'] == true) {
-                  _loadAddresses(); // Reload addresses from GraphQL
-                }
-              });
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, addAddressScreenRoute);
+              if (result != null && result is Map && result['success'] == true) {
+                // Add small delay to ensure Hygraph has published the address
+                await Future.delayed(const Duration(milliseconds: 500));
+                _loadAddresses(); // Reload addresses from GraphQL
+              }
             },
           ),
         ],

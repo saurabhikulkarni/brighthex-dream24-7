@@ -154,11 +154,15 @@ class UserService {
         final backendBalance = user?.walletBalance ?? 0.0;
         print('[USER_SERVICE] Backend balance: $backendBalance');
         
-        // Update cache with backend value if it's valid
-        if (backendBalance > 0) {
-          await prefs.setDouble('wallet_balance', backendBalance);
-          print('[USER_SERVICE] Updated cache with backend balance: $backendBalance');
-          return backendBalance;
+        // Use the higher value between cached and backend
+        // This ensures we don't lose recently added balance
+        final maxBalance = cachedBalance != null ? 
+            (backendBalance > cachedBalance ? backendBalance : cachedBalance) : backendBalance;
+        
+        if (maxBalance > 0) {
+          await prefs.setDouble('wallet_balance', maxBalance);
+          print('[USER_SERVICE] Using max balance: $maxBalance');
+          return maxBalance;
         }
       } catch (e) {
         print('[USER_SERVICE] Error fetching from backend, using cached: $e');

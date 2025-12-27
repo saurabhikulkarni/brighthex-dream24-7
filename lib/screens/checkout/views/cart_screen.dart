@@ -11,6 +11,7 @@ import 'package:shop/services/order_service_graphql.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:shop/services/wallet_service.dart';
 import 'package:shop/services/user_service.dart';
+import 'package:shop/services/shiprocket_service.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -222,11 +223,24 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Future<void> _createOrderFromCart(int totalTokensNeeded, String? addressId) async {
-    // Show loading indicator
+    // Show loading indicator with message
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      builder: (context) => const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text(
+              'Processing your order...\nThis may take a few moments',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+      ),
     );
 
     try {
@@ -254,6 +268,68 @@ class _CartScreenState extends State<CartScreen> {
         status: OrderStatus.pending,
       );
 
+      // Get address details for Shiprocket
+      String? shiprocketOrderId;
+      if (addressId != null && addressId.isNotEmpty) {
+        try {
+          final address = await addressService.getAddressById(addressId);
+          if (address != null) {
+            // Create shipment in Shiprocket
+            final shipmentItems = cartItems.map((item) {
+              return {
+                'name': item.product?.title ?? 'Product',
+                'sku': item.product?.id ?? 'SKU-${item.id}',
+                'units': item.quantity,
+                'selling_price': item.product?.price ?? 0.0,
+                'discount': 0.0,
+              };
+            }).toList();
+
+            final shipmentResult = await ShiprocketService.createShipment(
+              orderId: order.orderNumber,
+              orderDate: DateTime.now().toIso8601String(),
+              pickupLocation: 'Primary', // You can make this configurable
+              billingCustomerName: address.fullName,
+              billingAddress: address.addressLine1 + (address.addressLine2 != null ? ', ${address.addressLine2}' : ''),
+              billingCity: address.city,
+              billingPincode: address.pincode,
+              billingState: address.state,
+              billingCountry: address.country,
+              billingEmail: 'customer@example.com', // AddressModel doesn't have email field
+              billingPhone: address.phoneNumber,
+              orderItems: shipmentItems,
+              paymentMethod: 'Prepaid', // Shopping tokens = prepaid
+              subTotal: total.toDouble(),
+              weight: 0.5, // Default weight in kg
+            );
+
+            if (shipmentResult != null) {
+              shiprocketOrderId = shipmentResult['order_id']?.toString() ?? 
+                                  shipmentResult['shipment_id']?.toString();
+              print('✅ Shiprocket shipment created: $shiprocketOrderId');
+              
+              // Update order with Shiprocket tracking info if available
+              if (shiprocketOrderId != null && order.id != null) {
+                final trackingNumber = shipmentResult['awb_code']?.toString();
+                final courierName = shipmentResult['courier_name']?.toString();
+                
+                await orderServiceGraphQL.updateOrderTracking(
+                  orderId: order.id!,
+                  shiprocketOrderId: shiprocketOrderId,
+                  trackingNumber: trackingNumber,
+                  courierName: courierName,
+                );
+              }
+            } else {
+              print('⚠️ Failed to create Shiprocket shipment, order will use mock tracking');
+            }
+          }
+        } catch (shiprocketError) {
+          print('⚠️ Shiprocket integration error: $shiprocketError');
+          // Continue with order - Shiprocket is optional
+        }
+      }
+
       // Deduct wallet balance
       await walletService.deductBalance(total.toDouble());
       
@@ -266,11 +342,11 @@ class _CartScreenState extends State<CartScreen> {
       if (!mounted) return;
       Navigator.pop(context); // Close loading dialog
 
-      // Navigate to order tracking screen
+      // Navigate to order tracking screen with appropriate ID
       Navigator.of(context).pushNamed(
         orderTrackingScreenRoute,
         arguments: {
-          'orderId': order.id ?? order.orderNumber,
+          'orderId': shiprocketOrderId ?? order.id ?? order.orderNumber,
         },
       );
     } catch (e) {

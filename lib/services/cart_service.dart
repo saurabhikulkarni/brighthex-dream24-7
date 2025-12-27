@@ -81,10 +81,13 @@ class CartService {
       throw Exception('Insufficient stock. Only ${size.quantity} items available for size ${size.sizeName}');
     }
 
-    // Check if product already exists in cart
-    final existingIndex = _localCart.indexWhere(
-      (item) => item.product?.id == product.id && item.size?.id == size?.id,
-    );
+    // Check if product already exists in cart with same size (or both null)
+    final existingIndex = _localCart.indexWhere((item) {
+      final sameProduct = item.product?.id == product.id;
+      final sameSize = (item.size?.id == size?.id) || 
+                       (item.size == null && size == null);
+      return sameProduct && sameSize;
+    });
 
     final newQuantity = existingIndex >= 0 
         ? _localCart[existingIndex].quantity + quantity 

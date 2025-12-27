@@ -28,23 +28,27 @@ class AddressService {
   // Get all addresses for a specific user ID
   Future<List<AddressModel>> getAddressesByUserId(String userId) async {
     try {
+      print('[ADDRESS_SERVICE] Querying addresses for userId: $userId');
       final QueryResult result = await _client.query(
         QueryOptions(
           document: gql(GraphQLQueries.getAddressesByUser),
           variables: {'userId': userId},
-          fetchPolicy: FetchPolicy.networkOnly,
+          fetchPolicy: FetchPolicy.networkOnly, // Always fetch fresh data
         ),
       );
 
       if (result.hasException) {
+        print('[ADDRESS_SERVICE] Query exception: ${result.exception}');
         throw Exception(result.exception.toString());
       }
 
       if (result.data == null || result.data!['addresses'] == null) {
+        print('[ADDRESS_SERVICE] No addresses data in response');
         return [];
       }
 
       final List<dynamic> addressesJson = result.data!['addresses'] as List<dynamic>;
+      print('[ADDRESS_SERVICE] Found ${addressesJson.length} addresses in query result');
       return addressesJson
           .map((json) => AddressModel.fromJson({
                 ...json as Map<String, dynamic>,
@@ -141,9 +145,16 @@ class AddressService {
       final createdAddress = result.data!['createAddress'];
       final addressId = createdAddress['id']?.toString();
 
+      print('[ADDRESS_SERVICE] Address created with ID: $addressId');
+
       // Publish the address (required for Hygraph)
       if (addressId != null) {
+        print('[ADDRESS_SERVICE] Publishing address...');
         await _publishAddress(addressId);
+        print('[ADDRESS_SERVICE] Address published, waiting for propagation...');
+        // Wait for Hygraph to propagate the published content
+        await Future.delayed(const Duration(milliseconds: 1500));
+        print('[ADDRESS_SERVICE] Propagation wait complete');
       }
 
       return AddressModel.fromJson({
@@ -308,15 +319,22 @@ class AddressService {
   // Helper: Publish address (required for Hygraph)
   Future<void> _publishAddress(String addressId) async {
     try {
-      await _client.mutate(
+      print('[ADDRESS_SERVICE] Publishing address ID: $addressId');
+      final result = await _client.mutate(
         MutationOptions(
           document: gql(GraphQLQueries.publishAddress),
           variables: {'id': addressId},
         ),
       );
+      
+      if (result.hasException) {
+        print('[ADDRESS_SERVICE] Publish exception: ${result.exception}');
+      } else {
+        print('[ADDRESS_SERVICE] Publish successful');
+      }
     } catch (e) {
       // Silently fail - address is still created/updated
-      print('Warning: Could not publish address: $e');
+      print('[ADDRESS_SERVICE] Warning: Could not publish address: $e');
     }
   }
 }

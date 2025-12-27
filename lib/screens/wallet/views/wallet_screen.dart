@@ -22,6 +22,8 @@ class _WalletScreenState extends State<WalletScreen> {
   double _selectedTopUpAmount = 0.0;
   final UserService _userService = userService;
   bool _isLoading = false;
+  bool _hasLoadedInitialBalance = false; // Track if we've loaded balance
+  bool _skipNextLoad = false; // Skip load after payment success
 
   @override
   void initState() {
@@ -31,6 +33,7 @@ class _WalletScreenState extends State<WalletScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    
     // Get arguments passed from navigation
     final args = ModalRoute.of(context)?.settings.arguments as Map?;
     if (args != null && args.isNotEmpty) {
@@ -49,19 +52,26 @@ class _WalletScreenState extends State<WalletScreen> {
     }
     
     // Load balance from GraphQL if user is logged in
-    _loadWalletBalance();
+    // Only load once, or if we haven't just completed a payment
+    if (!_hasLoadedInitialBalance && !_skipNextLoad) {
+      _loadWalletBalance();
+      _hasLoadedInitialBalance = true;
+    } else if (_skipNextLoad) {
+      print('[WALLET_SCREEN] Skipping balance load after payment');
+      _skipNextLoad = false; // Reset flag
+    }
   }
 
   Future<void> _loadWalletBalance() async {
     final userId = UserService.getCurrentUserId();
-    print('Wallet screen _loadWalletBalance: userId=$userId'); // Debug
+    print('[WALLET_SCREEN] _loadWalletBalance: userId=$userId');
     if (userId != null) {
       setState(() {
         _isLoading = true;
       });
       try {
         final balance = await _userService.getWalletBalance();
-        print('Wallet balance loaded from backend: $balance'); // Debug
+        print('[WALLET_SCREEN] Wallet balance loaded from service: $balance');
         if (mounted) {
           setState(() {
             walletBalance = balance;
@@ -70,7 +80,7 @@ class _WalletScreenState extends State<WalletScreen> {
           });
         }
       } catch (e) {
-        print('Error loading wallet balance: $e'); // Debug
+        print('[WALLET_SCREEN] Error loading wallet balance: $e');
         if (mounted) {
           setState(() {
             _isLoading = false;
@@ -82,43 +92,38 @@ class _WalletScreenState extends State<WalletScreen> {
 
   Future<void> _addMoney(double amount) async {
     final userId = UserService.getCurrentUserId();
-    print('_addMoney called: userId=$userId, amount=$amount'); // Debug
+    print('[WALLET_SCREEN] _addMoney called: userId=$userId, amount=$amount');
+    print('[WALLET_SCREEN] Current balance BEFORE: $walletBalance (tokens: $shoppingTokens)');
     
     if (userId != null) {
       // Update balance in GraphQL
       try {
         final newBalance = await _userService.addWalletBalance(userId, amount);
-        print('addWalletBalance returned: $newBalance'); // Debug
-        if (newBalance != null && mounted) {
+        print('[WALLET_SCREEN] addWalletBalance returned: $newBalance');
+        if (newBalance != null) {
+          // Always use the returned balance from addWalletBalance
+          // It's the most up-to-date value (either from backend or cache)
           setState(() {
             walletBalance = newBalance;
             shoppingTokens = newBalance.toInt();
+            _skipNextLoad = true; // Skip next didChangeDependencies load
           });
-          print('Wallet balance updated in UI: $walletBalance'); // Debug
+          print('[WALLET_SCREEN] State updated - walletBalance: $walletBalance, shoppingTokens: $shoppingTokens');
           return;
         }
       } catch (e) {
-        print('Error in _addMoney: $e'); // Debug
-        // If GraphQL update fails, update locally
-        if (mounted) {
-          setState(() {
-            walletBalance += amount;
-            shoppingTokens += amount.toInt();
-          });
-          print('Wallet balance updated locally: $walletBalance'); // Debug
-        }
-        return;
+        print('[WALLET_SCREEN] Error in _addMoney: $e');
+        // If there's an exception, still try to update locally
       }
     }
     
-    // Local update if no user ID
-    if (mounted) {
-      setState(() {
-        walletBalance += amount;
-        shoppingTokens += amount.toInt();
-      });
-      print('Wallet balance updated locally (no userId): $walletBalance'); // Debug
-    }
+    // Fallback: Local update if GraphQL fails or no user ID
+    setState(() {
+      walletBalance += amount;
+      shoppingTokens = walletBalance.toInt();
+      _skipNextLoad = true; // Skip next didChangeDependencies load
+    });
+    print('[WALLET_SCREEN] Local update - walletBalance: $walletBalance, shoppingTokens: $shoppingTokens');
   }
 
   void _initiatePayment() async {
@@ -220,13 +225,9 @@ class _WalletScreenState extends State<WalletScreen> {
           print('[WALLET] Adding money: $_selectedTopUpAmount');
           await _addMoney(_selectedTopUpAmount);
           
-          // Reload balance to ensure we have the latest value
-          print('[WALLET] Reloading balance after add money');
-          await _loadWalletBalance();
-          
           if (!mounted) return;
           
-          print('[WALLET] Final balance after reload: $walletBalance tokens: $shoppingTokens');
+          print('[WALLET] Balance after add money: $walletBalance tokens: $shoppingTokens');
           
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

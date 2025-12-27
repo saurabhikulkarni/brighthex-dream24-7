@@ -135,12 +135,10 @@ class _EntryPointState extends State<EntryPoint> {
                     setState(() {});
                   }
                 },
-                icon: SvgPicture.asset(
-                  "assets/icons/Bag.svg",
-                  height: iconSize,
-                  colorFilter: const ColorFilter.mode(
-                      Colors.white,
-                      BlendMode.srcIn),
+                icon: Icon(
+                  Icons.shopping_cart,
+                  size: iconSize,
+                  color: Colors.white,
                 ),
               ),
               if (_cartItemCount > 0)

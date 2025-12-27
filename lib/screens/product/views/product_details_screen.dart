@@ -16,6 +16,7 @@ import 'components/notify_me_card.dart';
 import 'components/product_images.dart';
 import 'components/product_info.dart';
 import 'components/product_list_tile.dart';
+import 'components/selected_size.dart';
 import '../../../components/review_card.dart';
 import 'product_buy_now_screen.dart';
 
@@ -42,6 +43,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   List<ProductModel> _relatedProducts = [];
   bool _isLoading = true;
   bool _isInWishlist = false;
+  int _selectedSizeIndex = 0;
 
   @override
   void initState() {
@@ -147,6 +149,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   child: ProductBuyNowScreen(
                     product: _product!,
                     sizes: _sizes,
+                    initialSizeIndex: _selectedSizeIndex,
                   ),
                 );
               },
@@ -210,6 +213,25 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               rating: 4.4,
               numOfReviews: 126,
             ),
+            // Size Selection
+            if (_sizes.isNotEmpty)
+              SliverToBoxAdapter(
+                child: SelectedSize(
+                  sizes: _sizes.map((s) => s.sizeName).toList(),
+                  selectedIndex: _selectedSizeIndex,
+                  availableIndices: _sizes
+                      .asMap()
+                      .entries
+                      .where((entry) => entry.value.quantity > 0)
+                      .map((entry) => entry.key)
+                      .toList(),
+                  press: (index) {
+                    setState(() {
+                      _selectedSizeIndex = index;
+                    });
+                  },
+                ),
+              ),
             ProductListTile(
               svgSrc: "assets/icons/Product.svg",
               title: "Product Details",

@@ -181,6 +181,17 @@ class OrderServiceGraphQL {
     OrderStatus status = OrderStatus.pending,
   }) async {
     try {
+      // Ensure minimum interval between requests to avoid rate limits
+      if (_lastRequestTime != null) {
+        final timeSinceLastRequest = DateTime.now().difference(_lastRequestTime!);
+        if (timeSinceLastRequest < _minRequestInterval) {
+          final waitTime = _minRequestInterval - timeSinceLastRequest;
+          print('[ORDER_SERVICE] Rate limit protection: waiting ${waitTime.inMilliseconds}ms');
+          await Future.delayed(waitTime);
+        }
+      }
+      _lastRequestTime = DateTime.now();
+      
       final userId = UserService.getCurrentUserId();
       if (userId == null || userId.isEmpty) {
         throw Exception('User not logged in. Please log in to create an order.');
@@ -232,14 +243,18 @@ class OrderServiceGraphQL {
         throw Exception('Order must have at least one item');
       }
       
+      print('[ORDER_SERVICE] Creating ${items.length} order items with rate limiting...');
+      
       // Create each order item - if any fails, rollback the order
       final List<String> createdItemIds = [];
       try {
-        for (final item in items) {
-          // Add small delay between items to avoid rate limiting (Hygraph free tier)
-          if (createdItemIds.isNotEmpty) {
-            await Future.delayed(const Duration(milliseconds: 500));
-          }
+        for (int i = 0; i < items.length; i++) {
+          final item = items[i];
+          
+          // Add delay BEFORE each request (including first one) to ensure spacing
+          // This prevents burst requests at the start
+          print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before creating item ${i + 1}/${items.length}');
+          await Future.delayed(_minRequestInterval);
           
           // Validate required fields and use defaults if needed
           final productId = item.productId.isNotEmpty 
@@ -261,6 +276,7 @@ class OrderServiceGraphQL {
           // sizeId can be null (optional field)
           final sizeId = item.sizeId;
           
+          print('[ORDER_SERVICE] Creating order item ${i + 1}/${items.length}');
           final itemId = await _createOrderItem(
             orderId: orderId,
             productId: productId,
@@ -274,12 +290,17 @@ class OrderServiceGraphQL {
             throw Exception('Failed to create order item - no ID returned');
           }
           
-          // Small delay before publishing to avoid rate limit
-          await Future.delayed(const Duration(milliseconds: 300));
+          print('[ORDER_SERVICE] Item ${i + 1} created with ID: $itemId');
+          
+          // Delay before publishing to avoid rate limit
+          print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before publishing item ${i + 1}');
+          await Future.delayed(_minRequestInterval);
           
           // Publish order item
+          print('[ORDER_SERVICE] Publishing order item ${i + 1}/${items.length}');
           await _publishOrderItem(itemId);
           createdItemIds.add(itemId);
+          print('[ORDER_SERVICE] Item ${i + 1} published successfully');
         }
       } catch (e) {
         // If any item creation fails, we should ideally rollback
@@ -287,11 +308,23 @@ class OrderServiceGraphQL {
         throw Exception('Failed to create all order items: $e');
       }
 
+      // Delay before publishing order
+      print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before publishing order');
+      await Future.delayed(_minRequestInterval);
+      
       // Publish order
+      print('[ORDER_SERVICE] Publishing order...');
       await _publishOrder(orderId);
+      print('[ORDER_SERVICE] Order published successfully');
 
+      // Delay before updating stock
+      print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before updating stock');
+      await Future.delayed(_minRequestInterval);
+      
       // Update stock for all items with sizes
+      print('[ORDER_SERVICE] Updating stock...');
       await _updateStockForOrder(items);
+      print('[ORDER_SERVICE] Stock updated successfully');
 
       // Return full order by fetching it
       final order = await getOrderById(orderId);

@@ -12,6 +12,7 @@ import 'package:shop/services/cart_service.dart';
 import 'package:shop/services/wallet_service.dart';
 import 'package:shop/services/wishlist_service.dart';
 import 'package:shop/services/user_service.dart';
+import 'package:shop/services/notification_service.dart';
 
 import '../../../constants.dart';
 import 'components/product_quantity.dart';
@@ -23,10 +24,12 @@ class ProductBuyNowScreen extends StatefulWidget {
     super.key,
     required this.product,
     this.sizes = const [],
+    this.initialSizeIndex = 0,
   });
 
   final ProductModel product;
   final List<SizeModel> sizes;
+  final int initialSizeIndex;
 
   @override
   _ProductBuyNowScreenState createState() => _ProductBuyNowScreenState();
@@ -34,13 +37,37 @@ class ProductBuyNowScreen extends StatefulWidget {
 
 class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   int _quantity = 1;
-  int _selectedSizeIndex = 0;
+  late int _selectedSizeIndex;
   double walletBalance = 0.0; // User's shopping tokens
   int shoppingTokens = 0;
   bool _isInWishlist = false;
 
   // Default sizes if none from API
   static const List<String> _defaultSizes = ["S", "M", "L", "XL", "XXL"];
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Validate and set initial size index
+    if (widget.sizes.isNotEmpty) {
+      // Check if initialSizeIndex is valid and has stock
+      if (widget.initialSizeIndex < widget.sizes.length &&
+          widget.sizes[widget.initialSizeIndex].quantity > 0) {
+        _selectedSizeIndex = widget.initialSizeIndex;
+      } else {
+        // Find first size with stock
+        final firstAvailableIndex = widget.sizes
+            .indexWhere((size) => size.quantity > 0);
+        _selectedSizeIndex = firstAvailableIndex >= 0 ? firstAvailableIndex : 0;
+      }
+    } else {
+      _selectedSizeIndex = widget.initialSizeIndex;
+    }
+    
+    _loadWalletBalance();
+    _checkWishlistStatus();
+  }
 
   List<String> get availableSizes {
     if (widget.sizes.isNotEmpty) {
@@ -63,13 +90,6 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   }
 
   double get totalPrice => widget.product.price * _quantity;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadWalletBalance();
-    _checkWishlistStatus();
-  }
 
   Future<void> _checkWishlistStatus() async {
     final isInWishlist = wishlistService.isInWishlist(widget.product.id!);
@@ -125,8 +145,28 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   }
 
   void _addToCart() async {
-    // Create a size model from selected size name if no API sizes
+    // Check if size is selected and has stock
     SizeModel? sizeToAdd = selectedSize;
+    
+    // If product has sizes, ensure one is selected
+    if (widget.sizes.isNotEmpty && sizeToAdd == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a size before adding to cart'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    
+    // Check stock availability
+    if (sizeToAdd != null && sizeToAdd.quantity <= 0) {
+      _showOutOfStockDialog();
+      return;
+    }
+    
+    // Create a size model from selected size name if no API sizes
     if (sizeToAdd == null && availableSizes.isNotEmpty) {
       sizeToAdd = SizeModel(
         id: 'local_$selectedSizeName',
@@ -165,7 +205,99 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     }
   }
 
+  void _showOutOfStockDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red),
+            const SizedBox(width: 8),
+            const Text('Out of Stock'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Sorry, ${widget.product.title} in size ${selectedSize?.sizeName ?? selectedSizeName} is currently out of stock.',
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: defaultPadding),
+            const Text(
+              'Would you like to add it to your wishlist? We\'ll notify you when it\'s back in stock.',
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.pop(context);
+              
+              // Add to wishlist
+              await _toggleWishlist();
+              
+              // Register stock alert
+              final userId = UserService.getCurrentUserId();
+              if (userId != null && widget.product.id != null) {
+                await notificationService.registerStockAlert(
+                  productId: widget.product.id!,
+                  productTitle: widget.product.title,
+                  sizeId: selectedSize?.id,
+                  sizeName: selectedSize?.sizeName ?? selectedSizeName,
+                  userId: userId,
+                );
+                
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('We\'ll notify you when this item is back in stock!'),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              }
+            },
+            icon: const Icon(Icons.favorite, size: 18),
+            label: const Text('Add to Wishlist'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _handleRedeemNow() {
+    // If product has sizes, ensure one is selected
+    if (widget.sizes.isNotEmpty && selectedSize == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a size before proceeding'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+    
+    // Check if size is selected and has stock
+    if (selectedSize != null && selectedSize!.quantity <= 0) {
+      _showOutOfStockDialog();
+      return;
+    }
+    
     // Show confirmation dialog
     showDialog(
       context: context,
@@ -292,16 +424,34 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
   }
 
   Future<void> _addToCartAndNavigate() async {
-    final userId = UserService.getCurrentUserId();
+    // Check if size is selected and has stock
+    SizeModel? sizeToAdd = selectedSize;
     
-    if (userId == null) {
+    // If product has sizes, ensure one is selected
+    if (widget.sizes.isNotEmpty && sizeToAdd == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please login to continue'),
+          content: Text('Please select a size before proceeding'),
           backgroundColor: Colors.red,
+          duration: Duration(seconds: 2),
         ),
       );
       return;
+    }
+    
+    // Check stock availability
+    if (sizeToAdd != null && sizeToAdd.quantity <= 0) {
+      _showOutOfStockDialog();
+      return;
+    }
+    
+    // Create a size model from selected size name if no API sizes
+    if (sizeToAdd == null && availableSizes.isNotEmpty) {
+      sizeToAdd = SizeModel(
+        id: 'local_$selectedSizeName',
+        sizeName: selectedSizeName,
+        quantity: 100,
+      );
     }
 
     // Show loading
@@ -312,12 +462,11 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     );
 
     try {
-      // Add to cart
-      await cartService.addToCart(
-        userId: userId,
-        productId: widget.product.id!,
-        sizeId: selectedSize?.id,
-        quantity: _quantity,
+      // Add to local cart (also syncs with backend if logged in)
+      await cartService.addToLocalCart(
+        widget.product,
+        sizeToAdd,
+        _quantity,
       );
 
       if (!mounted) return;
@@ -473,6 +622,12 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
                   child: SelectedSize(
                     sizes: availableSizes,
                     selectedIndex: _selectedSizeIndex,
+                    availableIndices: widget.sizes
+                        .asMap()
+                        .entries
+                        .where((entry) => entry.value.quantity > 0)
+                        .map((entry) => entry.key)
+                        .toList(),
                     press: (index) {
                       setState(() {
                         _selectedSizeIndex = index;

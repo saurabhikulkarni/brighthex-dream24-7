@@ -30,4 +30,8 @@ export '/screens/wallet/views/empty_wallet_screen.dart';
 export '/screens/wallet/views/wallet_screen.dart';
 export '/screens/profile/views/profile_screen.dart';
 export '/screens/get_help/views/get_help_screen.dart';
+export '/screens/terms_and_conditions/views/terms_and_conditions_screen.dart';
+export '/screens/privacy_policy/views/privacy_policy_screen.dart';
+export '/screens/refund_policy/views/refund_policy_screen.dart';
+export '/screens/shipping_policy/views/shipping_policy_screen.dart';
 export '/screens/user_info/views/user_info_screen.dart';

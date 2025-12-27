@@ -177,6 +177,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
             press: () {
               _openFAQ();
             },
+          ),
+          ProfileMenuListTile(
+            text: "Terms & Conditions",
+            svgSrc: "assets/icons/info.svg",
+            press: () {
+              Navigator.pushNamed(context, termsAndConditionsScreenRoute);
+            },
+          ),
+          ProfileMenuListTile(
+            text: "Privacy Policy",
+            svgSrc: "assets/icons/Lock.svg",
+            press: () {
+              Navigator.pushNamed(context, privacyPolicyScreenRoute);
+            },
+          ),
+          ProfileMenuListTile(
+            text: "Refund Policy",
+            svgSrc: "assets/icons/Return.svg",
+            press: () {
+              Navigator.pushNamed(context, refundPolicyScreenRoute);
+            },
+          ),
+          ProfileMenuListTile(
+            text: "Shipping Policy",
+            svgSrc: "assets/icons/Delivery.svg",
+            press: () {
+              Navigator.pushNamed(context, shippingPolicyScreenRoute);
+            },
             isShowDivider: false,
           ),
           const SizedBox(height: defaultPadding),

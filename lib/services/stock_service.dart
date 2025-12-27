@@ -1,6 +1,7 @@
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:shop/services/graphql_client.dart';
 import 'package:shop/services/graphql_queries.dart';
+import 'package:shop/services/notification_service.dart';
 
 /// Service for managing product stock/inventory in Hygraph
 class StockService {
@@ -19,8 +20,14 @@ class StockService {
   Future<bool> updateSizeStock({
     required String sizeId,
     required int newQuantity,
+    String? productId,
+    String? productTitle,
+    String? sizeName,
   }) async {
     try {
+      // Get old quantity first
+      final oldQuantity = await getStockQuantity(sizeId);
+      
       // Update size quantity
       final MutationOptions updateOptions = MutationOptions(
         document: gql(GraphQLQueries.updateSizeQuantity),
@@ -46,6 +53,19 @@ class StockService {
 
       if (publishResult.hasException) {
         return false;
+      }
+
+      // If stock went from 0 to > 0, notify users
+      if (oldQuantity != null && oldQuantity == 0 && newQuantity > 0) {
+        if (productId != null && productTitle != null) {
+          await notificationService.checkAndNotifyStockAvailability(
+            productId: productId,
+            productTitle: productTitle,
+            sizeId: sizeId,
+            sizeName: sizeName,
+            newQuantity: newQuantity,
+          );
+        }
       }
 
       return true;
@@ -100,6 +120,9 @@ class StockService {
   Future<bool> increaseStock({
     required String sizeId,
     required int quantityToAdd,
+    String? productId,
+    String? productTitle,
+    String? sizeName,
   }) async {
     try {
       // First, get current quantity
@@ -128,6 +151,9 @@ class StockService {
       return await updateSizeStock(
         sizeId: sizeId,
         newQuantity: newQuantity,
+        productId: productId,
+        productTitle: productTitle,
+        sizeName: sizeName,
       );
     } catch (e) {
       print('Error increasing stock: $e');

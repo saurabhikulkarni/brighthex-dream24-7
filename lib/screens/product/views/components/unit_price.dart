@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../constants.dart';
 
@@ -22,10 +23,20 @@ class UnitPrice extends StatelessWidget {
           style: Theme.of(context).textTheme.titleSmall,
         ),
         const SizedBox(height: defaultPadding / 1),
-        Text(
-          "\$${price.toStringAsFixed(2)}",
-          style: Theme.of(context).textTheme.titleLarge,
-        )
+        Row(
+          children: [
+            SvgPicture.asset(
+              'assets/icons/coin.svg',
+              width: 20,
+              height: 20,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              price.toStringAsFixed(2),
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ],
+        ),
       ],
     );
   }
