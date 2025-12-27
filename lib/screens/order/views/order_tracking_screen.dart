@@ -56,7 +56,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         print('❌ Shiprocket API failed for order: ${widget.orderId}');
         
         // Check if backend proxy is configured
-        final hasProxy = ShiprocketConfig.proxyUrl != null && ShiprocketConfig.proxyUrl!.isNotEmpty;
+        final hasProxy = ShiprocketConfig.proxyUrl.isNotEmpty;
         
         if (kIsWeb && !hasProxy) {
           print('⚠️ CORS Error: Shiprocket API cannot be called directly from browser');

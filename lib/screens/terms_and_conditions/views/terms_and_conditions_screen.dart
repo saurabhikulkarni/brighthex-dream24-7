@@ -285,7 +285,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
                 ),
               );
             }
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -390,7 +390,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
                 ),
               );
             }
-          }).toList(),
+          }),
         ],
       ),
     );

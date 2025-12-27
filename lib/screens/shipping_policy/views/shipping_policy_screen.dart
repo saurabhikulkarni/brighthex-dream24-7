@@ -373,7 +373,7 @@ class ShippingPolicyScreen extends StatelessWidget {
                 ),
               );
             }
-          }).toList(),
+          }),
         ],
       ),
     );

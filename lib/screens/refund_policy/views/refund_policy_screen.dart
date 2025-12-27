@@ -309,7 +309,7 @@ class RefundPolicyScreen extends StatelessWidget {
                 ),
               );
             }
-          }).toList(),
+          }),
         ],
       ),
     );
@@ -409,7 +409,7 @@ class RefundPolicyScreen extends StatelessWidget {
                 ),
               );
             }
-          }).toList(),
+          }),
         ],
       ),
     );

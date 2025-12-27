@@ -209,11 +209,11 @@ class _ProductBuyNowScreenState extends State<ProductBuyNowScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.red),
-            const SizedBox(width: 8),
-            const Text('Out of Stock'),
+            Icon(Icons.error_outline, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Out of Stock'),
           ],
         ),
         content: Column(
