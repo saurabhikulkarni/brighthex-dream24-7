@@ -278,9 +278,12 @@ flutter pub get
 flutter build apk --debug
 
 # Build iOS (requires macOS and Xcode)
+# First, install iOS dependencies (only needed once or after dependency changes)
 cd ios && pod install && cd ..
+# Then build the iOS app
 flutter build ios --debug --no-codesign
 
-# The APK will be available at:
-# build/app/outputs/flutter-apk/app-debug.apk
+# Output locations:
+# Android APK: build/app/outputs/flutter-apk/app-debug.apk
+# iOS: build/ios/iphoneos/Runner.app
 ```
