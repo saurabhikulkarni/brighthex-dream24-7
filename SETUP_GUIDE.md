@@ -84,10 +84,12 @@ choco install flutter git androidstudio -y
 
 ## iOS Development Setup (macOS only)
 
+**Note:** iOS development requires macOS due to Apple's licensing requirements for Xcode and iOS SDK. Windows and Linux users can only develop for Android.
+
 For iOS development, you need additional setup:
 
 ### Requirements
-- **macOS**: iOS development requires macOS with Xcode
+- **macOS**: iOS development requires macOS with Xcode (Apple's licensing restriction)
 - **Xcode**: Download from App Store or developer.apple.com
 - **CocoaPods**: iOS dependency manager
 

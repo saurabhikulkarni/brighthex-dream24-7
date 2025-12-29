@@ -243,12 +243,33 @@ flutter doctor -v
 
 ## CI/CD Considerations
 
-If setting up CI/CD for iOS builds, ensure your pipeline includes:
+If setting up CI/CD for iOS builds, ensure your pipeline includes these steps:
 
+```bash
+# Generate Flutter dependencies
+flutter pub get
+
+# Install iOS dependencies
+cd ios && pod install && cd ..
+
+# Build iOS app
+flutter build ios --release --no-codesign
+```
+
+Example GitHub Actions workflow step:
 ```yaml
-- flutter pub get
-- cd ios && pod install && cd ..
-- flutter build ios --release --no-codesign
+steps:
+  - name: Install Flutter dependencies
+    run: flutter pub get
+    
+  - name: Install iOS CocoaPods dependencies
+    run: |
+      cd ios
+      pod install
+      cd ..
+    
+  - name: Build iOS app
+    run: flutter build ios --release --no-codesign
 ```
 
 ## Additional Resources
