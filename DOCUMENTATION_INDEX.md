@@ -6,25 +6,47 @@ Welcome! Here's a complete guide to all documentation files for the wallet and w
 
 **New to this project?** Start with these in order:
 
-1. **[INTEGRATION_STATUS_REPORT.md](INTEGRATION_STATUS_REPORT.md)** ← START HERE
+1. **[SETUP_GUIDE.md](SETUP_GUIDE.md)** ← Initial Setup
+   - 💻 Required software installation
+   - 📱 Platform-specific setup (Windows/Android)
+   - 🔧 Flutter and dependency installation
+   - 🚀 Running the app
+
+2. **[IOS_BUILD_TROUBLESHOOTING.md](IOS_BUILD_TROUBLESHOOTING.md)** ← iOS Developers
+   - 🍎 iOS-specific build issues and solutions
+   - 📝 Missing Generated.xcconfig fixes
+   - 🔨 CocoaPods setup and troubleshooting
+   - ⚙️ Xcode configuration issues
+
+3. **[INTEGRATION_STATUS_REPORT.md](INTEGRATION_STATUS_REPORT.md)** ← Backend Integration
    - 📊 Overall status and progress
    - 🎯 What's been done and what's next
    - 🗓️ Deployment timeline
    - ✅ Complete checklist
 
-2. **[QUICK_START.md](QUICK_START.md)** ← Quick Reference
+4. **[QUICK_START.md](QUICK_START.md)** ← Quick Reference
    - ⚡ 5-minute quick start guide
    - 🔧 Configuration steps
    - 🧪 Testing sequence
    - 🐛 Debugging tips
 
-3. **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** ← Technical Details
+5. **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** ← Technical Details
    - 📝 Summary of all changes
    - 🏗️ Architecture improvements
    - 📁 Files modified/created
    - 🔌 Integration points
 
 ## 📖 Full Documentation
+
+### For iOS Developers
+
+**[IOS_BUILD_TROUBLESHOOTING.md](IOS_BUILD_TROUBLESHOOTING.md)**
+- Common Xcode build errors explained
+- Missing Generated.xcconfig solutions
+- CocoaPods installation and setup
+- XCFileList and Pods directory issues
+- Xcode project settings updates
+- Step-by-step troubleshooting guide
 
 ### For Backend Developers
 
@@ -69,6 +91,28 @@ Welcome! Here's a complete guide to all documentation files for the wallet and w
 ---
 
 ## 📋 Document Overview
+
+### SETUP_GUIDE.md (Essential)
+```
+✓ Required software installation
+✓ Windows/Android setup
+✓ iOS setup (macOS)
+✓ Flutter installation
+✓ Running the app
+```
+**Best for:** Initial project setup
+**Read time:** 10-15 minutes
+
+### IOS_BUILD_TROUBLESHOOTING.md (iOS Developers)
+```
+✓ Xcode build error solutions
+✓ Generated.xcconfig issues
+✓ CocoaPods setup guide
+✓ XCFileList problems
+✓ Step-by-step fixes
+```
+**Best for:** Resolving iOS build errors
+**Read time:** 15-20 minutes
 
 ### QUICK_START.md (Essential)
 ```
@@ -129,6 +173,12 @@ Welcome! Here's a complete guide to all documentation files for the wallet and w
 
 ## 🎯 By Role
 
+### iOS Developer
+1. Start with **SETUP_GUIDE.md** (iOS section)
+2. Read **IOS_BUILD_TROUBLESHOOTING.md** (comprehensive guide)
+3. Check inline code comments in iOS-specific files
+4. Run `flutter pub get && cd ios && pod install`
+
 ### Backend Developer
 1. Start with **QUICK_START.md** (configuration)
 2. Read **BACKEND_INTEGRATION_GUIDE.md** (API specs)
@@ -154,6 +204,18 @@ Welcome! Here's a complete guide to all documentation files for the wallet and w
 ---
 
 ## 🔍 Finding Specific Information
+
+### "I'm getting iOS build errors in Xcode"
+→ **IOS_BUILD_TROUBLESHOOTING.md** → Complete solutions guide
+
+### "Generated.xcconfig not found"
+→ **IOS_BUILD_TROUBLESHOOTING.md** → "Error 1: Missing Generated.xcconfig"
+
+### "Missing Pods directory or XCFileList files"
+→ **IOS_BUILD_TROUBLESHOOTING.md** → "Solution Steps"
+
+### "How do I set up iOS development?"
+→ **SETUP_GUIDE.md** → "iOS Development Setup" section
 
 ### "How do I implement the wallet endpoint?"
 → **BACKEND_INTEGRATION_GUIDE.md** → Search "Add Money to Wallet"
@@ -240,8 +302,17 @@ Welcome! Here's a complete guide to all documentation files for the wallet and w
 
 ### Common Questions
 
+**Q: I'm getting iOS build errors in Xcode, what do I do?**
+A: Read IOS_BUILD_TROUBLESHOOTING.md - it covers all common iOS build issues
+
 **Q: Where do I start?**
-A: Read QUICK_START.md first (5 minutes)
+A: Read SETUP_GUIDE.md first for initial setup, then QUICK_START.md (5 minutes)
+
+**Q: How do I fix "Generated.xcconfig not found"?**
+A: Run `flutter pub get` - see IOS_BUILD_TROUBLESHOOTING.md for details
+
+**Q: How do I install CocoaPods dependencies?**
+A: Run `cd ios && pod install && cd ..` - see IOS_BUILD_TROUBLESHOOTING.md
 
 **Q: How do I implement the backend?**
 A: Use BACKEND_INTEGRATION_GUIDE.md for specs and BACKEND_EXAMPLES.md for code
@@ -263,14 +334,15 @@ A: See "Deployment Timeline" in INTEGRATION_STATUS_REPORT.md
 ## 🎓 Learning Path
 
 ```
-Start Here (5 min)
+Start Here (10 min)
     ↓
-INTEGRATION_STATUS_REPORT.md
+SETUP_GUIDE.md (Initial Setup)
     ↓
 Choose Your Path
+    ├─→ iOS Dev? → IOS_BUILD_TROUBLESHOOTING.md → pod install
     ├─→ Backend Dev? → BACKEND_INTEGRATION_GUIDE.md → BACKEND_EXAMPLES.md
     ├─→ Frontend Dev? → IMPLEMENTATION_SUMMARY.md → Service code
-    └─→ PM/Manager? → Stay on this page
+    └─→ PM/Manager? → INTEGRATION_STATUS_REPORT.md
     ↓
 QUICK_START.md (for configuration)
     ↓
@@ -281,11 +353,23 @@ Implement & Test
 
 ## ✅ Ready to Start?
 
-**Step 1:** Open [QUICK_START.md](QUICK_START.md)
-**Step 2:** Follow the configuration steps
-**Step 3:** Implement the 8 backend endpoints
-**Step 4:** Run the testing sequence
-**Step 5:** Deploy to production
+**New Developer Setup:**
+1. Open [SETUP_GUIDE.md](SETUP_GUIDE.md)
+2. Install required software
+3. Run `flutter pub get`
+4. For iOS: Run `cd ios && pod install && cd ..`
+
+**iOS Build Issues?**
+1. Open [IOS_BUILD_TROUBLESHOOTING.md](IOS_BUILD_TROUBLESHOOTING.md)
+2. Follow the solution steps
+3. Run commands in order
+
+**Backend Integration:**
+1. Open [QUICK_START.md](QUICK_START.md)
+2. Follow the configuration steps
+3. Implement the 8 backend endpoints
+4. Run the testing sequence
+5. Deploy to production
 
 ---
 
@@ -293,6 +377,8 @@ Implement & Test
 
 | File | Purpose | Audience | Read Time |
 |------|---------|----------|-----------|
+| SETUP_GUIDE.md | Initial project setup | All developers | 10-15 min |
+| IOS_BUILD_TROUBLESHOOTING.md | iOS build fixes | iOS developers | 15-20 min |
 | QUICK_START.md | Quick reference guide | Everyone | 5-10 min |
 | BACKEND_INTEGRATION_GUIDE.md | Complete API specs | Backend devs | 20-30 min |
 | BACKEND_EXAMPLES.md | Code templates | Backend devs | 15-20 min |
@@ -304,13 +390,14 @@ Implement & Test
 
 ## 🎯 Your Next Step
 
-👉 **[Start with QUICK_START.md](QUICK_START.md)**
+**First time here?** 
+👉 **[Start with SETUP_GUIDE.md](SETUP_GUIDE.md)**
 
-It will guide you through:
-1. Configuration (backend URL)
-2. Backend setup checklist
-3. Testing sequence
-4. Debugging tips
+**iOS build errors?**
+👉 **[Read IOS_BUILD_TROUBLESHOOTING.md](IOS_BUILD_TROUBLESHOOTING.md)**
+
+**Backend integration?**
+👉 **[Start with QUICK_START.md](QUICK_START.md)**
 
 ---
 

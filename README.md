@@ -215,6 +215,38 @@ Visit FlutterLibrary.com to Download the [Flutter e-commerce app template](https
   </a>
 </p>
 
+## Getting Started
+
+### Setup Instructions
+
+For detailed setup instructions, see:
+- 📖 [SETUP_GUIDE.md](SETUP_GUIDE.md) - Complete setup guide for Windows/Android
+- 📱 [IOS_BUILD_TROUBLESHOOTING.md](IOS_BUILD_TROUBLESHOOTING.md) - iOS-specific build issues and solutions
+
+### Quick Start
+
+```bash
+# Install Flutter dependencies
+flutter pub get
+
+# For iOS development (macOS only)
+cd ios
+pod install
+cd ..
+
+# Run the app
+flutter run
+```
+
+### iOS Build Errors?
+
+If you encounter iOS build errors in Xcode such as:
+- ❌ "could not find included file 'Generated.xcconfig'"
+- ❌ "Unable to read contents of XCFileList"
+- ⚠️ "Update to recommended settings"
+
+See the **[iOS Build Troubleshooting Guide](IOS_BUILD_TROUBLESHOOTING.md)** for step-by-step solutions.
+
 ## Building the App
 
 ### GitHub Actions - Automated APK Build
@@ -242,9 +274,16 @@ To build the app manually on your local machine:
 # Install dependencies
 flutter pub get
 
-# Build debug APK
+# Build debug APK (Android)
 flutter build apk --debug
 
-# The APK will be available at:
-# build/app/outputs/flutter-apk/app-debug.apk
+# Build iOS (requires macOS and Xcode)
+# First, install iOS dependencies (only needed once or after dependency changes)
+cd ios && pod install && cd ..
+# Then build the iOS app
+flutter build ios --debug --no-codesign
+
+# Output locations:
+# Android APK: build/app/outputs/flutter-apk/app-debug.apk
+# iOS: build/ios/iphoneos/Runner.app
 ```
