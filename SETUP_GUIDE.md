@@ -82,9 +82,53 @@ You can also use Chocolatey (Windows package manager) to install:
 choco install flutter git androidstudio -y
 ```
 
+## iOS Development Setup (macOS only)
+
+For iOS development, you need additional setup:
+
+### Requirements
+- **macOS**: iOS development requires macOS with Xcode
+- **Xcode**: Download from App Store or developer.apple.com
+- **CocoaPods**: iOS dependency manager
+
+### Install CocoaPods
+
+```bash
+sudo gem install cocoapods
+```
+
+### Initial iOS Setup
+
+After cloning the repository, run these commands:
+
+```bash
+# Install Flutter dependencies
+flutter pub get
+
+# Install iOS native dependencies
+cd ios
+pod install
+cd ..
+```
+
+### Open in Xcode
+
+Always open the **workspace** file, not the project file:
+
+```bash
+open ios/Runner.xcworkspace
+```
+
+### iOS Build Errors?
+
+If you encounter iOS build errors related to missing files (Generated.xcconfig, Pods, etc.), see the comprehensive troubleshooting guide:
+
+📖 **[iOS Build Troubleshooting Guide](IOS_BUILD_TROUBLESHOOTING.md)**
+
 ## Troubleshooting
 
 - **Flutter not recognized**: Make sure Flutter is added to your PATH and restart PowerShell
 - **No devices found**: Make sure Android Studio is installed and an emulator is created
 - **Build errors**: Run `flutter doctor -v` to see detailed information about issues
+- **iOS build errors**: See [IOS_BUILD_TROUBLESHOOTING.md](IOS_BUILD_TROUBLESHOOTING.md) for detailed iOS-specific solutions
 
