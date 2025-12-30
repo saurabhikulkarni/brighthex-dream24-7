@@ -152,7 +152,7 @@ class ShiprocketService {
   /// Get the actual URL to use (backend proxy if configured, otherwise direct API)
   static String _getApiUrl(String endpoint) {
     // Use backend proxy if configured (for all platforms to avoid CORS and keep credentials secure)
-    if (_proxyUrl != null && _proxyUrl!.isNotEmpty) {
+    if (_proxyUrl.isNotEmpty) {
       // Map Shiprocket endpoints to backend endpoints
       if (endpoint.startsWith('/orders/show/')) {
         final orderId = endpoint.replaceAll('/orders/show/', '');
@@ -177,7 +177,7 @@ class ShiprocketService {
   /// Check if we should attempt API calls
   static bool _shouldAttemptApiCall() {
     // If backend proxy is configured, always use it (works on all platforms)
-    if (_proxyUrl != null && _proxyUrl!.isNotEmpty) {
+    if (_proxyUrl.isNotEmpty) {
       return true;
     }
     // Without proxy, only attempt on mobile/desktop (web will fail due to CORS)
