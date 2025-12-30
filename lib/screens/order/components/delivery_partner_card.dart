@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/services/shiprocket_service.dart';
+import 'package:shop/utils/responsive_extension.dart';
 
 class DeliveryPartnerCard extends StatelessWidget {
   final DeliveryPartner deliveryPartner;
@@ -12,6 +13,12 @@ class DeliveryPartnerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final avatarRadius = context.isTablet ? 40.0 : 32.0;
+    final avatarFontSize = context.fontSize(24, minSize: 20, maxSize: 28);
+    final nameFontSize = context.fontSize(16, minSize: 14, maxSize: 18);
+    final detailFontSize = context.fontSize(12, minSize: 10, maxSize: 14);
+    final iconSize = context.isTablet ? 16.0 : 14.0;
+    
     return Container(
       padding: const EdgeInsets.all(defaultPadding),
       decoration: BoxDecoration(
@@ -25,14 +32,14 @@ class DeliveryPartnerCard extends StatelessWidget {
             children: [
               // Delivery Partner Avatar
               CircleAvatar(
-                radius: 32,
+                radius: avatarRadius,
                 backgroundColor: const Color(0xFF219A00),
                 child: Text(
                   deliveryPartner.name[0].toUpperCase(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 24,
+                    fontSize: avatarFontSize,
                   ),
                 ),
               ),
@@ -44,20 +51,20 @@ class DeliveryPartnerCard extends StatelessWidget {
                   children: [
                     Text(
                       deliveryPartner.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                        fontSize: nameFontSize,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.call, size: 14, color: Colors.grey),
+                        Icon(Icons.call, size: iconSize, color: Colors.grey),
                         const SizedBox(width: 4),
                         Text(
                           deliveryPartner.phone,
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: detailFontSize,
                             color: Colors.grey.shade600,
                           ),
                         ),

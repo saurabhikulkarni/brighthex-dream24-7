@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:shop/components/gradient_button.dart';
+import 'package:shop/utils/responsive_extension.dart';
 
 import 'components/login_form.dart';
 
@@ -52,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     "Welcome",
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontSize: 36,
+                          fontSize: context.fontSize(36, minSize: 28, maxSize: 44),
                           fontWeight: FontWeight.bold,
                         ),
                   ),

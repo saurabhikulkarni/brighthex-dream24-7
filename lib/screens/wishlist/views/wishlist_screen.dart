@@ -7,6 +7,7 @@ import 'package:shop/services/cart_service.dart';
 import 'package:shop/route/route_constants.dart';
 
 import '../../../constants.dart';
+import '../../../utils/responsive_extension.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({super.key});
@@ -241,8 +242,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
                 children: [
                   SvgPicture.asset(
                     'assets/icons/Wishlist.svg',
-                    width: 80,
-                    height: 80,
+                    width: context.isTablet ? 100 : 80,
+                    height: context.isTablet ? 100 : 80,
                     colorFilter: ColorFilter.mode(
                       Colors.grey.shade400,
                       BlendMode.srcIn,
@@ -269,14 +270,14 @@ class _WishlistScreenState extends State<WishlistScreen> {
           : CustomScrollView(
               slivers: [
                 SliverPadding(
-                  padding: const EdgeInsets.all(defaultPadding),
+                  padding: EdgeInsets.all(context.responsiveSpacing),
                   sliver: SliverGrid(
                     gridDelegate:
-                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 200.0,
-                      mainAxisSpacing: defaultPadding,
-                      crossAxisSpacing: defaultPadding,
-                      childAspectRatio: 0.58,
+                        SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: context.isTablet ? 250.0 : 200.0,
+                      mainAxisSpacing: context.responsiveSpacing,
+                      crossAxisSpacing: context.responsiveSpacing,
+                      childAspectRatio: context.isTablet ? 0.62 : 0.58,
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (BuildContext context, int index) {
@@ -318,18 +319,18 @@ class _WishlistScreenState extends State<WishlistScreen> {
                                           ],
                                         ),
                                         child: IconButton(
-                                          icon: const Icon(
+                                          icon: Icon(
                                             Icons.close,
-                                            size: 18,
+                                            size: context.isTablet ? 20 : 18,
                                             color: Colors.white,
                                           ),
                                           onPressed: () {
                                             _removeFromWishlist(product.id!);
                                           },
                                           padding: EdgeInsets.zero,
-                                          constraints: const BoxConstraints(
-                                            minWidth: 36,
-                                            minHeight: 36,
+                                          constraints: BoxConstraints(
+                                            minWidth: context.isTablet ? 40 : 36,
+                                            minHeight: context.isTablet ? 40 : 36,
                                           ),
                                         ),
                                       ),
@@ -342,13 +343,17 @@ class _WishlistScreenState extends State<WishlistScreen> {
                               width: double.infinity,
                               child: ElevatedButton.icon(
                                 onPressed: () => _addToCart(product),
-                                icon: const Icon(Icons.shopping_cart_outlined, size: 16),
-                                label: const Text('Add to Cart', style: TextStyle(fontSize: 12)),
+                                icon: Icon(Icons.shopping_cart_outlined, 
+                                  size: context.isTablet ? 18 : 16),
+                                label: Text('Add to Cart', 
+                                  style: TextStyle(fontSize: context.fontSize(12, minSize: 10, maxSize: 14))),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: primaryColor,
                                   foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                                  minimumSize: const Size(0, 32),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: context.responsiveSpacing, 
+                                    vertical: context.responsiveSpacing),
+                                  minimumSize: Size(0, context.isTablet ? 36 : 32),
                                 ),
                               ),
                             ),

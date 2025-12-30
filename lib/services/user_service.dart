@@ -144,9 +144,12 @@ class UserService {
       // This is important for test users and offline mode
       final prefs = await SharedPreferences.getInstance();
       final cachedBalance = prefs.getDouble('wallet_balance');
+      final lastUpdateTime = prefs.getInt('wallet_last_update') ?? 0;
+      final now = DateTime.now().millisecondsSinceEpoch;
       
       print('[USER_SERVICE] Getting wallet balance for userId: $_currentUserId');
       print('[USER_SERVICE] Cached balance from SharedPreferences: $cachedBalance');
+      print('[USER_SERVICE] Last update: ${lastUpdateTime > 0 ? "${now - lastUpdateTime}ms ago" : "never"}');
       
       // Try to get from backend
       try {
@@ -154,24 +157,35 @@ class UserService {
         final backendBalance = user?.walletBalance ?? 0.0;
         print('[USER_SERVICE] Backend balance: $backendBalance');
         
-        // Use the higher value between cached and backend
-        // This ensures we don't lose recently added balance
-        final maxBalance = cachedBalance != null ? 
-            (backendBalance > cachedBalance ? backendBalance : cachedBalance) : backendBalance;
-        
-        if (maxBalance > 0) {
-          await prefs.setDouble('wallet_balance', maxBalance);
-          print('[USER_SERVICE] Using max balance: $maxBalance');
-          return maxBalance;
+        // If cache was updated very recently (within 5 seconds), prefer cache
+        // This prevents race condition where backend hasn't synced yet
+        if (cachedBalance != null && lastUpdateTime > 0 && (now - lastUpdateTime) < 5000) {
+          print('[USER_SERVICE] Using recent cached balance (${now - lastUpdateTime}ms ago): $cachedBalance');
+          return cachedBalance;
         }
+        
+        // If cache is significantly higher than backend and has no timestamp,
+        // it's likely from a recent top-up where backend update failed (test user)
+        // Prefer cache in this case
+        if (cachedBalance != null && cachedBalance > backendBalance && lastUpdateTime == 0) {
+          print('[USER_SERVICE] Using higher cached balance (no timestamp, likely test user): $cachedBalance');
+          // Set timestamp now so future queries can use time-based logic
+          await prefs.setInt('wallet_last_update', now);
+          return cachedBalance;
+        }
+        
+        // Otherwise use backend balance and update cache
+        await prefs.setDouble('wallet_balance', backendBalance);
+        await prefs.setInt('wallet_last_update', now);
+        print('[USER_SERVICE] Using backend balance: $backendBalance');
+        return backendBalance;
       } catch (e) {
         print('[USER_SERVICE] Error fetching from backend, using cached: $e');
+        // Only use cached balance if backend is unavailable
+        final finalBalance = cachedBalance ?? 0.0;
+        print('[USER_SERVICE] Returning cached balance: $finalBalance');
+        return finalBalance;
       }
-      
-      // Return cached balance if backend fails or returns 0
-      final finalBalance = cachedBalance ?? 0.0;
-      print('[USER_SERVICE] Returning final balance: $finalBalance');
-      return finalBalance;
     } catch (e) {
       print('[USER_SERVICE] Error in getWalletBalance: $e');
       return 0.0;
@@ -220,8 +234,9 @@ class UserService {
       
       print('[USER_SERVICE] Current balance: $currentBalance, New balance: $newBalance');
       
-      // Update cache immediately
+      // Update cache immediately with timestamp
       await prefs.setDouble('wallet_balance', newBalance);
+      await prefs.setInt('wallet_last_update', DateTime.now().millisecondsSinceEpoch);
       print('[USER_SERVICE] Updated SharedPreferences wallet_balance to: $newBalance');
       
       // Verify it was saved
@@ -231,8 +246,10 @@ class UserService {
       // Try to update backend (will fail for test users, but that's OK)
       try {
         final user = await getUserById(userId);
+        print('[USER_SERVICE] Got user from backend: ${user?.id}, walletBalance: ${user?.walletBalance}');
         if (user != null) {
           // Update with new calculated balance
+          print('[USER_SERVICE] Attempting GraphQL mutation to update balance to: ${newBalance.toInt()}');
           final QueryResult result = await _client.mutate(
             MutationOptions(
               document: gql(GraphQLQueries.updateWalletBalance),
@@ -243,19 +260,32 @@ class UserService {
             ),
           );
 
+          print('[USER_SERVICE] Mutation result - hasException: ${result.hasException}');
+          if (result.hasException) {
+            print('[USER_SERVICE] Mutation exception: ${result.exception.toString()}');
+          }
+          
           if (!result.hasException && result.data != null && result.data!['updateUserDetail'] != null) {
             final updatedUser = result.data!['updateUserDetail'];
             final updatedUserId = updatedUser['id'];
             final returnedBalance = (updatedUser['walletBalance'] ?? 0).toDouble();
-            print('[USER_SERVICE] New wallet balance from backend: $returnedBalance');
+            print('[USER_SERVICE] ✅ Backend mutation SUCCESS! New balance: $returnedBalance');
             
+            print('[USER_SERVICE] Publishing user update...');
             await _publishUser(updatedUserId);
             await prefs.setDouble('wallet_balance', returnedBalance);
+            await prefs.setInt('wallet_last_update', DateTime.now().millisecondsSinceEpoch);
+            print('[USER_SERVICE] ✅ User published and cache updated');
             return returnedBalance;
+          } else {
+            print('[USER_SERVICE] ❌ Mutation did not return expected data');
           }
+        } else {
+          print('[USER_SERVICE] ❌ User not found in backend (getUserById returned null)');
         }
       } catch (e) {
-        print('[USER_SERVICE] Backend update failed (expected for test user): $e');
+        print('[USER_SERVICE] ❌ Backend update failed with exception: $e');
+        print('[USER_SERVICE] Exception type: ${e.runtimeType}');
       }
 
       // Return the new balance from cache

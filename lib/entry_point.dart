@@ -176,9 +176,9 @@ class _EntryPointState extends State<EntryPoint> {
                   walletBalance = result['walletBalance'] ?? walletBalance;
                   shoppingTokens = result['shoppingTokens'] ?? shoppingTokens;
                 });
+                // Don't reload immediately - use the returned value which is already fresh
+                // Backend sync happens in wallet screen, returned value is authoritative
               }
-              // Always reload from server after returning from wallet screen
-              await _loadWalletBalance();
             },
             icon: SvgPicture.asset(
               "assets/icons/Wallet.svg",

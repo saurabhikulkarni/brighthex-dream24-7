@@ -3,6 +3,7 @@ import 'package:shop/constants.dart';
 import 'package:shop/services/razorpay_service.dart';
 import 'package:shop/services/user_service.dart';
 import 'package:shop/services/auth_service.dart';
+import 'package:shop/utils/responsive_extension.dart';
 
 import 'components/wallet_balance_card.dart';
 
@@ -193,6 +194,7 @@ class _WalletScreenState extends State<WalletScreen> {
       }
 
       // Now start payment with the created order ID
+      print('[WALLET] 🚀 Starting Razorpay payment for amount: $_selectedTopUpAmount');
       razorpayService.startPayment(
         orderId: razorpayOrder.razorpayOrderId,
         amount: _selectedTopUpAmount,
@@ -200,8 +202,12 @@ class _WalletScreenState extends State<WalletScreen> {
         userPhone: userPhone,
         userName: userName,
       onSuccess: (response) async {
+        print('[WALLET] ✅ Payment SUCCESS callback triggered!');
+        print('[WALLET] Payment ID: ${response.paymentId}');
+        print('[WALLET] Order ID: ${razorpayOrder.razorpayOrderId}');
         try {
           // Verify payment signature on backend
+          print('[WALLET] Verifying payment signature...');
           final razorpayService = RazorpayService();
           final isVerified = await razorpayService.verifyPaymentSignature(
             paymentId: response.paymentId,
@@ -209,7 +215,9 @@ class _WalletScreenState extends State<WalletScreen> {
             signature: response.signature,
           );
 
+          print('[WALLET] Signature verification result: $isVerified');
           if (!isVerified) {
+            print('[WALLET] ❌ Signature verification FAILED');
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -222,30 +230,33 @@ class _WalletScreenState extends State<WalletScreen> {
           }
 
           // Payment verified, add money to wallet
-          print('[WALLET] Adding money: $_selectedTopUpAmount');
+          print('[WALLET] ✅ Payment verified! Adding money: $_selectedTopUpAmount');
           await _addMoney(_selectedTopUpAmount);
           
           if (!mounted) return;
           
           print('[WALLET] Balance after add money: $walletBalance tokens: $shoppingTokens');
           
+          // Force complete UI refresh to update WalletBalanceCard
+          setState(() {
+            _selectedTopUpAmount = 0;
+            _amountController.clear();
+            // Force rebuild by updating state variables
+            walletBalance = walletBalance;
+            shoppingTokens = shoppingTokens;
+          });
+          
+          if (!mounted) return;
+          
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                "Successfully added ₹${_selectedTopUpAmount.toStringAsFixed(0)} to wallet!\nNew balance: ₹${walletBalance.toStringAsFixed(0)} ($shoppingTokens tokens)",
+                "Successfully added ₹${walletBalance.toStringAsFixed(0)} to wallet!\nNew balance: $shoppingTokens tokens",
               ),
               duration: const Duration(seconds: 3),
               backgroundColor: Colors.green,
             ),
           );
-
-          // Reset amount field and update UI
-          if (mounted) {
-            setState(() {
-              _selectedTopUpAmount = 0;
-              _amountController.clear();
-            });
-          }
 
           // If returning to cart, pop with updated balance
           if (returnToCart) {
@@ -266,6 +277,8 @@ class _WalletScreenState extends State<WalletScreen> {
         }
       },
       onError: (error) {
+        print('[WALLET] ❌ Payment ERROR callback triggered!');
+        print('[WALLET] Error: $error');
         // Payment failed
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -312,8 +325,12 @@ class _WalletScreenState extends State<WalletScreen> {
 
   Widget _buildQuickSelectButton(double amount) {
     final isSelected = _selectedTopUpAmount == amount;
+    final buttonWidth = MediaQuery.of(context).size.width * 0.27;
+    final fontSize = context.fontSize(10, minSize: 8, maxSize: 12);
+    final amountFontSize = context.fontSize(14, minSize: 12, maxSize: 16);
+    
     return SizedBox(
-      width: 90,
+      width: buttonWidth,
       child: OutlinedButton(
         onPressed: () {
           setState(() {
@@ -334,16 +351,16 @@ class _WalletScreenState extends State<WalletScreen> {
         ),
         child: Column(
           children: [
-            const Text(
+            Text(
               "Add",
-              style: TextStyle(fontSize: 10),
+              style: TextStyle(fontSize: fontSize),
             ),
             Text(
               "₹${amount.toStringAsFixed(0)}",
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: isSelected ? const Color(0xFF219A00) : Colors.grey[600],
-                fontSize: 14,
+                fontSize: amountFontSize,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -403,7 +420,7 @@ class _WalletScreenState extends State<WalletScreen> {
                                           'You need ${requiredAmount!.toInt()} more tokens to complete your purchase',
                                           style: TextStyle(
                                             color: Colors.orange.shade900,
-                                            fontSize: 13,
+                                            fontSize: context.fontSize(13, minSize: 11, maxSize: 15),
                                           ),
                                         ),
                                       ),
@@ -450,9 +467,9 @@ class _WalletScreenState extends State<WalletScreen> {
                                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                   children: [
                                     _buildQuickSelectButton(50),
-                                    const SizedBox(width: 12),
+                                    SizedBox(width: context.responsiveSpacing),
                                     _buildQuickSelectButton(100),
-                                    const SizedBox(width: 12),
+                                    SizedBox(width: context.responsiveSpacing),
                                     _buildQuickSelectButton(200),
                                   ],
                                 ),
@@ -479,8 +496,8 @@ class _WalletScreenState extends State<WalletScreen> {
                                   _selectedTopUpAmount > 0
                                       ? "Add ₹${_selectedTopUpAmount.toStringAsFixed(0)}"
                                       : "Add Top-up",
-                                  style: const TextStyle(
-                                    fontSize: 16,
+                                  style: TextStyle(
+                                    fontSize: context.fontSize(16, minSize: 14, maxSize: 18),
                                     fontWeight: FontWeight.w600,
                                     color: Colors.white,
                                   ),

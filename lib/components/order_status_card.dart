@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../constants.dart';
+import '../utils/responsive_extension.dart';
 import 'order_process.dart';
 
 class OrderStatusCard extends StatelessWidget {
@@ -57,7 +58,7 @@ class OrderStatusCard extends StatelessWidget {
                           DefaultTextStyle(
                             style: TextStyle(
                               fontWeight: FontWeight.w500,
-                              fontSize: 12,
+                              fontSize: context.fontSize(12, minSize: 10, maxSize: 14),
                               color:
                                   Theme.of(context).textTheme.bodyMedium!.color,
                             ),
@@ -78,8 +79,8 @@ class OrderStatusCard extends StatelessWidget {
                       ),
                       SvgPicture.asset(
                         "assets/icons/miniRight.svg",
-                        height: 24,
-                        width: 24,
+                        height: context.isTablet ? 28 : 24,
+                        width: context.isTablet ? 28 : 24,
                         colorFilter: ColorFilter.mode(
                             Theme.of(context).dividerColor, BlendMode.srcIn),
                       )

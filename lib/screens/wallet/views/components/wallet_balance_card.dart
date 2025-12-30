@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../constants.dart';
+import '../../../../utils/responsive_extension.dart';
 
 class WalletBalanceCard extends StatelessWidget {
   const WalletBalanceCard({
@@ -17,8 +18,13 @@ class WalletBalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cardHeight = context.isTablet ? context.height(25) : context.height(22);
+    final titleFontSize = context.fontSize(16, minSize: 14, maxSize: 20);
+    final tokenFontSize = context.fontSize(36, minSize: 28, maxSize: 44);
+    final iconSize = context.isTablet ? 32.0 : 28.0;
+    
     return SizedBox(
-      height: 180,
+      height: cardHeight,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(defaultBorderRadious),
         child: Container(
@@ -39,14 +45,14 @@ class WalletBalanceCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Available Shopping Token Text
-              const Text(
+              Text(
                 "Available Shopping Tokens",
                 style: TextStyle(
                     color: whileColor80,
                     fontWeight: FontWeight.w500,
-                    fontSize: 16),
+                    fontSize: titleFontSize),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: context.responsiveSpacing),
               // Shopping Tokens - Centered
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -54,14 +60,14 @@ class WalletBalanceCard extends StatelessWidget {
                 children: [
                   SvgPicture.asset(
                     'assets/icons/coin.svg',
-                    width: 28,
-                    height: 28,
+                    width: iconSize,
+                    height: iconSize,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     shoppingTokens.toString(),
-                    style: const TextStyle(
-                      fontSize: 36,
+                    style: TextStyle(
+                      fontSize: tokenFontSize,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),

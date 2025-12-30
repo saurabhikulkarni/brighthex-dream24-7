@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/components/product/secondary_product_card.dart';
 
 import '../../../../constants.dart';
+import '../../../../utils/responsive_extension.dart';
 
 class WalletHistoryCard extends StatelessWidget {
   const WalletHistoryCard({
@@ -20,6 +21,9 @@ class WalletHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconSize = context.isTablet ? 28.0 : 24.0;
+    final subtitleFontSize = context.fontSize(12, minSize: 10, maxSize: 14);
+    
     return Container(
       decoration: BoxDecoration(
         borderRadius:
@@ -29,12 +33,12 @@ class WalletHistoryCard extends StatelessWidget {
       child: Column(
         children: [
           ListTile(
-            minLeadingWidth: 24,
+            minLeadingWidth: iconSize,
             leading: SvgPicture.asset(
               isReturn ? "assets/icons/Return.svg" : "assets/icons/Product.svg",
               color: Theme.of(context).iconTheme.color,
-              height: 24,
-              width: 24,
+              height: iconSize,
+              width: iconSize,
             ),
             title: Text(isReturn ? "Return" : "Purchase"),
             subtitle: Padding(
@@ -42,7 +46,7 @@ class WalletHistoryCard extends StatelessWidget {
               child: Text(
                 date,
                 style: TextStyle(
-                    fontSize: 12,
+                    fontSize: subtitleFontSize,
                     color: Theme.of(context).textTheme.bodyMedium!.color),
               ),
             ),

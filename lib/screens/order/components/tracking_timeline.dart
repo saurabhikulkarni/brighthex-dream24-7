@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/services/shiprocket_service.dart';
+import 'package:shop/utils/responsive_extension.dart';
 
 class TrackingTimeline extends StatelessWidget {
   final List<TrackingEvent> events;
@@ -13,6 +14,12 @@ class TrackingTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final circleSize = context.isTablet ? 48.0 : 40.0;
+    final iconSize = context.isTablet ? 24.0 : 20.0;
+    final statusFontSize = context.fontSize(14, minSize: 12, maxSize: 16);
+    final detailFontSize = context.fontSize(12, minSize: 10, maxSize: 14);
+    final lineHeight = context.isTablet ? 60.0 : 50.0;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -42,8 +49,8 @@ class TrackingTimeline extends StatelessWidget {
                   Column(
                     children: [
                       Container(
-                        width: 40,
-                        height: 40,
+                        width: circleSize,
+                        height: circleSize,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isFirst
@@ -60,13 +67,13 @@ class TrackingTimeline extends StatelessWidget {
                           _getStatusIcon(event.status),
                           color:
                               isFirst ? Colors.white : Colors.grey.shade600,
-                          size: 20,
+                          size: iconSize,
                         ),
                       ),
                       if (!isLast)
                         Container(
                           width: 2,
-                          height: 50,
+                          height: lineHeight,
                           color: Colors.grey.shade300,
                         ),
                     ],
@@ -81,9 +88,9 @@ class TrackingTimeline extends StatelessWidget {
                         children: [
                           Text(
                             event.status,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                              fontSize: statusFontSize,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -91,7 +98,7 @@ class TrackingTimeline extends StatelessWidget {
                             Text(
                               event.location!,
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: detailFontSize,
                                 color: Colors.grey.shade600,
                               ),
                             ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/components/list_tile/divider_list_tile.dart';
+import 'package:shop/utils/responsive_extension.dart';
 
 class ProfileMenuListTile extends StatelessWidget {
   const ProfileMenuListTile({
@@ -17,12 +18,15 @@ class ProfileMenuListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconSize = context.isTablet ? 28.0 : 24.0;
+    final fontSize = context.fontSize(14, minSize: 12, maxSize: 16);
+    
     return DividerListTile(
-      minLeadingWidth: 24,
+      minLeadingWidth: iconSize,
       leading: SvgPicture.asset(
         svgSrc,
-        height: 24,
-        width: 24,
+        height: iconSize,
+        width: iconSize,
         colorFilter: ColorFilter.mode(
           Theme.of(context).iconTheme.color!,
           BlendMode.srcIn,
@@ -30,7 +34,7 @@ class ProfileMenuListTile extends StatelessWidget {
       ),
       title: Text(
         text,
-        style: const TextStyle(fontSize: 14, height: 1),
+        style: TextStyle(fontSize: fontSize, height: 1),
       ),
       press: press,
       isShowDivider: isShowDivider,

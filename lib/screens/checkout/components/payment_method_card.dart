@@ -3,6 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/models/payment_model.dart';
 import 'package:shop/services/razorpay_service.dart';
+import 'package:shop/utils/responsive_extension.dart';
 
 class PaymentMethodCard extends StatelessWidget {
   final PaymentMethod method;
@@ -18,6 +19,10 @@ class PaymentMethodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconSize = context.isTablet ? 40.0 : 32.0;
+    final nameFontSize = context.fontSize(12, minSize: 10, maxSize: 14);
+    final selectedFontSize = context.fontSize(10, minSize: 8, maxSize: 12);
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -45,8 +50,8 @@ class PaymentMethodCard extends StatelessWidget {
               ),
               child: SvgPicture.asset(
                 RazorpayService().getPaymentMethodIcon(method),
-                height: 32,
-                width: 32,
+                height: iconSize,
+                width: iconSize,
                 colorFilter: ColorFilter.mode(
                   isSelected ? const Color(0xFF6441A5) : Colors.grey.shade600,
                   BlendMode.srcIn,
@@ -59,7 +64,7 @@ class PaymentMethodCard extends StatelessWidget {
               RazorpayService().getPaymentMethodName(method),
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: nameFontSize,
                 fontWeight: FontWeight.w600,
                 color: isSelected ? const Color(0xFF6441A5) : Colors.grey.shade700,
               ),
@@ -73,10 +78,10 @@ class PaymentMethodCard extends StatelessWidget {
                   color: const Color(0xFF6441A5),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
+                child: Text(
                   'Selected',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: selectedFontSize,
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
@@ -102,6 +107,10 @@ class PaymentHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final orderFontSize = context.fontSize(14, minSize: 12, maxSize: 16);
+    final amountFontSize = context.fontSize(18, minSize: 16, maxSize: 20);
+    final statusFontSize = context.fontSize(12, minSize: 10, maxSize: 14);
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -124,18 +133,18 @@ class PaymentHistoryCard extends StatelessWidget {
                   children: [
                     Text(
                       'Order ${payment.orderId}',
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: TextStyle(
+                        fontSize: orderFontSize,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       RazorpayService().formatAmount(payment.amount),
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: amountFontSize,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF6441A5),
+                        color: const Color(0xFF6441A5),
                       ),
                     ),
                   ],
@@ -155,7 +164,7 @@ class PaymentHistoryCard extends StatelessWidget {
                   child: Text(
                     RazorpayService().getStatusText(payment.paymentStatus),
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: statusFontSize,
                       fontWeight: FontWeight.bold,
                       color: Color(int.parse(
                         'FF${RazorpayService().getStatusColor(payment.paymentStatus).replaceFirst('#', '')}',
@@ -229,6 +238,9 @@ class PaymentLoadingDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final titleFontSize = context.fontSize(16, minSize: 14, maxSize: 18);
+    final subtitleFontSize = context.fontSize(12, minSize: 10, maxSize: 14);
+    
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -249,10 +261,10 @@ class PaymentLoadingDialog extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
+              style: TextStyle(
+                fontSize: titleFontSize,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF2A0845),
+                color: const Color(0xFF2A0845),
               ),
             ),
             const SizedBox(height: defaultPadding / 2),
@@ -260,7 +272,7 @@ class PaymentLoadingDialog extends StatelessWidget {
               'Please wait, do not close the app',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: subtitleFontSize,
                 color: Colors.grey.shade600,
               ),
             ),
@@ -287,6 +299,9 @@ class PaymentSuccessDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconSize = context.isTablet ? 56.0 : 48.0;
+    final titleFontSize = context.fontSize(20, minSize: 18, maxSize: 24);
+    
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -304,20 +319,20 @@ class PaymentSuccessDialog extends StatelessWidget {
                 color: Color(0xFF219A00),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.check,
                 color: Colors.white,
-                size: 48,
+                size: iconSize,
               ),
             ),
             const SizedBox(height: defaultPadding * 1.5),
-            const Text(
+            Text(
               'Payment Successful!',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: titleFontSize,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2A0845),
+                color: const Color(0xFF2A0845),
               ),
             ),
             const SizedBox(height: defaultPadding),
@@ -376,6 +391,10 @@ class PaymentErrorDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final iconSize = context.isTablet ? 56.0 : 48.0;
+    final titleFontSize = context.fontSize(20, minSize: 18, maxSize: 24);
+    final messageFontSize = context.fontSize(14, minSize: 12, maxSize: 16);
+    
     return Dialog(
       backgroundColor: Colors.transparent,
       child: Container(
@@ -393,20 +412,20 @@ class PaymentErrorDialog extends StatelessWidget {
                 color: Color(0xFFF44336),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.close,
                 color: Colors.white,
-                size: 48,
+                size: iconSize,
               ),
             ),
             const SizedBox(height: defaultPadding * 1.5),
-            const Text(
+            Text(
               'Payment Failed',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: titleFontSize,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2A0845),
+                color: const Color(0xFF2A0845),
               ),
             ),
             const SizedBox(height: defaultPadding),
@@ -414,7 +433,7 @@ class PaymentErrorDialog extends StatelessWidget {
               errorMessage,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: messageFontSize,
                 color: Colors.grey.shade700,
               ),
             ),
