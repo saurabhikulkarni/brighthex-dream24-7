@@ -40,6 +40,13 @@ class _EntryPointState extends State<EntryPoint> {
     _loadWalletBalance();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reload wallet balance when screen becomes active
+    _loadWalletBalance();
+  }
+
   Future<void> _loadWalletBalance() async {
     final userId = UserService.getCurrentUserId();
     if (userId != null) {
