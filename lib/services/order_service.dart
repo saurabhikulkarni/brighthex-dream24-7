@@ -229,7 +229,7 @@ class OrderService {
 
       // Clear cart if requested
       if (clearCartAfter) {
-        await cartService.clearLocalCart(deleteOnBackend: true);
+        cartService.clearLocalCart();
       }
 
       return order;
