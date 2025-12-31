@@ -383,6 +383,15 @@ class _WalletScreenState extends State<WalletScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text("Wallet"),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.of(context).pop({
+                'walletBalance': walletBalance,
+                'shoppingTokens': shoppingTokens,
+              });
+            },
+          ),
         ),
         body: SafeArea(
           child: Padding(
