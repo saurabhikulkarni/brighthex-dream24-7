@@ -5,15 +5,13 @@ import 'package:shop/components/network_image_with_loader.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/models/order_models.dart';
-import 'package:shop/models/payment_model.dart';
 import 'package:shop/services/cart_service.dart';
 import 'package:shop/services/address_service.dart';
 import 'package:shop/services/order_service_graphql.dart';
-import 'package:shop/services/payment_service.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:shop/services/wallet_service.dart';
 import 'package:shop/services/user_service.dart';
-import 'package:shop/screens/checkout/views/order_confirmation_screen.dart';
+import 'package:shop/services/shiprocket_service.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -29,13 +27,20 @@ class _CartScreenState extends State<CartScreen> {
   final CartService cartService = CartService();
   final AddressService addressService = AddressService();
   final OrderServiceGraphQL orderServiceGraphQL = OrderServiceGraphQL();
-  final PaymentService paymentService = PaymentService();
   final WalletService walletService = WalletService();
 
   @override
   void initState() {
     super.initState();
     _loadWalletBalance();
+    _syncCart();
+  }
+
+  Future<void> _syncCart() async {
+    await cartService.syncWithBackend();
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _loadWalletBalance() async {
@@ -47,15 +52,22 @@ class _CartScreenState extends State<CartScreen> {
         });
       }
     } catch (e) {
-      print('Error loading wallet balance: $e');
+      // Silently handle error
     }
   }
 
   List<CartModel> get cartItems => cartService.getLocalCart();
 
   double get subtotal => cartService.getCartTotal();
-  double get tax => subtotal * 0.1;
-  double get total => subtotal + tax;
+  double get total => subtotal;
+
+  // Check if a size name represents a free size product
+  bool _isFreeSizeProduct(String sizeName) {
+    final upperSizeName = sizeName.toUpperCase().replaceAll(' ', '');
+    return standardFreeSizes.any((freeSize) => 
+      freeSize.toUpperCase().replaceAll(' ', '') == upperSizeName
+    );
+  }
 
   void _removeItem(String cartItemId) async {
     try {
@@ -102,6 +114,29 @@ class _CartScreenState extends State<CartScreen> {
     if (cartItems.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Your cart is empty')),
+      );
+      return;
+    }
+
+    // Validate size selection for all items that require sizes
+    final itemsWithoutSize = cartItems.where((item) {
+      // Skip validation if product has free size
+      if (item.size != null && _isFreeSizeProduct(item.size!.sizeName)) {
+        return false;
+      }
+      // Check if size is missing for products that need it
+      return item.product != null && item.size == null;
+    }).toList();
+
+    if (itemsWithoutSize.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Please select size for ${itemsWithoutSize.length} item(s) before checkout'
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
       );
       return;
     }
@@ -175,16 +210,37 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-    // Sufficient tokens - create order
-    await _createOrderFromCart(totalTokensNeeded);
+    // Sufficient tokens - navigate to address selection
+    final selectedAddressId = await Navigator.pushNamed(
+      context,
+      addressSelectionScreenRoute,
+    );
+
+    // If user selected an address, proceed with order creation
+    if (selectedAddressId != null && selectedAddressId is String) {
+      await _createOrderFromCart(totalTokensNeeded, selectedAddressId);
+    }
   }
 
-  Future<void> _createOrderFromCart(int totalTokensNeeded) async {
-    // Show loading indicator
+  Future<void> _createOrderFromCart(int totalTokensNeeded, String? addressId) async {
+    // Show loading indicator with message
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      builder: (context) => const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text(
+              'Processing your order...\nThis may take a few moments',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+      ),
     );
 
     try {
@@ -193,9 +249,6 @@ class _CartScreenState extends State<CartScreen> {
       if (userId == null) {
         throw Exception('User not logged in');
       }
-
-      // Get default address
-      final defaultAddress = await addressService.getDefaultAddress(userId);
       
       // Convert cart items to OrderItemModel for GraphQL
       final orderItems = cartItems.map((cartItem) {
@@ -211,9 +264,71 @@ class _CartScreenState extends State<CartScreen> {
       final order = await orderServiceGraphQL.createOrder(
         items: orderItems,
         totalAmount: total.toDouble(),
-        shippingAddressId: defaultAddress?.id,
-        status: OrderStatus.confirmed,
+        addressId: addressId,
+        status: OrderStatus.pending,
       );
+
+      // Get address details for Shiprocket
+      String? shiprocketOrderId;
+      if (addressId != null && addressId.isNotEmpty) {
+        try {
+          final address = await addressService.getAddressById(addressId);
+          if (address != null) {
+            // Create shipment in Shiprocket
+            final shipmentItems = cartItems.map((item) {
+              return {
+                'name': item.product?.title ?? 'Product',
+                'sku': item.product?.id ?? 'SKU-${item.id}',
+                'units': item.quantity,
+                'selling_price': item.product?.price ?? 0.0,
+                'discount': 0.0,
+              };
+            }).toList();
+
+            final shipmentResult = await ShiprocketService.createShipment(
+              orderId: order.orderNumber,
+              orderDate: DateTime.now().toIso8601String(),
+              pickupLocation: 'Primary', // You can make this configurable
+              billingCustomerName: address.fullName,
+              billingAddress: address.addressLine1 + (address.addressLine2 != null ? ', ${address.addressLine2}' : ''),
+              billingCity: address.city,
+              billingPincode: address.pincode,
+              billingState: address.state,
+              billingCountry: address.country,
+              billingEmail: 'customer@example.com', // AddressModel doesn't have email field
+              billingPhone: address.phoneNumber,
+              orderItems: shipmentItems,
+              paymentMethod: 'Prepaid', // Shopping tokens = prepaid
+              subTotal: total.toDouble(),
+              weight: 0.5, // Default weight in kg
+            );
+
+            if (shipmentResult != null) {
+              shiprocketOrderId = shipmentResult['order_id']?.toString() ?? 
+                                  shipmentResult['shipment_id']?.toString();
+              print('✅ Shiprocket shipment created: $shiprocketOrderId');
+              
+              // Update order with Shiprocket tracking info if available
+              if (shiprocketOrderId != null && order.id != null) {
+                final trackingNumber = shipmentResult['awb_code']?.toString();
+                final courierName = shipmentResult['courier_name']?.toString();
+                
+                await orderServiceGraphQL.updateOrderTracking(
+                  orderId: order.id!,
+                  shiprocketOrderId: shiprocketOrderId,
+                  trackingNumber: trackingNumber,
+                  courierName: courierName,
+                );
+              }
+            } else {
+              print('⚠️ Failed to create Shiprocket shipment, order will use mock tracking');
+            }
+          }
+        } catch (shiprocketError) {
+          print('⚠️ Shiprocket integration error: $shiprocketError');
+          // Continue with order - Shiprocket is optional
+        }
+      }
 
       // Deduct wallet balance
       await walletService.deductBalance(total.toDouble());
@@ -221,30 +336,18 @@ class _CartScreenState extends State<CartScreen> {
       // Update wallet balance in UI
       await _loadWalletBalance();
 
-      // Create payment record (using wallet payment)
-      await paymentService.createPayment(PaymentModel(
-        orderId: order.id ?? '',
-        amount: total.toDouble(),
-        razorpayOrderId: '', // Wallet payment doesn't have Razorpay order
-        paymentStatus: PaymentStatus.completed,
-        method: PaymentMethod.wallet,
-      ));
-
-      // Clear cart locally and on backend
-      await cartService.clearLocalCart(deleteOnBackend: true);
+      // Clear cart
+      cartService.clearLocalCart();
 
       if (!mounted) return;
       Navigator.pop(context); // Close loading dialog
 
-      // Navigate to order confirmation screen
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => OrderConfirmationScreen(
-            order: order,
-            orderId: order.orderNumber,
-            totalAmount: order.totalAmount,
-          ),
-        ),
+      // Navigate to order tracking screen with appropriate ID
+      Navigator.of(context).pushNamed(
+        orderTrackingScreenRoute,
+        arguments: {
+          'orderId': shiprocketOrderId ?? order.id ?? order.orderNumber,
+        },
       );
     } catch (e) {
       if (!mounted) return;
@@ -341,10 +444,39 @@ class _CartScreenState extends State<CartScreen> {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 4),
-                                        if (item.size != null)
+                                        if (item.size != null) ...[
                                           Text(
                                             'Size: ${item.size!.sizeName}',
                                             style: Theme.of(context).textTheme.bodySmall,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          // Show stock availability
+                                          if (item.size!.quantity > 0)
+                                            Text(
+                                              'Stock: ${item.size!.quantity} available',
+                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                color: item.size!.quantity < 5 
+                                                  ? Colors.orange 
+                                                  : Colors.green,
+                                                fontSize: 11,
+                                              ),
+                                            )
+                                          else
+                                            Text(
+                                              'Out of Stock',
+                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                color: Colors.red,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                        ] else
+                                          Text(
+                                            'Size not selected',
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Colors.red,
+                                              fontStyle: FontStyle.italic,
+                                            ),
                                           ),
                                         const SizedBox(height: 4),
                                         Row(
@@ -433,24 +565,6 @@ class _CartScreenState extends State<CartScreen> {
                               ),
                               const SizedBox(width: 2),
                               Text("${subtotal.toInt()}"),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: defaultPadding / 2),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text("Tax (10%)"),
-                          Row(
-                            children: [
-                              SvgPicture.asset(
-                                'assets/icons/coin.svg',
-                                width: 14,
-                                height: 14,
-                              ),
-                              const SizedBox(width: 2),
-                              Text("${tax.toInt()}"),
                             ],
                           ),
                         ],

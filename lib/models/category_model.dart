@@ -62,52 +62,19 @@ final List<CategoryModel> demoCategoriesWithImage = [
 
 final List<CategoryModel> demoCategories = [
   CategoryModel(
-    title: "Men's",
+    title: "Men's Collection",
     svgSrc: "assets/icons/Man&Woman.svg",
-    subCategories: [
-      CategoryModel(title: "All Clothing"),
-      CategoryModel(title: "New In"),
-      CategoryModel(title: "Coats & Jackets"),
-      CategoryModel(title: "Shirts"),
-      CategoryModel(title: "Pants"),
-      CategoryModel(title: "T-Shirts"),
-      CategoryModel(title: "Jeans"),
-      CategoryModel(title: "Hoodies"),
-    ],
   ),
   CategoryModel(
-    title: "Women's",
+    title: "Women's Collection",
     svgSrc: "assets/icons/Woman.svg",
-    subCategories: [
-      CategoryModel(title: "All Clothing"),
-      CategoryModel(title: "New In"),
-      CategoryModel(title: "Coats & Jackets"),
-      CategoryModel(title: "Dresses"),
-      CategoryModel(title: "Tops"),
-      CategoryModel(title: "T-Shirts"),
-      CategoryModel(title: "Jeans"),
-      CategoryModel(title: "Hoodies"),
-    ],
   ),
   CategoryModel(
     title: "Accessories",
     svgSrc: "assets/icons/Accessories.svg",
-    subCategories: [
-      CategoryModel(title: "Handbags"),
-      CategoryModel(title: "Jewelry"),
-      CategoryModel(title: "Mobile Accessories"),
-      CategoryModel(title: "Men's Wallet"),
-    ],
   ),
   CategoryModel(
     title: "Electronics & Gadgets",
     svgSrc: "assets/icons/USB.svg",
-    subCategories: [
-      CategoryModel(title: "Chargers"),
-      CategoryModel(title: "Wired Headphones"),
-      CategoryModel(title: "Bluetooth Headphones"),
-      CategoryModel(title: "USB Cables"),
-      CategoryModel(title: "Speakers"),
-    ],
   ),
 ];

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../constants.dart';
+import '../../../../utils/responsive_extension.dart';
 
 class TransactionHistoryCard extends StatelessWidget {
   const TransactionHistoryCard({
@@ -31,6 +32,9 @@ class TransactionHistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final amountStr = amount.toStringAsFixed(0);
+    final containerSize = context.isTablet ? 56.0 : 48.0;
+    final iconSize = context.isTablet ? 28.0 : 24.0;
+    final subtitleFontSize = context.fontSize(12, minSize: 10, maxSize: 14);
     
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -44,10 +48,10 @@ class TransactionHistoryCard extends StatelessWidget {
       ),
       child: ListTile(
         contentPadding: EdgeInsets.zero,
-        minLeadingWidth: 48,
+        minLeadingWidth: containerSize,
         leading: Container(
-          width: 48,
-          height: 48,
+          width: containerSize,
+          height: containerSize,
           decoration: BoxDecoration(
             color: (isIncome ? Colors.green : Colors.red).withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
@@ -56,8 +60,8 @@ class TransactionHistoryCard extends StatelessWidget {
             child: SvgPicture.asset(
               _getIcon(),
               color: isIncome ? Colors.green : Colors.red,
-              height: 24,
-              width: 24,
+              height: iconSize,
+              width: iconSize,
             ),
           ),
         ),
@@ -70,7 +74,7 @@ class TransactionHistoryCard extends StatelessWidget {
         subtitle: Text(
           date,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: subtitleFontSize,
             color: Theme.of(context).textTheme.bodyMedium!.color,
           ),
         ),

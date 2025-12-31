@@ -7,6 +7,10 @@ import 'package:shop/services/auth_service.dart';
 import 'package:shop/services/graphql_client.dart';
 import 'package:shop/services/graphql_queries.dart';
 import 'package:shop/services/msg91_service.dart';
+import 'package:shop/services/user_service.dart';
+import 'package:shop/services/wishlist_service.dart';
+import 'package:shop/services/cart_service.dart';
+import 'package:shop/route/route_constants.dart';
 
 import '../../../../constants.dart';
 
@@ -71,8 +75,27 @@ class _LogInFormState extends State<LogInForm> {
     // Validate Indian mobile number before sending OTP
     String phone = _phoneController.text.replaceAll(RegExp(r'[^\d]'), '');
     
+    // Check if it's test user - bypass OTP
+    final authService = AuthService();
+    if (authService.isTestUser(phone)) {
+      setState(() {
+        _otpSent = true;
+        _otpController.text = "0000"; // Auto-fill with dummy OTP
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🧪 Test user detected - OTP bypassed (use 0000)'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+    
     // Check if it's a valid Indian mobile number (10 digits, starts with 6-9)
-    if (!RegExp(r'^[6-9]\d{9}$').hasMatch(phone)) {
+    if (!RegExp(r'^[6-9]\\d{9}\$').hasMatch(phone)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a valid Indian mobile number'),
@@ -88,6 +111,53 @@ class _LogInFormState extends State<LogInForm> {
       barrierDismissible: false,
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
+
+    // Check if user exists in database
+    try {
+      final UserService userService = UserService();
+      final existingUser = await userService.getUserByMobileNumber(phone);
+      
+      if (existingUser == null) {
+        // User doesn't exist
+        if (mounted) {
+          Navigator.of(context).pop(); // Hide loading dialog
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Unregistered Number'),
+              content: const Text('This mobile number is not registered. Please sign up first to create an account.'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.pushReplacementNamed(context, signUpScreenRoute);
+                  },
+                  child: const Text('Sign Up'),
+                ),
+              ],
+            ),
+          );
+        }
+        return;
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error checking user: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
 
     // Send OTP via MSG91 service (backend API)
     final result = await msg91Service.sendOtp(phone);
@@ -145,6 +215,21 @@ class _LogInFormState extends State<LogInForm> {
       return false;
     }
 
+    // Check if it's test user - bypass OTP verification
+    final authService = AuthService();
+    if (authService.isTestUser(phone)) {
+      if (otp == "0000") {
+        return true; // Accept any OTP for test user
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Test user OTP should be 0000'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return false;
+    }
+
     // Show loading indicator
     showDialog(
       context: context,
@@ -181,16 +266,29 @@ class _LogInFormState extends State<LogInForm> {
     final phone = getVerifiedPhone();
     if (phone != null) {
       final authService = AuthService();
-      final name = getUserName();
       
-      print('[LOGIN] Starting login session with phone: $phone');
+      // Check if it's test user - use direct login
+      if (authService.isTestUser(phone)) {
+        final success = await authService.loginTestUser();
+        if (success && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('🧪 Test user logged in successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+        return;
+      }
+      
+      final name = getUserName();
       
       try {
         // First, try to find existing user by mobile number
         final graphQLClient = GraphQLService.getClient();
         
         // Clean phone number (remove non-digit characters)
-        final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+        final cleanPhone = phone.replaceAll(RegExp(r'[^\\d]'), '');
         
         // Query for existing user
         final QueryOptions queryOptions = QueryOptions(
@@ -223,7 +321,6 @@ class _LogInFormState extends State<LogInForm> {
           final QueryResult result = await graphQLClient.mutate(options);
           
           if (result.hasException) {
-            print('Error creating user: ${result.exception}');
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -246,7 +343,7 @@ class _LogInFormState extends State<LogInForm> {
               );
               await graphQLClient.mutate(publishOptions);
             } catch (e) {
-              print('Error publishing user: $e');
+              // Publishing failed, but user is created
             }
           }
         }
@@ -259,8 +356,11 @@ class _LogInFormState extends State<LogInForm> {
             phoneVerified: true,
             userId: userId,
           );
+          
+          // Sync wishlist and cart from backend after successful login
+          await wishlistService.syncWithBackend();
+          await cartService.syncWithBackend();
         } else {
-          print('Error: Could not extract user ID from response');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -271,7 +371,6 @@ class _LogInFormState extends State<LogInForm> {
           }
         }
       } catch (e) {
-        print('Exception in saveLoginSession: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

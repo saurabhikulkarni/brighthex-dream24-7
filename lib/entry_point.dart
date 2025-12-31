@@ -5,6 +5,7 @@ import 'package:shop/constants.dart';
 import 'package:shop/route/screen_export.dart';
 import 'package:shop/services/cart_service.dart';
 import 'package:shop/services/wishlist_service.dart';
+import 'package:shop/services/user_service.dart';
 
 class EntryPoint extends StatefulWidget {
   const EntryPoint({super.key});
@@ -17,6 +18,7 @@ class _EntryPointState extends State<EntryPoint> {
   double walletBalance = 0.0;
   int shoppingTokens = 0;
   int _currentIndex = 0;
+  final UserService _userService = userService;
 
   List<Widget> get _pages => [
     const HomeScreen(),
@@ -25,14 +27,34 @@ class _EntryPointState extends State<EntryPoint> {
     const ProfileScreen(),
   ];
 
-  int get _cartItemCount => cartService.getLocalCart().length;
+  int get _cartItemCount {
+    // Force refresh by calling getLocalCart each time
+    return CartService().getLocalCart().length;
+  }
 
   int get _wishlistItemCount => wishlistService.getWishlistCount();
 
   @override
   void initState() {
     super.initState();
-    // Refresh UI whenever page is visited
+    _loadWalletBalance();
+  }
+
+  Future<void> _loadWalletBalance() async {
+    final userId = UserService.getCurrentUserId();
+    if (userId != null) {
+      try {
+        final balance = await _userService.getWalletBalance();
+        if (mounted) {
+          setState(() {
+            walletBalance = balance;
+            shoppingTokens = balance.toInt();
+          });
+        }
+      } catch (e) {
+        // Silently fail, keep current values
+      }
+    }
   }
 
   @override
@@ -48,6 +70,16 @@ class _EntryPointState extends State<EntryPoint> {
             BlendMode.srcIn),
       );
     }
+
+    // Responsive sizing based on screen width
+    final screenWidth = MediaQuery.of(context).size.width;
+    final double iconSize = (screenWidth * 0.055).clamp(20.0, 24.0);
+    final double iconPadding = (screenWidth * 0.015).clamp(4.0, 8.0); // Reduced padding
+    final double badgeFontSize = (screenWidth * 0.022).clamp(8.0, 10.0);
+    final double tokenIconSize = (screenWidth * 0.05).clamp(18.0, 22.0);
+    final double tokenFontSize = (screenWidth * 0.032).clamp(12.0, 14.0);
+    final double tokenSpacing = (screenWidth * 0.008).clamp(2.0, 4.0);
+    final double rightPadding = (screenWidth * 0.04).clamp(12.0, 20.0); // Increased to bring tokens inside
 
     return Scaffold(
       appBar: PreferredSize(
@@ -78,12 +110,14 @@ class _EntryPointState extends State<EntryPoint> {
             ),
             actions: [
           IconButton(
+            padding: EdgeInsets.symmetric(horizontal: iconPadding),
+            constraints: const BoxConstraints(),
             onPressed: () {
               Navigator.pushNamed(context, searchScreenRoute);
             },
             icon: SvgPicture.asset(
               "assets/icons/Search.svg",
-              height: 24,
+              height: iconSize,
               colorFilter: const ColorFilter.mode(
                   Colors.white,
                   BlendMode.srcIn),
@@ -92,32 +126,36 @@ class _EntryPointState extends State<EntryPoint> {
           Stack(
             children: [
               IconButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, checkoutScreenRoute);
+                padding: EdgeInsets.symmetric(horizontal: iconPadding),
+                constraints: const BoxConstraints(),
+                onPressed: () async {
+                  await Navigator.pushNamed(context, checkoutScreenRoute);
+                  // Refresh cart count after returning from cart
+                  if (mounted) {
+                    setState(() {});
+                  }
                 },
-                icon: SvgPicture.asset(
-                  "assets/icons/Bag.svg",
-                  height: 24,
-                  colorFilter: const ColorFilter.mode(
-                      Colors.white,
-                      BlendMode.srcIn),
+                icon: Icon(
+                  Icons.shopping_cart_outlined,
+                  size: iconSize,
+                  color: Colors.white,
                 ),
               ),
               if (_cartItemCount > 0)
                 Positioned(
-                  right: 6,
-                  top: 6,
+                  right: iconPadding * 0.5,
+                  top: iconPadding * 0.5,
                   child: Container(
-                    padding: const EdgeInsets.all(4),
+                    padding: EdgeInsets.all(badgeFontSize * 0.3),
                     decoration: const BoxDecoration(
                       color: Color(0xFFFF4444),
                       shape: BoxShape.circle,
                     ),
                     child: Text(
                       _cartItemCount.toString(),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 10,
+                        fontSize: badgeFontSize,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -126,6 +164,8 @@ class _EntryPointState extends State<EntryPoint> {
             ],
           ),
           IconButton(
+            padding: EdgeInsets.symmetric(horizontal: iconPadding),
+            constraints: const BoxConstraints(),
             onPressed: () async {
               final result = await Navigator.pushNamed(context, walletScreenRoute, arguments: {
                 'walletBalance': walletBalance,
@@ -136,32 +176,34 @@ class _EntryPointState extends State<EntryPoint> {
                   walletBalance = result['walletBalance'] ?? walletBalance;
                   shoppingTokens = result['shoppingTokens'] ?? shoppingTokens;
                 });
+                // Don't reload immediately - use the returned value which is already fresh
+                // Backend sync happens in wallet screen, returned value is authoritative
               }
             },
             icon: SvgPicture.asset(
               "assets/icons/Wallet.svg",
-              height: 24,
+              height: iconSize,
               colorFilter: const ColorFilter.mode(
                   Colors.white,
                   BlendMode.srcIn),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            padding: EdgeInsets.only(right: rightPadding),
             child: Row(
               children: [
                 SvgPicture.asset(
                   "assets/icons/coin.svg",
-                  height: 24,
-                  width: 24,
+                  height: tokenIconSize,
+                  width: tokenIconSize,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: tokenSpacing),
                 Text(
                   shoppingTokens.toString(),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Color(0xFFFFC107),
+                    fontSize: tokenFontSize,
+                    color: const Color(0xFFFFC107),
                   ),
                 ),
               ],

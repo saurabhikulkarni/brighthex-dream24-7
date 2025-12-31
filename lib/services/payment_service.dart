@@ -15,9 +15,10 @@ class PaymentService {
 
   final GraphQLClient _client = GraphQLService.getClient();
 
-  // Convert PaymentStatus enum to string
+  // Convert PaymentStatus enum to string for GraphQL
+  // Hygraph expects enum values to match the schema exactly (lowercase)
   String _paymentStatusToString(PaymentStatus status) {
-    return status.toString().split('.').last.toUpperCase();
+    return status.toString().split('.').last.toLowerCase();
   }
 
   // Convert string to PaymentStatus enum

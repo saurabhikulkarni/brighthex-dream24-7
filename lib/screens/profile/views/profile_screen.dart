@@ -17,11 +17,13 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String _userName = 'User';
+  bool _isTestUser = false;
   
   @override
   void initState() {
     super.initState();
     _loadUserName();
+    _checkTestUser();
   }
   
   Future<void> _loadUserName() async {
@@ -29,6 +31,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) {
       setState(() {
         _userName = name ?? 'User';
+      });
+    }
+  }
+  
+  Future<void> _checkTestUser() async {
+    final phone = await AuthService().getUserPhone();
+    if (phone != null && mounted) {
+      setState(() {
+        _isTestUser = AuthService().isTestUser(phone);
       });
     }
   }
@@ -63,6 +74,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       body: ListView(
         children: [
+          if (_isTestUser)
+            Container(
+              margin: const EdgeInsets.all(defaultPadding),
+              padding: const EdgeInsets.all(defaultPadding),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+                borderRadius: BorderRadius.circular(defaultBorderRadious),
+                border: Border.all(color: Colors.orange, width: 2),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.science, color: Colors.orange, size: 24),
+                  const SizedBox(width: defaultPadding / 2),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '🧪 TEST USER MODE',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                        Text(
+                          'Using test account for Razorpay testing',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ProfileCard(
             name: _userName,
             email: "user@shop.com",
@@ -87,13 +132,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             svgSrc: "assets/icons/Order.svg",
             press: () {
               Navigator.pushNamed(context, ordersScreenRoute);
-            },
-          ),
-          ProfileMenuListTile(
-            text: "Returns",
-            svgSrc: "assets/icons/Return.svg",
-            press: () {
-              Navigator.pushNamed(context, returnsScreenRoute);
             },
           ),
           ProfileMenuListTile(
@@ -138,6 +176,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
             svgSrc: "assets/icons/FAQ.svg",
             press: () {
               _openFAQ();
+            },
+          ),
+          ProfileMenuListTile(
+            text: "Terms & Conditions",
+            svgSrc: "assets/icons/info.svg",
+            press: () {
+              Navigator.pushNamed(context, termsAndConditionsScreenRoute);
+            },
+          ),
+          ProfileMenuListTile(
+            text: "Privacy Policy",
+            svgSrc: "assets/icons/Lock.svg",
+            press: () {
+              Navigator.pushNamed(context, privacyPolicyScreenRoute);
+            },
+          ),
+          ProfileMenuListTile(
+            text: "Refund Policy",
+            svgSrc: "assets/icons/Return.svg",
+            press: () {
+              Navigator.pushNamed(context, refundPolicyScreenRoute);
+            },
+          ),
+          ProfileMenuListTile(
+            text: "Shipping Policy",
+            svgSrc: "assets/icons/Delivery.svg",
+            press: () {
+              Navigator.pushNamed(context, shippingPolicyScreenRoute);
             },
             isShowDivider: false,
           ),

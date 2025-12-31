@@ -198,6 +198,22 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return MaterialPageRoute(
         builder: (context) => const GetHelpScreen(),
       );
+    case termsAndConditionsScreenRoute:
+      return MaterialPageRoute(
+        builder: (context) => const TermsAndConditionsScreen(),
+      );
+    case privacyPolicyScreenRoute:
+      return MaterialPageRoute(
+        builder: (context) => const PrivacyPolicyScreen(),
+      );
+    case refundPolicyScreenRoute:
+      return MaterialPageRoute(
+        builder: (context) => const RefundPolicyScreen(),
+      );
+    case shippingPolicyScreenRoute:
+      return MaterialPageRoute(
+        builder: (context) => const ShippingPolicyScreen(),
+      );
 
     // case chatScreenRoute:
     //   return MaterialPageRoute(
@@ -330,9 +346,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           state: args?['state'],
         ),
       );
-    case returnsScreenRoute:
+    case addressSelectionScreenRoute:
       return MaterialPageRoute(
-        builder: (context) => const ReturnsScreen(),
+        builder: (context) => const AddressSelectionScreen(),
       );
     // case paymentMethodScreenRoute:
     //   return MaterialPageRoute(

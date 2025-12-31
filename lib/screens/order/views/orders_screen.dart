@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/services/order_service_graphql.dart';
 import 'package:shop/models/order_models.dart';
-import 'package:shop/route/route_constants.dart';
 import 'order_tracking_screen.dart';
 
 class OrdersScreen extends StatefulWidget {
@@ -24,25 +23,40 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   Future<void> _loadOrders() async {
+    if (!mounted) return;
+    
     try {
       setState(() {
         _isLoading = true;
+        _orders = []; // Clear previous orders while loading
       });
+      
       final orders = await orderService.getUserOrders();
-      setState(() {
-        _orders = orders;
-        _isLoading = false;
-      });
+      
+      print('📦 Fetched ${orders.length} orders from service');
+      for (int i = 0; i < orders.length; i++) {
+        final order = orders[i];
+        print('  Order $i: id=${order.id}, orderNumber=${order.orderNumber}, items=${order.items.length}');
+      }
+      
+      if (mounted) {
+        setState(() {
+          _orders = orders;
+          _isLoading = false;
+        });
+        print('✅ UI Updated: _orders.length=${_orders.length}, _isLoading=$_isLoading');
+      }
     } catch (e) {
-      print('Error loading orders: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
+          // Keep existing orders if available, don't clear them on error
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error loading orders: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -56,40 +70,73 @@ class _OrdersScreenState extends State<OrdersScreen> {
       appBar: AppBar(
         title: const Text("My Orders"),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _orders.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.shopping_bag_outlined,
-                        size: 80,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: defaultPadding),
-                      Text(
-                        "No orders yet",
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: defaultPadding / 2),
-                      Text(
-                        "Start shopping to place your first order!",
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
+      body: Builder(
+        builder: (context) {
+          print('🔍 Building orders screen: _isLoading=$_isLoading, _orders.length=${_orders.length}');
+          
+          if (_isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          
+          // Debug: Show order count even if empty
+          if (_orders.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.shopping_bag_outlined,
+                    size: 80,
+                    color: Colors.grey.shade400,
                   ),
-                )
-              : RefreshIndicator(
+                  const SizedBox(height: defaultPadding),
+                  Text(
+                    "No orders yet",
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: defaultPadding / 2),
+                  Text(
+                    "Start shopping to place your first order!",
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  // Debug info
+                  if (true) // Always show debug in development
+                    Padding(
+                      padding: const EdgeInsets.all(defaultPadding),
+                      child: Text(
+                        'Debug: Orders fetched but list is empty',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.grey,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          }
+          
+          print('✅ Rendering ${_orders.length} orders');
+          return RefreshIndicator(
                   onRefresh: _loadOrders,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(defaultPadding),
                     itemCount: _orders.length,
                     itemBuilder: (context, index) {
                       final order = _orders[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: defaultPadding),
+                      // Skip rendering if order is invalid
+                      // Only skip if both id and orderNumber are missing
+                      if ((order.id == null || order.id!.isEmpty) && order.orderNumber.isEmpty) {
+                        print('⚠️ Skipping invalid order at index $index: id=${order.id}, orderNumber=${order.orderNumber}');
+                        return const SizedBox.shrink();
+                      }
+                      // Use orderNumber if available, otherwise use id
+                      final displayOrderNumber = order.orderNumber.isNotEmpty 
+                          ? order.orderNumber 
+                          : (order.id ?? 'Order ${index + 1}');
+                      print('✅ Rendering order $index: $displayOrderNumber');
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: defaultPadding),
                   child: Padding(
                     padding: const EdgeInsets.all(defaultPadding),
                     child: Column(
@@ -103,7 +150,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Order ${order.orderNumber}",
+                                    "Order ${order.orderNumber.isNotEmpty ? order.orderNumber : (order.id ?? 'N/A')}",
                                     style: Theme.of(context).textTheme.titleSmall,
                                   ),
                                   const SizedBox(height: 4),
@@ -137,12 +184,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         ),
                         const SizedBox(height: defaultPadding / 2),
                         Text(
-                          order.orderSummary,
+                          order.items.isEmpty ? 'No items' : order.orderSummary,
                           style: Theme.of(context).textTheme.bodyMedium,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: defaultPadding / 2),
                         // Show tracking info if available
-                        if (order.trackingNumber != null || order.courierName != null)
+                        if ((order.trackingNumber != null && order.trackingNumber!.isNotEmpty) || 
+                            (order.courierName != null && order.courierName!.isNotEmpty))
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -194,12 +244,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         const SizedBox(height: defaultPadding / 2),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
                               "₹${order.totalAmount.toStringAsFixed(2)}",
                               style: Theme.of(context).textTheme.titleSmall,
                             ),
-                            Row(
+                            Wrap(
+                              spacing: 8,
+                              alignment: WrapAlignment.end,
                               children: [
                                 // Track button - show if order has Shiprocket order ID or tracking number
                                 if (order.shiprocketOrderId != null || order.trackingNumber != null)
@@ -222,8 +275,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                     ),
                                   ),
-                                if (order.shiprocketOrderId != null || order.trackingNumber != null)
-                                  const SizedBox(width: 8),
                                 ElevatedButton(
                                   onPressed: () {
                                     // Navigate to order details/tracking screen
@@ -249,7 +300,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 );
                     },
                   ),
-                ),
+          );
+        },
+      ),
     );
   }
 

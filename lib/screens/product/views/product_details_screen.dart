@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:shop/components/cart_button.dart';
@@ -7,7 +9,6 @@ import 'package:shop/constants.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/services/product_service.dart';
 import 'package:shop/services/wishlist_service.dart';
-import 'package:shop/screens/product/views/product_returns_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart' as svg;
 import 'package:shop/route/screen_export.dart';
 
@@ -15,6 +16,7 @@ import 'components/notify_me_card.dart';
 import 'components/product_images.dart';
 import 'components/product_info.dart';
 import 'components/product_list_tile.dart';
+import 'components/selected_size.dart';
 import '../../../components/review_card.dart';
 import 'product_buy_now_screen.dart';
 
@@ -41,6 +43,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   List<ProductModel> _relatedProducts = [];
   bool _isLoading = true;
   bool _isInWishlist = false;
+  int _selectedSizeIndex = 0;
 
   @override
   void initState() {
@@ -146,6 +149,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   child: ProductBuyNowScreen(
                     product: _product!,
                     sizes: _sizes,
+                    initialSizeIndex: _selectedSizeIndex,
                   ),
                 );
               },
@@ -209,6 +213,25 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               rating: 4.4,
               numOfReviews: 126,
             ),
+            // Size Selection
+            if (_sizes.isNotEmpty)
+              SliverToBoxAdapter(
+                child: SelectedSize(
+                  sizes: _sizes.map((s) => s.sizeName).toList(),
+                  selectedIndex: _selectedSizeIndex,
+                  availableIndices: _sizes
+                      .asMap()
+                      .entries
+                      .where((entry) => entry.value.quantity > 0)
+                      .map((entry) => entry.key)
+                      .toList(),
+                  press: (index) {
+                    setState(() {
+                      _selectedSizeIndex = index;
+                    });
+                  },
+                ),
+              ),
             ProductListTile(
               svgSrc: "assets/icons/Product.svg",
               title: "Product Details",
@@ -285,7 +308,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                           Card(
                             child: ListTile(
                               title: const Text("Standard Shipping"),
-                              subtitle: const Text("5-7 business days"),
+                              subtitle: const Text("15-20 business days"),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
@@ -300,41 +323,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Card(
-                            child: ListTile(
-                              title: const Text("Express Shipping"),
-                              subtitle: const Text("2-3 business days"),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  svg.SvgPicture.asset(
-                                    'assets/icons/coin.svg',
-                                    width: 14,
-                                    height: 14,
-                                  ),
-                                  const SizedBox(width: 2),
-                                  const Text("50"),
-                                ],
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                     ),
                   ),
-                );
-              },
-            ),
-            ProductListTile(
-              svgSrc: "assets/icons/Return.svg",
-              title: "Returns",
-              isShowBottomBorder: true,
-              press: () {
-                customModalBottomSheet(
-                  context,
-                  height: MediaQuery.of(context).size.height * 0.92,
-                  child: const ProductReturnsScreen(),
                 );
               },
             ),

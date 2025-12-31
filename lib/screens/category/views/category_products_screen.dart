@@ -35,6 +35,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     try {
       // Fetch products by category from GraphQL
       final products = await _productService.getProductsByCategory(widget.categoryName);
+      
       if (mounted) {
         setState(() {
           _products = products;

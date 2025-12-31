@@ -288,29 +288,6 @@ class OrderConfirmationScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: defaultPadding / 2),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Tax (10%)'),
-                          Row(
-                            children: [
-                              SvgPicture.asset(
-                                'assets/icons/coin.svg',
-                                width: 14,
-                                height: 14,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${((order?.totalAmount ?? totalAmount) * 0.09).toInt()}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
                       const Divider(height: defaultPadding),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,

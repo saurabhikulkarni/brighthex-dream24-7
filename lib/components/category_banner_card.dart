@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/components/network_image_with_loader.dart';
+import 'package:shop/utils/responsive_extension.dart';
 
 class CategoryBannerCard extends StatelessWidget {
   const CategoryBannerCard({
@@ -26,17 +27,17 @@ class CategoryBannerCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(defaultBorderRadious),
       child: Stack(
         children: [
-          // Background Image (supports both assets and network)
-          AspectRatio(
-            aspectRatio: 2.0,
-            child: image.startsWith('assets/')
-                ? Image.asset(
-                    image,
-                    fit: BoxFit.cover,
-                  )
-                : NetworkImageWithLoader(
+          // Background Image
+          Positioned.fill(
+            child: image.startsWith('http')
+                ? NetworkImageWithLoader(
                     image,
                     radius: defaultBorderRadious,
+                    fit: BoxFit.cover,
+                  )
+                : Image.asset(
+                    image,
+                    fit: BoxFit.cover,
                   ),
           ),
           // Dark overlay
@@ -60,7 +61,7 @@ class CategoryBannerCard extends StatelessWidget {
                         subtitle,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.white70,
-                              fontSize: 12,
+                              fontSize: context.fontSize(12, minSize: 10, maxSize: 14),
                             ),
                       ),
                       const SizedBox(height: defaultPadding / 4),
@@ -76,14 +77,14 @@ class CategoryBannerCard extends StatelessWidget {
                   ),
                   // Shop Now Button
                   SizedBox(
-                    width: 90,
+                    width: context.isTablet ? 110 : 90,
                     child: ElevatedButton(
                       onPressed: onPressed,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: defaultPadding / 3,
-                          vertical: defaultPadding / 6,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: context.responsiveSpacing / 2,
+                          vertical: context.responsiveSpacing / 3,
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
@@ -94,7 +95,7 @@ class CategoryBannerCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: Colors.black,
                               fontWeight: FontWeight.w600,
-                              fontSize: 11,
+                              fontSize: context.fontSize(11, minSize: 9, maxSize: 13),
                             ),
                       ),
                     ),

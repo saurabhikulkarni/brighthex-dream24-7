@@ -4,6 +4,7 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 import 'dart:convert';
 import 'graphql_client.dart';
 import 'graphql_queries.dart';
+import 'user_service.dart';
 
 class WishlistService {
   static final WishlistService _instance = WishlistService._internal();
@@ -21,6 +22,17 @@ class WishlistService {
   // In-memory storage for wishlist items with their wishlist record IDs
   final List<Map<String, dynamic>> _wishlist = []; // {product, wishlistId}
   bool _isInitialized = false;
+  String? _currentUserId;
+
+  // Set current user ID for backend operations
+  void setUserId(String userId) {
+    _currentUserId = userId;
+    UserService.setCurrentUserId(userId); // Fire and forget - no need to await
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setString(_userIdKey, userId);
+      print('✓ Wishlist service: User ID set to $userId');
+    });
+  }
 
   // Initialize wishlist from SharedPreferences
   Future<void> initialize() async {
@@ -29,6 +41,14 @@ class WishlistService {
     try {
       final prefs = await SharedPreferences.getInstance();
       final wishlistJson = prefs.getStringList(_wishlistKey) ?? [];
+      
+      // Load user ID from UserService (central source) or fallback to local storage
+      _currentUserId = UserService.getCurrentUserId() ?? prefs.getString(_userIdKey);
+      if (_currentUserId != null) {
+        print('✓ Wishlist initialized with user ID: $_currentUserId');
+      } else {
+        print('⚠️ Wishlist initialized but no user ID found');
+      }
       
       _wishlist.clear();
       for (String json in wishlistJson) {
@@ -39,6 +59,7 @@ class WishlistService {
           print('Error parsing wishlist item: $e');
         }
       }
+      print('✓ Loaded ${_wishlist.length} wishlist items from local storage');
       _isInitialized = true;
     } catch (e) {
       print('Error initializing wishlist: $e');
@@ -63,28 +84,41 @@ class WishlistService {
   Future<void> addToWishlist(ProductModel product, {String? sizeId}) async {
     // Check if already exists
     if (!_wishlist.any((item) => item['product']?['id'] == product.id)) {
+      final productJson = product.toJson();
+      
       _wishlist.insert(0, {
-        'product': product.toJson(),
-        'sizeId': sizeId,
+        'product': productJson,
         'wishlistId': null, // Will be set when synced with backend
       });
       await _saveToPreferences();
+      print('✓ Product ${product.title} added to wishlist. Total items: ${_wishlist.length}');
+    } else {
+      print('Product ${product.title} already in wishlist');
     }
   }
 
-  // Remove product from wishlist (local cache)
+  // Remove product from wishlist (local cache and backend)
   Future<void> removeFromWishlist(String productId) async {
+    final countBefore = _wishlist.length;
+    
+    // Remove from backend first
+    await removeFromWishlistOnBackend(productId);
+    
+    // Then remove locally
     _wishlist.removeWhere((item) => item['product']?['id'] == productId);
+    final countAfter = _wishlist.length;
     await _saveToPreferences();
+    print('✓ Product removed from wishlist. Items: $countBefore → $countAfter');
   }
 
   // Check if product is in wishlist
   bool isInWishlist(String productId) {
     return _wishlist.any((item) => item['product']?['id'] == productId);
   }
-
+    
   // Get all wishlist items as ProductModel list
   List<ProductModel> getWishlist() {
+    print('Getting wishlist: ${_wishlist.length} items');
     return _wishlist
         .map((item) {
           try {
@@ -103,25 +137,35 @@ class WishlistService {
     return _wishlist.length;
   }
 
-  // Clear wishlist
+  // Clear wishlist (local and backend)
   Future<void> clearWishlist() async {
+    // Delete all items from backend
+    final itemsToDelete = List.from(_wishlist);
+    for (var item in itemsToDelete) {
+      final productId = item['product']?['id'];
+      if (productId != null) {
+        await removeFromWishlistOnBackend(productId);
+      }
+    }
+    
+    // Then clear locally
     _wishlist.clear();
     await _saveToPreferences();
+    print('✓ Wishlist cleared from local and backend');
   }
 
-  // Toggle wishlist (add if not exists, remove if exists) + sync with backend
+  // Toggle wishlist (add if not exists, remove if exists)
   Future<bool> toggleWishlist(ProductModel product, {String? sizeId}) async {
     if (isInWishlist(product.id!)) {
-      // Remove from local cache first
+      // Remove from local and backend (removeFromWishlist already calls backend)
       await removeFromWishlist(product.id!);
-      // Then sync with backend
-      await removeFromWishlistOnBackend(product.id!);
       return false; // Removed
     } else {
-      // Add to local cache first
+      // Add to local and backend
       await addToWishlist(product, sizeId: sizeId);
-      // Then sync with backend
       await addToWishlistOnBackend(product.id!, sizeId: sizeId);
+      // Don't sync immediately - let local data persist
+      // Sync will happen on next app start or screen load
       return true; // Added
     }
   }
@@ -129,54 +173,84 @@ class WishlistService {
   // Sync wishlist with backend via GraphQL
   Future<bool> syncWithBackend() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString(_userIdKey);
+      // Get userId from UserService (central source)
+      final userId = UserService.getCurrentUserId();
       
-      if (userId == null) {
-        print('Error: User ID not found');
+      if (userId == null || userId.isEmpty) {
+        print('⚠️ Cannot sync wishlist: User ID not found');
         return false;
       }
+      
+      _currentUserId = userId;
+
+      print('📡 Syncing wishlist for user: $userId');
 
       // Fetch wishlist from GraphQL (from separate Wishlist collection)
       final QueryOptions options = QueryOptions(
         document: gql(GraphQLQueries.getUserWishlist),
         variables: {'userId': userId},
+        fetchPolicy: FetchPolicy.networkOnly, // Always fetch from network
       );
 
       final QueryResult result = await _graphQLClient.query(options);
 
       if (result.hasException) {
-        print('Error syncing wishlist with backend: ${result.exception}');
+        print('❌ Error syncing wishlist with backend: ${result.exception}');
         return false;
       }
 
       final data = result.data;
+      
       if (data != null && data['wishlists'] != null) {
         final wishlistData = data['wishlists'] as List?;
-        if (wishlistData != null) {
-          _wishlist.clear();
+        print('📋 Found ${wishlistData?.length ?? 0} wishlist items from backend');
+        
+        if (wishlistData != null && wishlistData.isNotEmpty) {
+          // Merge backend items with local - ADD ONLY, never remove during sync
           for (var item in wishlistData) {
             try {
               final wishlistItem = item as Map<String, dynamic>;
               final productData = wishlistItem['product'] as Map<String, dynamic>?;
               if (productData != null) {
-                _wishlist.add({
-                  'product': productData,
-                  'wishlistId': wishlistItem['id'],
-                  'sizeId': wishlistItem['size']?['id'],
-                });
+                final productId = productData['id']?.toString();
+                if (productId != null) {
+                  // Only add if not already in local wishlist
+                  if (!_wishlist.any((localItem) => localItem['product']?['id'] == productId)) {
+                    // Ensure image URL is properly formatted
+                    if (productData['image'] != null && productData['image'] is Map) {
+                      productData['image'] = (productData['image'] as Map)['url'] ?? '';
+                    }
+                    
+                    _wishlist.add({
+                      'product': productData,
+                      'wishlistId': wishlistItem['id'],
+                    });
+                  } else {
+                    // Update wishlistId for existing items
+                    final index = _wishlist.indexWhere((localItem) => localItem['product']?['id'] == productId);
+                    if (index >= 0 && _wishlist[index]['wishlistId'] == null) {
+                      _wishlist[index]['wishlistId'] = wishlistItem['id'];
+                    }
+                  }
+                }
               }
             } catch (e) {
-              print('Error parsing wishlist item from backend: $e');
+              print('❌ Error parsing wishlist item from backend: $e');
             }
           }
+          
           await _saveToPreferences();
-          return true;
+          print('✅ Wishlist synced successfully. Total items: ${_wishlist.length}');
+        } else {
+          // Backend returned empty but we have local items - keep local items
+          print('⚠️ Backend empty - keeping ${_wishlist.length} local items');
         }
+        return true;
       }
+      print('⚠️ No wishlist data found in backend response');
       return false;
     } catch (e) {
-      print('Error syncing wishlist with backend: $e');
+      print('❌ Error syncing wishlist with backend: $e');
       return false;
     }
   }
@@ -184,33 +258,49 @@ class WishlistService {
   // Add to wishlist on backend via GraphQL (creates new Wishlist record)
   Future<bool> addToWishlistOnBackend(String productId, {String? sizeId}) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString(_userIdKey);
+      // Get userId from UserService (central source)
+      final userId = UserService.getCurrentUserId();
       
-      if (userId == null) {
-        print('Error: User ID not found');
+      if (userId == null || userId.isEmpty) {
+        print('❌ Cannot add to wishlist backend: User ID not found');
+        print('   Item saved locally - will sync when user logs in');
         return false;
       }
+
+      print('📤 Adding product $productId to backend wishlist for user $userId');
 
       final MutationOptions options = MutationOptions(
         document: gql(GraphQLQueries.addToWishlist),
         variables: {
           'userId': userId,
           'productId': productId,
-          'sizeId': sizeId,
         },
       );
 
       final QueryResult result = await _graphQLClient.mutate(options);
 
       if (result.hasException) {
-        print('Error adding to wishlist on backend: ${result.exception}');
+        print('❌ Error adding to wishlist on backend: ${result.exception}');
+        print('   Item remains in local storage only');
         return false;
       }
 
+      print('✅ Product added to backend wishlist successfully');
+      
+      // Update local item with backend wishlistId
+      if (result.data?['createWishlist']?['id'] != null) {
+        final wishlistId = result.data!['createWishlist']['id'];
+        final index = _wishlist.indexWhere((item) => item['product']?['id'] == productId);
+        if (index >= 0) {
+          _wishlist[index]['wishlistId'] = wishlistId;
+          await _saveToPreferences();
+        }
+      }
+      
       return !result.hasException;
     } catch (e) {
-      print('Error adding to wishlist on backend: $e');
+      print('❌ Error adding to wishlist on backend: $e');
+      print('   Item remains in local storage only');
       return false;
     }
   }
@@ -251,23 +341,14 @@ class WishlistService {
     }
   }
 
-  // Store user ID from login
-  Future<void> setUserId(String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_userIdKey, userId);
-    } catch (e) {
-      print('Error setting user ID: $e');
-    }
-  }
-
-  // Clear wishlist (logout)
+  // Clear wishlist (logout) - only clear memory, keep local storage for offline access
   Future<void> clear() async {
     try {
+      // Clear in-memory list but keep SharedPreferences
+      // Data will be synced from backend on next login
       _wishlist.clear();
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_wishlistKey);
-      await prefs.remove(_userIdKey);
+      _currentUserId = null;
+      print('✓ Wishlist memory cleared (local storage preserved for sync)');
     } catch (e) {
       print('Error clearing wishlist: $e');
     }

@@ -48,6 +48,13 @@ const Color blackColor80 = Color(0xFF45454B);
 const Color blackColor60 = Color(0xFF737378);
 const Color blackColor40 = Color(0xFFA2A2A5);
 const Color blackColor20 = Color(0xFFD0D0D2);
+
+// Test User Configuration (for development/testing only)
+const bool enableTestUser = true; // Set to false in production
+const String testUserPhone = "9876543210";
+const String testUserId = "cmjjx4dyn255i07o92vexv4jl";
+const String testUserName = "Test User";
+const double testUserWalletBalance = 10000.0;
 const Color blackColor10 = Color(0xFFE8E8E9);
 const Color blackColor5 = Color(0xFFF3F3F4);
 
@@ -78,6 +85,21 @@ const Color errorColor = Color(0xFFEA5B5B);
 const double defaultPadding = 16.0;
 const double defaultBorderRadious = 12.0;
 const Duration defaultDuration = Duration(milliseconds: 300);
+
+// Standard size names that don't require user selection
+const List<String> standardFreeSizes = [
+  'FREE_SIZE',
+  'FREE SIZE',
+  'ONE_SIZE',
+  'ONE SIZE',
+  'NO_SIZE',
+  'NO SIZE',
+  'FREESIZE',
+  'ONESIZE',
+  'NOSIZE',
+  'FREE',
+  'ONE',
+];
 
 final passwordValidator = MultiValidator([
   RequiredValidator(errorText: 'Password is required'),

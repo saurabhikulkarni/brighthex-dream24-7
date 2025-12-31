@@ -27,11 +27,19 @@ class AddressModel {
   });
 
   factory AddressModel.fromJson(Map<String, dynamic> json) {
+    // Handle phoneNumber as either String or Int from GraphQL
+    String phoneNumberStr = '';
+    if (json['phoneNumber'] != null) {
+      phoneNumberStr = json['phoneNumber'].toString();
+    } else if (json['phone_number'] != null) {
+      phoneNumberStr = json['phone_number'].toString();
+    }
+    
     return AddressModel(
       id: json['id']?.toString(),
       userId: json['userId']?.toString() ?? json['userDetail']?['id']?.toString() ?? '',
       fullName: json['fullName'] ?? json['full_name'] ?? '',
-      phoneNumber: json['phoneNumber'] ?? json['phone_number'] ?? '',
+      phoneNumber: phoneNumberStr,
       pincode: json['pincode'] ?? '',
       addressLine1: json['addressLine1'] ?? json['address_line1'] ?? '',
       addressLine2: json['addressLine2'] ?? json['address_line2'],

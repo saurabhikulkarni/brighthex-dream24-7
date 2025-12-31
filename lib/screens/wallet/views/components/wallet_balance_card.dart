@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../constants.dart';
+import '../../../../utils/responsive_extension.dart';
 
 class WalletBalanceCard extends StatelessWidget {
   const WalletBalanceCard({
@@ -17,8 +18,13 @@ class WalletBalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cardHeight = context.isTablet ? context.height(25) : context.height(22);
+    final titleFontSize = context.fontSize(16, minSize: 14, maxSize: 20);
+    final tokenFontSize = context.fontSize(36, minSize: 28, maxSize: 44);
+    final iconSize = context.isTablet ? 32.0 : 28.0;
+    
     return SizedBox(
-      height: 180,
+      height: cardHeight,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(defaultBorderRadious),
         child: Container(
@@ -36,91 +42,37 @@ class WalletBalanceCard extends StatelessWidget {
             ),
           ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Top - Available Balance Text
-              const Text(
-                "Available Balance",
+              // Available Shopping Token Text
+              Text(
+                "Available Shopping Tokens",
                 style: TextStyle(
                     color: whileColor80,
                     fontWeight: FontWeight.w500,
-                    fontSize: 16),
+                    fontSize: titleFontSize),
               ),
-              const SizedBox(height: 12),
-              // Bottom - White Card with Balance and Tokens
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: defaultPadding, vertical: defaultPadding / 1.5),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // Wallet Balance
-                    Column(
-                      children: [
-                        const Text(
-                          "Wallet Balance",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF2A0845),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "\$${balance.toStringAsFixed(0)}",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2A0845),
-                          ),
-                        ),
-                      ],
+              SizedBox(height: context.responsiveSpacing),
+              // Shopping Tokens - Centered
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    'assets/icons/coin.svg',
+                    width: iconSize,
+                    height: iconSize,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    shoppingTokens.toString(),
+                    style: TextStyle(
+                      fontSize: tokenFontSize,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
-                    // Divider
-                    Container(
-                      width: 1,
-                      height: 50,
-                      color: Colors.grey[300],
-                    ),
-                    // Shopping Tokens
-                    Column(
-                      children: [
-                        const Text(
-                          "Shopping Tokens",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF2A0845),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SvgPicture.asset(
-                              'assets/icons/coin.svg',
-                              width: 18,
-                              height: 18,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              shoppingTokens.toString(),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF2A0845),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),

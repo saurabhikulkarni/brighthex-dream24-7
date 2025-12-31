@@ -1,5 +1,6 @@
 /// Stub file for non-web platforms
 /// This file is never used - the conditional import will select mobile.dart or web.dart
+library;
 
 class RazorpayPlatform {
   void init({

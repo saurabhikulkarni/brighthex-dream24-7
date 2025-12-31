@@ -3,9 +3,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/components/product/product_card.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/services/wishlist_service.dart';
+import 'package:shop/services/cart_service.dart';
 import 'package:shop/route/route_constants.dart';
 
 import '../../../constants.dart';
+import '../../../utils/responsive_extension.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({super.key});
@@ -15,7 +17,10 @@ class WishlistScreen extends StatefulWidget {
 }
 
 class _WishlistScreenState extends State<WishlistScreen> {
-  late List<ProductModel> _wishlistItems;
+  List<ProductModel> _wishlistItems = [];
+  bool _isLoading = true;
+  bool _isEditMode = false;
+  final CartService cartService = CartService();
 
   @override
   void initState() {
@@ -30,21 +35,128 @@ class _WishlistScreenState extends State<WishlistScreen> {
     _loadWishlist();
   }
 
-  void _loadWishlist() {
+  void _loadWishlist() async {
     setState(() {
-      _wishlistItems = wishlistService.getWishlist();
+      _isLoading = true;
     });
+    
+    // Sync with backend first to get latest wishlist
+    await wishlistService.syncWithBackend();
+    
+    if (mounted) {
+      setState(() {
+        _wishlistItems = wishlistService.getWishlist();
+        _isLoading = false;
+      });
+    }
   }
 
-  void _removeFromWishlist(String productId) {
-    wishlistService.removeFromWishlist(productId);
+  void _removeFromWishlist(String productId) async {
+    await wishlistService.removeFromWishlist(productId);
     _loadWishlist();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Item removed from wishlist'),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Item removed from wishlist'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  // Check if product has stock (checking all sizes)
+  bool _hasStock(ProductModel product) {
+    // If no size information, assume in stock
+    // You might need to add sizes field to ProductModel or fetch separately
+    return true; // Implement proper stock checking based on your data model
+  }
+
+  Future<void> _addToCart(ProductModel product) async {
+    try {
+      // Check stock before adding
+      if (!_hasStock(product)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('This product is out of stock'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        return;
+      }
+
+      // Add to cart without size (you can modify this if you want to show size selection)
+      await cartService.addToLocalCart(product, null, 1);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${product.title} added to cart'),
+            duration: const Duration(seconds: 2),
+            action: SnackBarAction(
+              label: 'View Cart',
+              onPressed: () {
+                Navigator.pushNamed(context, cartScreenRoute);
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _moveAllToCart() async {
+    if (_wishlistItems.isEmpty) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
+
+    int addedCount = 0;
+    int failedCount = 0;
+
+    for (var product in _wishlistItems) {
+      try {
+        await cartService.addToLocalCart(product, null, 1);
+        await wishlistService.removeFromWishlist(product.id!);
+        addedCount++;
+      } catch (e) {
+        failedCount++;
+        print('Error moving ${product.title} to cart: $e');
+      }
+    }
+
+    _loadWishlist();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            failedCount > 0
+                ? '$addedCount items moved to cart, $failedCount failed'
+                : 'All $addedCount items moved to cart',
+          ),
+          duration: const Duration(seconds: 3),
+          action: SnackBarAction(
+            label: 'View Cart',
+            onPressed: () {
+              Navigator.pushNamed(context, cartScreenRoute);
+            },
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -55,9 +167,32 @@ class _WishlistScreenState extends State<WishlistScreen> {
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            // Check if we can pop, otherwise navigate to home
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, entryPointScreenRoute);
+            }
+          },
         ),
         actions: [
+          if (_wishlistItems.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.shopping_cart_outlined),
+              onPressed: _moveAllToCart,
+              tooltip: 'Move All to Cart',
+            ),
+          if (_wishlistItems.isNotEmpty)
+            IconButton(
+              icon: Icon(_isEditMode ? Icons.check : Icons.edit_outlined),
+              onPressed: () {
+                setState(() {
+                  _isEditMode = !_isEditMode;
+                });
+              },
+              tooltip: _isEditMode ? 'Done' : 'Edit',
+            ),
           if (_wishlistItems.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.delete_sweep),
@@ -74,17 +209,20 @@ class _WishlistScreenState extends State<WishlistScreen> {
                         child: const Text('Cancel'),
                       ),
                       TextButton(
-                        onPressed: () {
-                          wishlistService.clearWishlist();
-                          setState(() {
-                            _loadWishlist();
-                          });
+                        onPressed: () async {
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Wishlist cleared'),
-                            ),
-                          );
+                          setState(() {
+                            _isLoading = true;
+                          });
+                          await wishlistService.clearWishlist();
+                          _loadWishlist();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Wishlist cleared'),
+                              ),
+                            );
+                          }
                         },
                         child: const Text('Clear'),
                       ),
@@ -95,15 +233,17 @@ class _WishlistScreenState extends State<WishlistScreen> {
             ),
         ],
       ),
-      body: _wishlistItems.isEmpty
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _wishlistItems.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   SvgPicture.asset(
                     'assets/icons/Wishlist.svg',
-                    width: 80,
-                    height: 80,
+                    width: context.isTablet ? 100 : 80,
+                    height: context.isTablet ? 100 : 80,
                     colorFilter: ColorFilter.mode(
                       Colors.grey.shade400,
                       BlendMode.srcIn,
@@ -130,63 +270,90 @@ class _WishlistScreenState extends State<WishlistScreen> {
           : CustomScrollView(
               slivers: [
                 SliverPadding(
-                  padding: const EdgeInsets.all(defaultPadding),
+                  padding: EdgeInsets.all(context.responsiveSpacing),
                   sliver: SliverGrid(
                     gridDelegate:
-                        const SliverGridDelegateWithMaxCrossAxisExtent(
-                      maxCrossAxisExtent: 200.0,
-                      mainAxisSpacing: defaultPadding,
-                      crossAxisSpacing: defaultPadding,
-                      childAspectRatio: 0.66,
+                        SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: context.isTablet ? 250.0 : 200.0,
+                      mainAxisSpacing: context.responsiveSpacing,
+                      crossAxisSpacing: context.responsiveSpacing,
+                      childAspectRatio: context.isTablet ? 0.62 : 0.58,
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (BuildContext context, int index) {
                         final product = _wishlistItems[index];
-                        return Stack(
+                        return Column(
                           children: [
-                            ProductCard(
-                              image: product.image,
-                              brandName: product.brandName,
-                              title: product.title,
-                              price: product.price,
-                              priceAfetDiscount:
-                                  product.priceAfetDiscount,
-                              product: product,
-                              press: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  productDetailsScreenRoute,
-                                  arguments: {'product': product},
-                                );
-                              },
-                            ),
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 8,
+                            Expanded(
+                              child: Stack(
+                                children: [
+                                  ProductCard(
+                                    image: product.image,
+                                    brandName: product.brandName,
+                                    title: product.title,
+                                    price: product.price,
+                                    priceAfetDiscount:
+                                        product.priceAfetDiscount,
+                                    product: product,
+                                    press: () {
+                                      Navigator.pushNamed(
+                                        context,
+                                        productDetailsScreenRoute,
+                                        arguments: {'product': product},
+                                      );
+                                    },
+                                  ),
+                                  if (_isEditMode && product.id != null)
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius: BorderRadius.circular(20),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.2),
+                                              blurRadius: 8,
+                                            ),
+                                          ],
+                                        ),
+                                        child: IconButton(
+                                          icon: Icon(
+                                            Icons.close,
+                                            size: context.isTablet ? 20 : 18,
+                                            color: Colors.white,
+                                          ),
+                                          onPressed: () {
+                                            _removeFromWishlist(product.id!);
+                                          },
+                                          padding: EdgeInsets.zero,
+                                          constraints: BoxConstraints(
+                                            minWidth: context.isTablet ? 40 : 36,
+                                            minHeight: context.isTablet ? 40 : 36,
+                                          ),
+                                        ),
+                                      ),
                                     ),
-                                  ],
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(
-                                    Icons.close,
-                                    size: 18,
-                                  ),
-                                  onPressed: () {
-                                    _removeFromWishlist(product.id!);
-                                  },
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(
-                                    minWidth: 36,
-                                    minHeight: 36,
-                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () => _addToCart(product),
+                                icon: Icon(Icons.shopping_cart_outlined, 
+                                  size: context.isTablet ? 18 : 16),
+                                label: Text('Add to Cart', 
+                                  style: TextStyle(fontSize: context.fontSize(12, minSize: 10, maxSize: 14))),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryColor,
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: context.responsiveSpacing, 
+                                    vertical: context.responsiveSpacing),
+                                  minimumSize: Size(0, context.isTablet ? 36 : 32),
                                 ),
                               ),
                             ),

@@ -3,6 +3,7 @@ import 'package:shop/components/product/product_card.dart';
 import 'package:shop/components/skleton/product/products_skelton.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/services/product_service.dart';
+import 'package:shop/utils/responsive_extension.dart';
 
 import '../../../../constants.dart';
 import '../../../../route/route_constants.dart';
@@ -33,7 +34,8 @@ class _BestSellersState extends State<BestSellers> {
       final products = await _productService.getBestSellers();
       if (mounted) {
         setState(() {
-          _products = products;
+          // Shuffle and take only 6 random products
+          _products = (products..shuffle()).take(6).toList();
           _isLoading = false;
         });
       }
@@ -74,7 +76,7 @@ class _BestSellersState extends State<BestSellers> {
           )
         else
           SizedBox(
-            height: 220,
+            height: context.isTablet ? context.height(32) : context.height(27),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: _products.length,

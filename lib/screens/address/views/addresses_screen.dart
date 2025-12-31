@@ -40,12 +40,22 @@ class _AddressesScreenState extends State<AddressesScreen> {
         return;
       }
 
+      print('[ADDRESSES_SCREEN] Fetching addresses for user: $userId');
       final fetchedAddresses = await addressService.getAddressesByUserId(userId);
-      setState(() {
-        addresses = fetchedAddresses;
-        _isLoading = false;
-      });
+      print('[ADDRESSES_SCREEN] Fetched ${fetchedAddresses.length} addresses from service');
+      
+      if (mounted) {
+        setState(() {
+          addresses = fetchedAddresses;
+          _isLoading = false;
+          _errorMessage = null;
+        });
+        print('[ADDRESSES_SCREEN] Updated UI with ${addresses.length} addresses');
+      } else {
+        print('[ADDRESSES_SCREEN] Widget not mounted, skipping setState');
+      }
     } catch (e) {
+      print('[ADDRESSES_SCREEN] Error loading addresses: $e');
       setState(() {
         _isLoading = false;
         _errorMessage = 'Failed to load addresses: ${e.toString()}';
@@ -147,12 +157,13 @@ class _AddressesScreenState extends State<AddressesScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.pushNamed(context, addAddressScreenRoute).then((result) {
-                if (result != null && result is Map && result['success'] == true) {
-                  _loadAddresses(); // Reload addresses from GraphQL
-                }
-              });
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, addAddressScreenRoute);
+              if (result != null && result is Map && result['success'] == true) {
+                // Add small delay to ensure Hygraph has published the address
+                await Future.delayed(const Duration(milliseconds: 500));
+                _loadAddresses(); // Reload addresses from GraphQL
+              }
             },
           ),
         ],
@@ -224,28 +235,71 @@ class _AddressesScreenState extends State<AddressesScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              address.fullName,
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                            if (address.isDefault)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  "Default",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: primaryColor,
-                                  ),
-                                ),
+                            Expanded(
+                              child: Text(
+                                address.fullName,
+                                style: Theme.of(context).textTheme.titleSmall,
                               ),
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (address.isDefault)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: primaryColor.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      "Default",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: primaryColor,
+                                      ),
+                                    ),
+                                  ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.edit_outlined, size: 20),
+                                  onPressed: () {
+                                    Navigator.pushNamed(
+                                      context,
+                                      addAddressScreenRoute,
+                                      arguments: {
+                                        'addressId': address.id,
+                                        'fullName': address.fullName,
+                                        'phoneNumber': address.phoneNumber,
+                                        'addressLine1': address.addressLine1,
+                                        'addressLine2': address.addressLine2,
+                                        'pincode': address.pincode,
+                                        'city': address.city,
+                                        'state': address.state,
+                                        'country': address.country,
+                                      },
+                                    ).then((result) {
+                                      if (result != null && result is Map && result['success'] == true) {
+                                        _loadAddresses();
+                                      }
+                                    });
+                                  },
+                                  tooltip: 'Edit Address',
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                                  onPressed: address.id != null ? () => _deleteAddress(address.id!) : null,
+                                  tooltip: 'Delete Address',
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                         const SizedBox(height: defaultPadding / 2),
@@ -264,67 +318,23 @@ class _AddressesScreenState extends State<AddressesScreen> {
                                   ),
                             ),
                           ),
-                        const SizedBox(height: defaultPadding / 2),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            if (!address.isDefault && address.id != null)
-                              ElevatedButton(
-                                onPressed: () => _setDefaultAddress(address.id!),
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
-                                ),
-                                child: const Text("Set as Default"),
-                              ),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  addAddressScreenRoute,
-                                  arguments: {
-                                    'addressId': address.id,
-                                    'fullName': address.fullName,
-                                    'phoneNumber': address.phoneNumber,
-                                    'addressLine1': address.addressLine1,
-                                    'addressLine2': address.addressLine2,
-                                    'pincode': address.pincode,
-                                    'city': address.city,
-                                    'state': address.state,
-                                    'country': address.country,
-                                  },
-                                ).then((result) {
-                                  if (result != null && result is Map && result['success'] == true) {
-                                    _loadAddresses(); // Reload addresses
-                                  }
-                                });
-                              },
-                              style: ElevatedButton.styleFrom(
+                        if (!address.isDefault && address.id != null) ...[
+                          const SizedBox(height: defaultPadding / 2),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton.icon(
+                              onPressed: () => _setDefaultAddress(address.id!),
+                              icon: const Icon(Icons.check_circle_outline, size: 16),
+                              label: const Text("Set as Default"),
+                              style: TextButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
+                                  horizontal: 12,
+                                  vertical: 6,
                                 ),
-                              ),
-                              child: const Text("Edit"),
-                            ),
-                            ElevatedButton(
-                              onPressed: address.id != null ? () => _deleteAddress(address.id!) : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                              ),
-                              child: const Text(
-                                "Delete",
-                                style: TextStyle(color: Colors.white),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

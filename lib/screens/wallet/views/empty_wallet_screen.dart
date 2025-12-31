@@ -29,7 +29,6 @@ class EmptyWalletScreen extends StatelessWidget {
                   ? "assets/Illustration/EmptyState_lightTheme.png"
                   : "assets/Illustration/EmptyState_darkTheme.png",
               width: MediaQuery.of(context).size.width * 0.5,
-              height: MediaQuery.of(context).size.height * 0.25,
               fit: BoxFit.contain,
             ),
             const Spacer(),

@@ -25,6 +25,16 @@ class _CategoryBannersCarouselState extends State<CategoryBannersCarousel> {
         _currentIndex = _pageController.page?.round() ?? 0;
       });
     });
+    
+    // Preload all carousel images to prevent loading delays
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      for (var banner in demoCategoryBanners) {
+        precacheImage(
+          AssetImage(banner.bannerImageUrl),
+          context,
+        );
+      }
+    });
   }
 
   @override
@@ -54,7 +64,7 @@ class _CategoryBannersCarouselState extends State<CategoryBannersCarousel> {
       children: [
         // Carousel
         SizedBox(
-          height: 200,
+          height: MediaQuery.of(context).size.height * 0.25,
           child: PageView.builder(
             controller: _pageController,
             itemCount: demoCategoryBanners.length,

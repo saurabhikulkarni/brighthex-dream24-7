@@ -42,6 +42,15 @@ class _ProductCardState extends State<ProductCard> {
   }
 
   @override
+  void didUpdateWidget(ProductCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Re-check wishlist status when widget updates
+    if (oldWidget.productId != widget.productId || oldWidget.product != widget.product) {
+      _checkWishlistStatus();
+    }
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Re-check wishlist status when dependencies change
@@ -87,9 +96,14 @@ class _ProductCardState extends State<ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    final cardWidth = context.isTablet ? 160 : 140;
-    final cardHeight = context.isTablet ? 260 : 220;
-    final fontSize = context.fontSize(10, minSize: 8, maxSize: 12);
+    final cardWidth = context.isTablet ? context.width(20) : context.width(37);
+    final cardHeight = context.isTablet ? context.height(32) : context.height(27);
+    final fontSize = context.fontSize(10, minSize: 8, maxSize: 14);
+    final titleFontSize = context.fontSize(12, minSize: 10, maxSize: 16);
+    final priceFontSize = context.fontSize(12, minSize: 10, maxSize: 14);
+    final iconSize = context.isTablet ? 18.0 : 14.0;
+    final smallIconSize = context.isTablet ? 16.0 : 12.0;
+    final heartIconSize = context.isTablet ? 20.0 : 16.0;
     
     return Stack(
       children: [
@@ -138,7 +152,7 @@ class _ProductCardState extends State<ProductCard> {
                           style: Theme.of(context)
                               .textTheme
                               .titleSmall!
-                              .copyWith(fontSize: fontSize + 2),
+                              .copyWith(fontSize: titleFontSize),
                         ),
                       ),
                       const Spacer(),
@@ -149,8 +163,8 @@ class _ProductCardState extends State<ProductCard> {
                                 children: [
                                   SvgPicture.asset(
                                     'assets/icons/coin.svg',
-                                    width: 14,
-                                    height: 14,
+                                    width: iconSize,
+                                    height: iconSize,
                                   ),
                                   const SizedBox(width: 2),
                                   Flexible(
@@ -158,10 +172,10 @@ class _ProductCardState extends State<ProductCard> {
                                       "${widget.priceAfetDiscount!.toInt()}",
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Color(0xFF31B0D8),
+                                      style: TextStyle(
+                                        color: const Color(0xFF31B0D8),
                                         fontWeight: FontWeight.w500,
-                                        fontSize: 12,
+                                        fontSize: priceFontSize,
                                       ),
                                     ),
                                   ),
@@ -170,8 +184,8 @@ class _ProductCardState extends State<ProductCard> {
                                     opacity: 0.5,
                                     child: SvgPicture.asset(
                                       'assets/icons/coin.svg',
-                                      width: 12,
-                                      height: 12,
+                                      width: smallIconSize,
+                                      height: smallIconSize,
                                     ),
                                   ),
                                   const SizedBox(width: 2),
@@ -185,7 +199,7 @@ class _ProductCardState extends State<ProductCard> {
                                             .textTheme
                                             .bodyMedium!
                                             .color,
-                                        fontSize: 10,
+                                        fontSize: priceFontSize - 2,
                                         decoration: TextDecoration.lineThrough,
                                       ),
                                     ),
@@ -199,8 +213,8 @@ class _ProductCardState extends State<ProductCard> {
                                 children: [
                                   SvgPicture.asset(
                                     'assets/icons/coin.svg',
-                                    width: 14,
-                                    height: 14,
+                                    width: iconSize,
+                                    height: iconSize,
                                   ),
                                   const SizedBox(width: 2),
                                   Flexible(
@@ -208,10 +222,10 @@ class _ProductCardState extends State<ProductCard> {
                                       "${widget.price.toInt()}",
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Color(0xFF31B0D8),
+                                      style: TextStyle(
+                                        color: const Color(0xFF31B0D8),
                                         fontWeight: FontWeight.w500,
-                                        fontSize: 12,
+                                        fontSize: priceFontSize,
                                       ),
                                     ),
                                   ),
@@ -246,8 +260,8 @@ class _ProductCardState extends State<ProductCard> {
                 padding: const EdgeInsets.all(8),
                 child: SvgPicture.asset(
                   'assets/icons/Wishlist.svg',
-                  width: 16,
-                  height: 16,
+                  width: heartIconSize,
+                  height: heartIconSize,
                   colorFilter: ColorFilter.mode(
                     _isInWishlist ? Colors.red : Colors.grey,
                     BlendMode.srcIn,

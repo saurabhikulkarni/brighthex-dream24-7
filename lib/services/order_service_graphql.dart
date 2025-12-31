@@ -4,6 +4,7 @@ import 'package:shop/models/address_model.dart';
 import 'package:shop/services/graphql_client.dart';
 import 'package:shop/services/graphql_queries.dart';
 import 'package:shop/services/user_service.dart';
+import 'package:shop/services/stock_service.dart';
 import 'package:uuid/uuid.dart';
 
 /// OrderService with GraphQL integration
@@ -17,28 +18,35 @@ class OrderServiceGraphQL {
   OrderServiceGraphQL._internal();
 
   final GraphQLClient _client = GraphQLService.getClient();
+  
+  // Cache to prevent duplicate requests for order items
+  final Map<String, List<OrderItemModel>> _orderItemsCache = {};
+  final Map<String, DateTime> _cacheTimestamps = {};
+  static const Duration _cacheExpiry = Duration(minutes: 5);
+  
+  // Rate limiting - track last request time to avoid hitting limits
+  DateTime? _lastRequestTime;
+  static const Duration _minRequestInterval = Duration(milliseconds: 800); // 800ms between requests to avoid rate limits
 
   // Convert OrderStatus enum to string for GraphQL
   // Hygraph expects enum values to match the schema exactly
-  // Based on schema: PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED, REFUNDED
+  // Try lowercase first as that's a common pattern
   String _orderStatusToString(OrderStatus status) {
     switch (status) {
       case OrderStatus.pending:
-        return 'PENDING';
+        return 'pending';
       case OrderStatus.confirmed:
-        return 'CONFIRMED';
+        return 'confirmed';
       case OrderStatus.processing:
-        return 'PROCESSING';
+        return 'processing';
       case OrderStatus.shipped:
-        return 'SHIPPED';
+        return 'shipped';
       case OrderStatus.delivered:
-        return 'DELIVERED';
+        return 'delivered';
       case OrderStatus.cancelled:
-        return 'CANCELLED';
+        return 'cancelled';
       case OrderStatus.refunded:
-        return 'REFUNDED';
-      default:
-        return 'PENDING';
+        return 'refunded';
     }
   }
 
@@ -88,10 +96,47 @@ class OrderServiceGraphQL {
 
       final List<dynamic> ordersJson = result.data!['orders'] as List<dynamic>;
       final List<OrderModel> orders = [];
-      for (final json in ordersJson) {
-        final order = await _orderFromGraphQL(json as Map<String, dynamic>, userId);
-        orders.add(order);
+      
+      // Fetch orders sequentially with delays to avoid rate limiting
+      // Hygraph free tier has strict rate limits, so we need to throttle requests
+      for (int i = 0; i < ordersJson.length; i++) {
+        final json = ordersJson[i];
+        
+        // Add delay between requests to avoid rate limiting (except for first request)
+        if (i > 0) {
+          await Future.delayed(_minRequestInterval);
+        }
+        
+        try {
+          final order = await _orderFromGraphQL(json as Map<String, dynamic>, userId);
+          orders.add(order);
+        } catch (e) {
+          print('Error fetching order ${json['id']}: $e');
+          // Continue with other orders even if one fails
+          // Create a minimal order model to keep the list consistent
+          try {
+            final minimalOrder = OrderModel(
+              id: json['id']?.toString(),
+              orderNumber: json['orderNumber'] ?? json['order_number'] ?? 'N/A',
+              userId: userId,
+              items: [], // Empty items if fetch fails
+              totalAmount: (json['totalAmount'] ?? json['total_amount'] ?? 0).toDouble(),
+              orderStatus: _stringToOrderStatus(json['orderStatus']?.toString() ?? 'pending'),
+              createdAt: json['createdAt'] != null
+                  ? DateTime.parse(json['createdAt'])
+                  : DateTime.now(),
+              updatedAt: json['updatedAt'] != null
+                  ? DateTime.parse(json['updatedAt'])
+                  : DateTime.now(),
+            );
+            orders.add(minimalOrder);
+          } catch (parseError) {
+            print('Error creating minimal order: $parseError');
+            // Skip this order if we can't even create a minimal version
+          }
+        }
       }
+      
       return orders;
     } catch (e) {
       throw Exception('Error fetching orders: $e');
@@ -132,18 +177,25 @@ class OrderServiceGraphQL {
   Future<OrderModel> createOrder({
     required List<OrderItemModel> items,
     required double totalAmount,
-    String? shippingAddressId,
+    String? addressId,
     OrderStatus status = OrderStatus.pending,
   }) async {
     try {
+      // Ensure minimum interval between requests to avoid rate limits
+      if (_lastRequestTime != null) {
+        final timeSinceLastRequest = DateTime.now().difference(_lastRequestTime!);
+        if (timeSinceLastRequest < _minRequestInterval) {
+          final waitTime = _minRequestInterval - timeSinceLastRequest;
+          print('[ORDER_SERVICE] Rate limit protection: waiting ${waitTime.inMilliseconds}ms');
+          await Future.delayed(waitTime);
+        }
+      }
+      _lastRequestTime = DateTime.now();
+      
       final userId = UserService.getCurrentUserId();
       if (userId == null || userId.isEmpty) {
-        print('Error: userId is null or empty when creating order');
-        print('UserService.getCurrentUserId() returned: $userId');
         throw Exception('User not logged in. Please log in to create an order.');
       }
-      
-      print('Creating order with userId: $userId');
 
       // Ensure totalAmount is valid (should be >= 0)
       if (totalAmount < 0) {
@@ -154,7 +206,7 @@ class OrderServiceGraphQL {
       final orderNumber = _generateOrderNumber();
       
       // Create order - use different mutation based on whether address is provided
-      final bool hasAddress = shippingAddressId != null && shippingAddressId.isNotEmpty;
+      final bool hasAddress = addressId != null && addressId.isNotEmpty;
       
       final MutationOptions options = MutationOptions(
         document: gql(hasAddress 
@@ -165,26 +217,20 @@ class OrderServiceGraphQL {
           'orderNumber': orderNumber,
           'totalAmount': totalAmount,
           'orderStatus': _orderStatusToString(status),
-          if (hasAddress) 'shippingAddressId': shippingAddressId!,
+          if (hasAddress) 'addressId': addressId,
         },
       );
 
       final QueryResult result = await _client.mutate(options);
 
       if (result.hasException) {
-        print('Error creating order: ${result.exception}');
-        print('GraphQL errors: ${result.exception?.graphqlErrors}');
         throw Exception(result.exception.toString());
       }
 
-      print('Create order response: ${result.data}');
       final createdOrder = result.data?['createOrder'];
       if (createdOrder == null) {
-        print('Error: createOrder response is null. Full data: ${result.data}');
         throw Exception('Failed to create order - no data returned');
       }
-      
-      print('Order created successfully: ${createdOrder['id']}');
 
       // Create order items
       final orderId = createdOrder['id']?.toString();
@@ -197,10 +243,19 @@ class OrderServiceGraphQL {
         throw Exception('Order must have at least one item');
       }
       
+      print('[ORDER_SERVICE] Creating ${items.length} order items with rate limiting...');
+      
       // Create each order item - if any fails, rollback the order
       final List<String> createdItemIds = [];
       try {
-        for (final item in items) {
+        for (int i = 0; i < items.length; i++) {
+          final item = items[i];
+          
+          // Add delay BEFORE each request (including first one) to ensure spacing
+          // This prevents burst requests at the start
+          print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before creating item ${i + 1}/${items.length}');
+          await Future.delayed(_minRequestInterval);
+          
           // Validate required fields and use defaults if needed
           final productId = item.productId.isNotEmpty 
             ? item.productId 
@@ -221,6 +276,7 @@ class OrderServiceGraphQL {
           // sizeId can be null (optional field)
           final sizeId = item.sizeId;
           
+          print('[ORDER_SERVICE] Creating order item ${i + 1}/${items.length}');
           final itemId = await _createOrderItem(
             orderId: orderId,
             productId: productId,
@@ -234,26 +290,41 @@ class OrderServiceGraphQL {
             throw Exception('Failed to create order item - no ID returned');
           }
           
+          print('[ORDER_SERVICE] Item ${i + 1} created with ID: $itemId');
+          
+          // Delay before publishing to avoid rate limit
+          print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before publishing item ${i + 1}');
+          await Future.delayed(_minRequestInterval);
+          
           // Publish order item
-          print('Publishing order item: $itemId');
+          print('[ORDER_SERVICE] Publishing order item ${i + 1}/${items.length}');
           await _publishOrderItem(itemId);
           createdItemIds.add(itemId);
-          print('Order item created and published successfully: $itemId');
+          print('[ORDER_SERVICE] Item ${i + 1} published successfully');
         }
       } catch (e) {
         // If any item creation fails, we should ideally rollback
-        // For now, log the error and throw to prevent order completion
-        print('Critical error creating order items: $e');
-        print('Created ${createdItemIds.length} out of ${items.length} items');
-        // Note: In a production system, you might want to delete the order here
-        // if some items fail. For now, we'll throw to prevent incomplete orders.
+        // For now, throw to prevent order completion
         throw Exception('Failed to create all order items: $e');
       }
 
+      // Delay before publishing order
+      print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before publishing order');
+      await Future.delayed(_minRequestInterval);
+      
       // Publish order
-      print('Publishing order: $orderId');
+      print('[ORDER_SERVICE] Publishing order...');
       await _publishOrder(orderId);
-      print('Order published successfully');
+      print('[ORDER_SERVICE] Order published successfully');
+
+      // Delay before updating stock
+      print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before updating stock');
+      await Future.delayed(_minRequestInterval);
+      
+      // Update stock for all items with sizes
+      print('[ORDER_SERVICE] Updating stock...');
+      await _updateStockForOrder(items);
+      print('[ORDER_SERVICE] Stock updated successfully');
 
       // Return full order by fetching it
       final order = await getOrderById(orderId);
@@ -364,34 +435,107 @@ class OrderServiceGraphQL {
     }
   }
 
-  // Helper: Fetch order items separately
+  // Helper: Fetch order items separately with caching and rate limiting
   Future<List<OrderItemModel>> _fetchOrderItems(String orderId) async {
     try {
+      // Check cache first
+      final cacheKey = orderId;
+      final cachedItems = _orderItemsCache[cacheKey];
+      final cacheTime = _cacheTimestamps[cacheKey];
+      
+      if (cachedItems != null && cacheTime != null) {
+        final age = DateTime.now().difference(cacheTime);
+        if (age < _cacheExpiry) {
+          print('Using cached order items for order: $orderId');
+          return cachedItems;
+        } else {
+          // Cache expired, remove it
+          _orderItemsCache.remove(cacheKey);
+          _cacheTimestamps.remove(cacheKey);
+        }
+      }
+      
+      // Rate limiting - wait if needed
+      if (_lastRequestTime != null) {
+        final timeSinceLastRequest = DateTime.now().difference(_lastRequestTime!);
+        if (timeSinceLastRequest < _minRequestInterval) {
+          final waitTime = _minRequestInterval - timeSinceLastRequest;
+          print('Rate limiting: waiting ${waitTime.inMilliseconds}ms before next request');
+          await Future.delayed(waitTime);
+        }
+      }
+      
+      print('Fetching order items for order: $orderId');
+      _lastRequestTime = DateTime.now();
+      
       final QueryResult result = await _client.query(
         QueryOptions(
           document: gql(GraphQLQueries.getOrderItemsByOrderId),
           variables: {'orderId': orderId},
-          fetchPolicy: FetchPolicy.networkOnly,
+          fetchPolicy: FetchPolicy.cacheFirst, // Use cache first to reduce requests
         ),
       );
 
       if (result.hasException) {
         print('Error fetching order items: ${result.exception}');
+        
+        // Check if it's a rate limit error
+        final errorMessage = result.exception.toString().toLowerCase();
+        if (errorMessage.contains('too many requests') || errorMessage.contains('rate limit')) {
+          print('⚠️ Rate limit hit! Returning cached data or empty list');
+          // Return cached data if available even if expired
+          if (cachedItems != null) {
+            print('Returning expired cache due to rate limit');
+            return cachedItems;
+          }
+          // Return empty list to prevent further errors
+          return [];
+        }
+        
+        // Return cached data if available even if expired
+        if (cachedItems != null) {
+          print('Returning expired cache due to error');
+          return cachedItems;
+        }
         return [];
       }
 
       if (result.data == null || result.data!['orderItems'] == null) {
+        // Return cached data if available
+        if (cachedItems != null) {
+          print('No data returned, using cached items');
+          return cachedItems;
+        }
         return [];
       }
 
       final List<dynamic> itemsJson = result.data!['orderItems'] as List<dynamic>;
-      return itemsJson
+      final items = itemsJson
           .map((itemJson) => OrderItemModel.fromJson(itemJson as Map<String, dynamic>))
           .toList();
+      
+      // Cache the results
+      _orderItemsCache[cacheKey] = items;
+      _cacheTimestamps[cacheKey] = DateTime.now();
+      print('Cached ${items.length} order items for order: $orderId');
+      
+      return items;
     } catch (e) {
       print('Error fetching order items: $e');
+      // Return cached data if available
+      final cachedItems = _orderItemsCache[orderId];
+      if (cachedItems != null) {
+        print('Exception occurred, returning cached items');
+        return cachedItems;
+      }
       return [];
     }
+  }
+  
+  // Clear cache (useful for testing or when data changes)
+  void clearOrderItemsCache() {
+    _orderItemsCache.clear();
+    _cacheTimestamps.clear();
   }
 
   // Helper: Convert GraphQL JSON to OrderModel
@@ -401,10 +545,16 @@ class OrderServiceGraphQL {
     // Fetch items separately
     final items = await _fetchOrderItems(orderId);
 
-    // Parse shipping address if present
-    AddressModel? shippingAddress;
-    if (json['shippingAddress'] != null) {
-      shippingAddress = AddressModel.fromJson({
+    // Parse address if present
+    AddressModel? address;
+    if (json['address'] != null) {
+      address = AddressModel.fromJson({
+        ...json['address'] as Map<String, dynamic>,
+        'userId': userId,
+      });
+    } else if (json['shippingAddress'] != null) {
+      // Fallback for backward compatibility
+      address = AddressModel.fromJson({
         ...json['shippingAddress'] as Map<String, dynamic>,
         'userId': userId,
       });
@@ -423,8 +573,8 @@ class OrderServiceGraphQL {
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'])
           : DateTime.now(),
-      shippingAddressId: shippingAddress?.id,
-      shippingAddress: shippingAddress,
+      addressId: address?.id,
+      address: address,
       trackingNumber: json['trackingNumber'] ?? json['tracking_number'],
       courierName: json['courierName'] ?? json['courier_name'],
       shiprocketOrderId: json['shiprocketOrderId'] ?? json['shiprocket_order_id'],
@@ -454,8 +604,8 @@ class OrderServiceGraphQL {
             variables: {
               'orderId': orderId,
               'productId': productId,
-              'sizeId': sizeId!,
-              'quantity': quantity.toString(),
+              'sizeId': sizeId,
+              'quantity': quantity,
               'pricePerUnit': pricePerUnit,
               'totalPrice': totalPrice,
             },
@@ -468,7 +618,7 @@ class OrderServiceGraphQL {
             variables: {
               'orderId': orderId,
               'productId': productId,
-              'quantity': quantity.toString(),
+              'quantity': quantity,
               'pricePerUnit': pricePerUnit,
               'totalPrice': totalPrice,
             },
@@ -482,7 +632,6 @@ class OrderServiceGraphQL {
 
       return result.data?['createOrderItem']?['id']?.toString();
     } catch (e) {
-      print('Error creating order item: $e');
       // Re-throw as this is critical
       throw Exception('Failed to create order item: $e');
     }
@@ -499,12 +648,9 @@ class OrderServiceGraphQL {
       );
       
       if (result.hasException) {
-        print('Error publishing order item: ${result.exception}');
         throw Exception('Failed to publish order item: ${result.exception}');
       }
-      print('Order item published successfully: $itemId');
     } catch (e) {
-      print('Error publishing order item: $e');
       // Re-throw as this is critical for order creation
       rethrow;
     }
@@ -521,14 +667,30 @@ class OrderServiceGraphQL {
       );
       
       if (result.hasException) {
-        print('Error publishing order: ${result.exception}');
         throw Exception('Failed to publish order: ${result.exception}');
       }
-      print('Order published successfully: $orderId');
     } catch (e) {
-      print('Error publishing order: $e');
       // Re-throw as this is critical for order creation
       rethrow;
+    }
+  }
+
+  // Helper: Update stock for order items
+  Future<void> _updateStockForOrder(List<OrderItemModel> items) async {
+    final stockService = StockService();
+    
+    for (final item in items) {
+      // Only update stock if item has a size
+      if (item.sizeId != null && item.sizeId!.isNotEmpty) {
+        try {
+          await stockService.reduceStock(
+            sizeId: item.sizeId!,
+            quantityToReduce: item.quantity,
+          );
+        } catch (e) {
+          // Silently handle stock reduction errors
+        }
+      }
     }
   }
 }

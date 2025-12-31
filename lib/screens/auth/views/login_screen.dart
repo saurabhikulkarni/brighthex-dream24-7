@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/route/route_constants.dart';
 import 'package:shop/components/gradient_button.dart';
-import 'package:shop/components/responsive_image.dart';
+import 'package:shop/utils/responsive_extension.dart';
 
 import 'components/login_form.dart';
 
@@ -18,17 +18,32 @@ class _LoginScreenState extends State<LoginScreen> {
   dynamic _loginFormState;
 
   @override
+  void initState() {
+    super.initState();
+    // Preload the welcome image to avoid loading delay
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      precacheImage(
+        const AssetImage("assets/images/welcome-min.jpg"),
+        context,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Top hero image: responsive for all Android and iOS devices
-            const ResponsiveImage(
-              imagePath: "assets/images/welcome.jpg",
-              heightPercentage: 55,
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
+            // Top hero image: render within SafeArea and avoid fixed cache sizes
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.45,
+              width: double.infinity,
+              child: Image.asset(
+                "assets/images/welcome-min.jpg",
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
             ),
             Padding(
               padding: const EdgeInsets.all(defaultPadding),
@@ -38,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   Text(
                     "Welcome",
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontSize: 36,
+                          fontSize: context.fontSize(36, minSize: 28, maxSize: 44),
                           fontWeight: FontWeight.bold,
                         ),
                   ),

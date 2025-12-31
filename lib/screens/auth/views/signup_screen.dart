@@ -7,7 +7,8 @@ import 'package:shop/services/auth_service.dart';
 import 'package:shop/services/graphql_client.dart';
 import 'package:shop/services/graphql_queries.dart';
 import 'package:shop/services/user_service.dart';
-import 'package:shop/components/responsive_image.dart';
+import 'package:shop/services/wishlist_service.dart';
+import 'package:shop/services/cart_service.dart';
 
 import '../../../constants.dart';
 
@@ -22,6 +23,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   dynamic _signUpFormState;
   bool _privacyAccepted = false;
+  
+  final WishlistService wishlistService = WishlistService();
+  final CartService cartService = CartService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Preload the welcome image to avoid loading delay
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      precacheImage(
+        const AssetImage("assets/images/welcome-min.jpg"),
+        context,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,12 +45,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Top hero image: responsive for all Android and iOS devices
-            const ResponsiveImage(
-              imagePath: "assets/images/welcome.jpg",
-              heightPercentage: 55,
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter,
+            // Top hero image: render within SafeArea and avoid fixed cache sizes
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.45,
+              width: double.infinity,
+              child: Image.asset(
+                "assets/images/welcome-min.jpg",
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
             ),
             Padding(
               padding: const EdgeInsets.all(defaultPadding),
@@ -138,34 +157,37 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                       try {
                         // Check if user already exists with this phone number
-                        print('Checking if user exists with phone: $phone');
                         final UserService userService = UserService();
                         final existingUser = await userService.getUserByMobileNumber(phone);
                         
                         if (existingUser != null) {
                           if (mounted) {
                             Navigator.of(context).pop(); // Hide loading dialog
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text(
-                                    'Account already exists with this phone number'),
-                                backgroundColor: Colors.orange,
-                                action: SnackBarAction(
-                                  label: 'Login',
-                                  onPressed: () {
-                                    Navigator.pushReplacementNamed(
-                                        context, logInScreenRoute);
-                                  },
-                                ),
-                                duration: const Duration(seconds: 5),
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Already Registered'),
+                                content: const Text('An account already exists with this mobile number. Please log in instead.'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: const Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      Navigator.pushReplacementNamed(context, logInScreenRoute);
+                                    },
+                                    child: const Text('Login'),
+                                  ),
+                                ],
                               ),
                             );
                           }
-                          print('User already exists: ${existingUser.id}');
                           return;
                         }
-
-                        print('User does not exist, proceeding with account creation');
 
                         // Extract first and last name from full name
                         final nameParts = name.split(' ');
@@ -187,7 +209,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           },
                         );
                         
-                        print('Creating user with phone: $phone, firstName: $firstName, lastName: $lastName');
                         final QueryResult result = await graphQLClient.mutate(options);
                         
                         if (result.hasException) {
@@ -200,13 +221,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             );
                           }
-                          print('GraphQL Error: ${result.exception}');
                           return;
                         }
                         
                         // Extract userId from response
                         final userId = result.data?['createUserDetail']?['id']?.toString();
-                        print('User created with ID: $userId, Response: ${result.data}');
 
                         if (userId != null && userId.isNotEmpty) {
                           // Publish user (required for Hygraph)
@@ -216,9 +235,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               variables: {'id': userId},
                             );
                             await graphQLClient.mutate(publishOptions);
-                            print('User published: $userId');
                           } catch (e) {
-                            print('Error publishing user: $e');
+                            // Publishing failed, but user is created
                           }
                           // Save login session with userId from Hygraph
                           final authService = AuthService();
@@ -229,7 +247,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                             userId: userId,
                           );
                           
-                          print('Login session saved for user: $userId');
+                          // Sync wishlist and cart from backend after successful signup
+                          await wishlistService.syncWithBackend();
+                          await cartService.syncWithBackend();
                           
                           if (!mounted) return;
                           Navigator.of(context).pop(); // Hide loading
@@ -245,10 +265,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               ),
                             );
                           }
-                          print('Error: userId is null or empty');
                         }
                       } catch (e) {
-                        print('Exception in signup: $e');
                         if (mounted) {
                           Navigator.of(context).pop(); // Hide loading
                           ScaffoldMessenger.of(context).showSnackBar(

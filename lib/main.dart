@@ -7,6 +7,7 @@ import 'package:shop/services/wishlist_service.dart';
 import 'package:shop/services/auth_service.dart';
 import 'package:shop/services/cart_service.dart';
 import 'package:shop/services/search_service.dart';
+import 'package:shop/services/user_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,14 +15,27 @@ void main() async {
   // Initialize Hive for GraphQL caching
   await initHiveForFlutter();
   
+  // Initialize User Service (loads userId from SharedPreferences)
+  await UserService.initialize();
+  
   // Initialize Auth Service for session persistence
   await authService.initialize();
   
   // Initialize Wishlist Service
   await wishlistService.initialize();
   
+  // Sync wishlist with backend if user is logged in
+  if (await authService.isLoggedIn()) {
+    await wishlistService.syncWithBackend();
+  }
+  
   // Initialize Cart Service
   await cartService.initialize();
+  
+  // Sync cart with backend if user is logged in
+  if (await authService.isLoggedIn()) {
+    await cartService.syncWithBackend();
+  }
   
   // Initialize Search Service
   await searchService.initialize();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/components/network_image_with_loader.dart';
+import 'package:shop/utils/responsive_extension.dart';
 
 import '../../../../constants.dart';
 
@@ -56,9 +57,9 @@ class ProfileCard extends StatelessWidget {
               ),
               child: Text(
                 proLableText,
-                style: const TextStyle(
+                style: TextStyle(
                   fontFamily: grandisExtendedFont,
-                  fontSize: 10,
+                  fontSize: context.fontSize(10, minSize: 8, maxSize: 12),
                   fontWeight: FontWeight.w500,
                   color: Colors.white,
                   letterSpacing: 0.7,
