@@ -180,7 +180,7 @@ class RazorpayService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['verified'] ?? false;
+        return data['success'] == true && data['verified'] == true;
       } else {
         try {
           final errorData = jsonDecode(response.body);

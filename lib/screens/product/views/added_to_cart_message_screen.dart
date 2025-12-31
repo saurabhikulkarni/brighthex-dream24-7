@@ -20,7 +20,6 @@ class AddedToCartMessageScreen extends StatelessWidget {
                     ? "assets/Illustration/success.png"
                     : "assets/Illustration/success_dark.png",
                 height: MediaQuery.of(context).size.height * 0.3,
-                fit: BoxFit.contain,
               ),
               const Spacer(flex: 2),
               Text(
@@ -32,7 +31,7 @@ class AddedToCartMessageScreen extends StatelessWidget {
               ),
               const SizedBox(height: defaultPadding / 2),
               const Text(
-                "View your cart and proceed to checkout.",
+                "Click the checkout button to complete the purchase process.",
                 textAlign: TextAlign.center,
               ),
               const Spacer(flex: 2),

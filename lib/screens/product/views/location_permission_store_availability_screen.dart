@@ -69,7 +69,6 @@ class LocationPermissonStoreAvailabilityScreen extends StatelessWidget {
                               ? "assets/Illustration/Illustration-4.png"
                               : "assets/Illustration/Illustration_darkTheme_4.png",
                           height: MediaQuery.of(context).size.height * 0.3,
-                          fit: BoxFit.contain,
                         ),
                       ),
                     ),
