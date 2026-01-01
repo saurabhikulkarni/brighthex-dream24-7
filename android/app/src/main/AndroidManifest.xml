@@ -31,7 +31,7 @@
             android:name="com.razorpay.DeeplinkActivity"
             android:exported="true"
             android:theme="@style/CheckoutTheme"
-            tools:node="merge">.?
+            tools:node="merge">.?7
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
