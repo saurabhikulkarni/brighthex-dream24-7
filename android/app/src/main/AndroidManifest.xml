@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <application
         android:label="DREAM 247"
         android:name="${applicationName}"
@@ -24,6 +25,26 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        
+        <!-- Razorpay Deep Link Activity with autoVerify disabled -->
+        <activity
+            android:name="com.razorpay.DeeplinkActivity"
+            android:exported="true"
+            android:theme="@style/CheckoutTheme"
+            tools:node="merge">.?
+            <intent-filter android:autoVerify="false">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="com.brighthex.dream247"
+                    android:scheme="razorpay" />
+                <data
+                    android:host="pg-router.dev.razorpay.in"
+                    android:scheme="https" />
+            </intent-filter>
+        </activity>
+        
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
