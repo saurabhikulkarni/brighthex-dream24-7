@@ -260,13 +260,42 @@ class _CartScreenState extends State<CartScreen> {
         );
       }).toList();
 
-      // Create order in GraphQL
-      final order = await orderServiceGraphQL.createOrder(
-        items: orderItems,
-        totalAmount: total.toDouble(),
-        addressId: addressId,
-        status: OrderStatus.pending,
-      );
+      // Create order in GraphQL with OPTIMIZED method (much faster!)
+      OrderModel? order;
+      int retryCount = 0;
+      const maxRetries = 3;
+      
+      while (order == null && retryCount < maxRetries) {
+        try {
+          if (retryCount > 0) {
+            // Wait before retry (exponential backoff)
+            await Future.delayed(Duration(seconds: retryCount * 2));
+            print('🔄 Retry attempt $retryCount/$maxRetries...');
+          }
+          
+          // Use optimized method - creates order with parallel operations
+          order = await orderServiceGraphQL.createOrderOptimized(
+            items: orderItems,
+            totalAmount: total.toDouble(),
+            addressId: addressId,
+            status: OrderStatus.pending,
+          );
+        } catch (e) {
+          retryCount++;
+          print('❌ Order creation failed (attempt $retryCount): $e');
+          
+          if (retryCount >= maxRetries) {
+            // All retries failed - show user-friendly error
+            throw Exception(
+              'Unable to create order. Please check your internet connection and try again.'
+            );
+          }
+        }
+      }
+      
+      if (order == null) {
+        throw Exception('Order creation failed after $maxRetries attempts');
+      }
 
       // Get address details for Shiprocket
       String? shiprocketOrderId;

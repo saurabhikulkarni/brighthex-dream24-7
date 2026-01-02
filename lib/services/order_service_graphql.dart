@@ -26,7 +26,162 @@ class OrderServiceGraphQL {
   
   // Rate limiting - track last request time to avoid hitting limits
   DateTime? _lastRequestTime;
-  static const Duration _minRequestInterval = Duration(milliseconds: 800); // 800ms between requests to avoid rate limits
+  static const Duration _minRequestInterval = Duration(milliseconds: 1500); // Increased to 1.5s to avoid burst limits on free tier
+  
+  // OPTIMIZED: Fast order creation with minimal API calls
+  Future<OrderModel> createOrderOptimized({
+    required List<OrderItemModel> items,
+    required double totalAmount,
+    String? addressId,
+    OrderStatus status = OrderStatus.pending,
+  }) async {
+    try {
+      final userId = UserService.getCurrentUserId();
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+
+      if (items.isEmpty) {
+        throw Exception('Order must have at least one item');
+      }
+
+      final orderNumber = _generateOrderNumber();
+      
+      print('🚀 [OPTIMIZED] Creating order with ${items.length} items...');
+      
+      // STEP 1: Create order (1 API call)
+      final orderId = await _createOrderOnly(
+        userId: userId,
+        orderNumber: orderNumber,
+        totalAmount: totalAmount,
+        status: status,
+        addressId: addressId,
+      );
+      
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // STEP 2: Create ALL items in parallel (items.length API calls simultaneously)
+      print('📦 [OPTIMIZED] Creating ${items.length} items in parallel...');
+      final itemIds = await _createOrderItemsParallel(orderId: orderId, items: items);
+      
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // STEP 3: Batch publish items + order (2 API calls total)
+      print('📤 [OPTIMIZED] Publishing items and order...');
+      await Future.wait([
+        _publishManyOrderItems(itemIds),
+        _publishOrder(orderId),
+      ]);
+      
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // STEP 4: Update stock in parallel (items.length API calls simultaneously)
+      print('📊 [OPTIMIZED] Updating stock for ${items.length} items...');
+      await _updateStockParallel(items);
+      
+      print('✅ [OPTIMIZED] Order created successfully!');
+      
+      // Return full order
+      final order = await getOrderById(orderId);
+      if (order == null) {
+        throw Exception('Failed to retrieve created order');
+      }
+      return order;
+    } catch (e) {
+      throw Exception('Error creating order: $e');
+    }
+  }
+  
+  // Helper: Create order only (no items)
+  Future<String> _createOrderOnly({
+    required String userId,
+    required String orderNumber,
+    required double totalAmount,
+    required OrderStatus status,
+    String? addressId,
+  }) async {
+    final bool hasAddress = addressId != null && addressId.isNotEmpty;
+    
+    final MutationOptions options = MutationOptions(
+      document: gql(hasAddress 
+        ? GraphQLQueries.createOrderWithAddress 
+        : GraphQLQueries.createOrderWithoutAddress),
+      variables: {
+        'userId': userId,
+        'orderNumber': orderNumber,
+        'totalAmount': totalAmount,
+        'orderStatus': _orderStatusToString(status),
+        if (hasAddress) 'addressId': addressId,
+      },
+    );
+
+    final QueryResult result = await _client.mutate(options);
+    if (result.hasException) {
+      throw Exception(result.exception.toString());
+    }
+
+    final orderId = result.data?['createOrder']?['id']?.toString();
+    if (orderId == null) {
+      throw Exception('Failed to get order ID');
+    }
+    return orderId;
+  }
+  
+  // Helper: Create multiple items in parallel
+  Future<List<String>> _createOrderItemsParallel({
+    required String orderId,
+    required List<OrderItemModel> items,
+  }) async {
+    final futures = items.map((item) {
+      return _createOrderItem(
+        orderId: orderId,
+        productId: item.productId,
+        sizeId: item.sizeId,
+        quantity: item.quantity > 0 ? item.quantity : 1,
+        pricePerUnit: item.pricePerUnit >= 0 ? item.pricePerUnit : 0.0,
+        totalPrice: item.totalPrice >= 0 ? item.totalPrice : (item.pricePerUnit * item.quantity),
+      );
+    }).toList();
+    
+    final itemIds = await Future.wait(futures);
+    return itemIds.whereType<String>().toList();
+  }
+  
+  // Helper: Batch publish multiple items
+  Future<void> _publishManyOrderItems(List<String> itemIds) async {
+    if (itemIds.isEmpty) return;
+    
+    try {
+      final MutationOptions options = MutationOptions(
+        document: gql(GraphQLQueries.publishManyOrderItems),
+        variables: {'ids': itemIds},
+      );
+      
+      await _client.mutate(options);
+    } catch (e) {
+      print('⚠️ Batch publish failed, falling back to individual publishes');
+      // Fallback: publish individually
+      for (final id in itemIds) {
+        await _publishOrderItem(id);
+      }
+    }
+  }
+  
+  // Helper: Update stock in parallel
+  Future<void> _updateStockParallel(List<OrderItemModel> items) async {
+    final stockService = StockService();
+    final futures = items
+        .where((item) => item.sizeId != null && item.sizeId!.isNotEmpty)
+        .map((item) => stockService.reduceStock(
+              sizeId: item.sizeId!,
+              quantityToReduce: item.quantity,
+            ))
+        .toList();
+    
+    if (futures.isNotEmpty) {
+      await Future.wait(futures);
+    }
+  }
 
   // Convert OrderStatus enum to string for GraphQL
   // Hygraph expects enum values to match the schema exactly

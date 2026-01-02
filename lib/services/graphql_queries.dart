@@ -638,7 +638,34 @@ class GraphQLQueries {
     }
   ''';
 
-  // Create order without shipping address
+  // OPTIMIZED: Create order WITH items in a single call (batch operation)
+  static const String createOrderBatch = '''
+    mutation CreateOrderBatch(
+      \$orderNumber: String!,
+      \$userId: ID!,
+      \$totalAmount: Float!,
+      \$orderStatus: OrderStatus!,
+      \$addressId: ID
+    ) {
+      createOrder(
+        data: {
+          orderNumber: \$orderNumber
+          userDetail: {connect: {id: \$userId}}
+          totalAmount: \$totalAmount
+          orderStatus: \$orderStatus
+          address: \$addressId != null ? {connect: {id: \$addressId}} : null
+        }
+      ) {
+        id
+        orderNumber
+        totalAmount
+        orderStatus
+        createdAt
+      }
+    }
+  ''';
+
+  // Create order without shipping address (legacy - keeping for backwards compatibility)
   static const String createOrderWithoutAddress = '''
     mutation CreateOrderWithoutAddress(
       \$userId: ID!,
@@ -802,6 +829,15 @@ class GraphQLQueries {
     mutation PublishOrder(\$id: ID!) {
       publishOrder(where: {id: \$id}) {
         id
+      }
+    }
+  ''';
+
+  // OPTIMIZED: Publish multiple order items at once (batch publish)
+  static const String publishManyOrderItems = '''
+    mutation PublishManyOrderItems(\$ids: [ID!]!) {
+      publishManyOrderItems(where: {id_in: \$ids}) {
+        count
       }
     }
   ''';

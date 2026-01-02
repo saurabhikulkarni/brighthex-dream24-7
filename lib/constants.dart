@@ -50,7 +50,7 @@ const Color blackColor40 = Color(0xFFA2A2A5);
 const Color blackColor20 = Color(0xFFD0D0D2);
 
 // Test User Configuration (for development/testing only)
-const bool enableTestUser = true; // Set to false in production
+const bool enableTestUser = true; // ENABLED FOR TESTING - Set to false before Play Store upload
 const String testUserPhone = "9876543210";
 const String testUserId = "cmjjx4dyn255i07o92vexv4jl";
 const String testUserName = "Test User";
