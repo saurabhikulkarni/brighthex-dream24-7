@@ -372,12 +372,20 @@ class _CartScreenState extends State<CartScreen> {
       Navigator.pop(context); // Close loading dialog
 
       // Navigate to order tracking screen with appropriate ID
-      Navigator.of(context).pushNamed(
+      await Navigator.of(context).pushNamed(
         orderTrackingScreenRoute,
         arguments: {
           'orderId': shiprocketOrderId ?? order.id ?? order.orderNumber,
         },
       );
+      
+      // After order tracking, pop back to home with updated wallet balance
+      if (!mounted) return;
+      Navigator.of(context).pop({
+        'walletBalance': walletBalance,
+        'shoppingTokens': walletBalance.toInt(),
+        'needsRefresh': true,
+      });
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context); // Close loading dialog
