@@ -365,8 +365,8 @@ class _CartScreenState extends State<CartScreen> {
       // Update wallet balance in UI
       await _loadWalletBalance();
 
-      // Clear cart
-      cartService.clearLocalCart();
+      // Clear cart completely (both local and backend)
+      await cartService.clearCompleteCart();
 
       if (!mounted) return;
       Navigator.pop(context); // Close loading dialog

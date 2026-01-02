@@ -267,6 +267,61 @@ class CartService {
     _saveToSharedPreferences();
   }
 
+  // Clear all cart items from backend for a user
+  Future<bool> clearBackendCart(String userId) async {
+    try {
+      print('🗑️ Clearing backend cart for user: $userId');
+      
+      // Get all cart items for the user from backend
+      final cartItems = await getCartByUser(userId);
+      
+      if (cartItems.isEmpty) {
+        print('✅ Backend cart is already empty');
+        return true;
+      }
+
+      print('📦 Found ${cartItems.length} items to delete from backend');
+      
+      // Delete all items in parallel for faster execution
+      final deleteFutures = cartItems
+          .where((item) => item.id != null && item.id!.isNotEmpty)
+          .map((item) => deleteCartItem(item.id!))
+          .toList();
+
+      if (deleteFutures.isNotEmpty) {
+        await Future.wait(deleteFutures);
+      }
+
+      print('✅ Backend cart cleared successfully');
+      return true;
+    } catch (e) {
+      print('❌ Error clearing backend cart: $e');
+      return false;
+    }
+  }
+
+  // Complete cart clearing - both local and backend
+  Future<bool> clearCompleteCart() async {
+    try {
+      // Get user ID
+      final userId = UserService.getCurrentUserId() ?? _userId;
+      
+      // Clear local cart first (immediate feedback)
+      clearLocalCart();
+      
+      // Then clear backend if user is logged in
+      if (userId != null && userId.isNotEmpty) {
+        await clearBackendCart(userId);
+      }
+      
+      print('✅ Complete cart clearing done (local + backend)');
+      return true;
+    } catch (e) {
+      print('❌ Error during complete cart clearing: $e');
+      return false;
+    }
+  }
+
   // Calculate total
   double getCartTotal() {
     return _localCart.fold(0, (sum, item) {
