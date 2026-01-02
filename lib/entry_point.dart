@@ -50,8 +50,10 @@ class _EntryPointState extends State<EntryPoint> {
             walletBalance = balance;
             shoppingTokens = balance.toInt();
           });
+          print('💰 [ENTRY_POINT] Wallet updated: Balance=$walletBalance, Tokens=$shoppingTokens');
         }
       } catch (e) {
+        print('⚠️ [ENTRY_POINT] Failed to load wallet: $e');
         // Silently fail, keep current values
       }
     }
@@ -129,10 +131,16 @@ class _EntryPointState extends State<EntryPoint> {
                 padding: EdgeInsets.symmetric(horizontal: iconPadding),
                 constraints: const BoxConstraints(),
                 onPressed: () async {
-                  await Navigator.pushNamed(context, checkoutScreenRoute);
-                  // Refresh cart count after returning from cart
+                  final result = await Navigator.pushNamed(context, checkoutScreenRoute);
+                  // Refresh cart count and wallet balance after returning from cart
                   if (mounted) {
-                    setState(() {});
+                    setState(() {
+                      // Update wallet if cart screen returns updated balance
+                      if (result is Map) {
+                        walletBalance = result['walletBalance'] ?? walletBalance;
+                        shoppingTokens = result['shoppingTokens'] ?? shoppingTokens;
+                      }
+                    });
                   }
                 },
                 icon: Icon(
@@ -265,6 +273,10 @@ class _EntryPointState extends State<EntryPoint> {
                 if (index != _currentIndex) {
                   setState(() {
                     _currentIndex = index;
+                  });
+                  // Refresh wallet after navigation completes
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _loadWalletBalance();
                   });
                 }
               },

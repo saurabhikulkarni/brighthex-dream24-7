@@ -95,7 +95,7 @@ class _LogInFormState extends State<LogInForm> {
     }
     
     // Check if it's a valid Indian mobile number (10 digits, starts with 6-9)
-    if (!RegExp(r'^[6-9]\\d{9}\$').hasMatch(phone)) {
+    if (!RegExp(r'^[6-9]\d{9}$').hasMatch(phone)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a valid Indian mobile number'),
@@ -249,6 +249,9 @@ class _LogInFormState extends State<LogInForm> {
       Navigator.of(context).pop();
     }
 
+    print('📱 [LOGIN] OTP Verification result: ${result['success']}');
+    print('📱 [LOGIN] OTP Verification message: ${result['message']}');
+
     if (result['success'] == true) {
       return true;
     } else {
@@ -288,7 +291,24 @@ class _LogInFormState extends State<LogInForm> {
         final graphQLClient = GraphQLService.getClient();
         
         // Clean phone number (remove non-digit characters)
-        final cleanPhone = phone.replaceAll(RegExp(r'[^\\d]'), '');
+        final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+        
+        print('📱 [LOGIN] Original phone: $phone');
+        print('📱 [LOGIN] Cleaned phone: $cleanPhone');
+        print('📱 [LOGIN] Phone length: ${cleanPhone.length}');
+        
+        // Validate phone number is exactly 10 digits
+        if (cleanPhone.length != 10) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Invalid phone number. Must be exactly 10 digits. Got: ${cleanPhone.length} digits'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
+        }
         
         // Query for existing user
         final QueryOptions queryOptions = QueryOptions(
@@ -308,23 +328,32 @@ class _LogInFormState extends State<LogInForm> {
 
         // If user doesn't exist, create new user
         if (userId == null) {
+          print('📝 [LOGIN] Creating new user with:');
+          print('   firstName: $name');
+          print('   lastName: (empty)');
+          print('   username: $name');
+          print('   mobileNumber: $cleanPhone');
+          
           final MutationOptions options = MutationOptions(
             document: gql(GraphQLQueries.createUser),
             variables: {
               'firstName': name,
               'lastName': '',
-              'username': phone, // Use phone as username
+              'username': name, // Use name as username, not phone!
               'mobileNumber': cleanPhone, // Use cleaned phone as String
             },
           );
           
+          print('📤 [LOGIN] Sending GraphQL mutation with variables: ${options.variables}');
+          
           final QueryResult result = await graphQLClient.mutate(options);
           
           if (result.hasException) {
+            print('❌ [LOGIN] Error creating user: ${result.exception}');
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Error creating account. Please try again.'),
+                SnackBar(
+                  content: Text('Error creating account: ${result.exception?.toString() ?? "Unknown error"}'),
                   backgroundColor: Colors.red,
                 ),
               );
