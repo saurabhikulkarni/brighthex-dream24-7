@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/services/order_service_graphql.dart';
 import 'package:shop/models/order_models.dart';
+import 'package:shop/components/network_image_with_loader.dart';
 import 'order_tracking_screen.dart';
 
 class OrdersScreen extends StatefulWidget {
@@ -137,7 +138,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       print('✅ Rendering order $index: $displayOrderNumber');
                       return Card(
                         margin: const EdgeInsets.only(bottom: defaultPadding),
-                  child: Padding(
+                  child: InkWell(
+                    onTap: () {
+                      final trackingId = order.shiprocketOrderId ?? order.orderNumber;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OrderTrackingScreen(
+                            orderId: trackingId,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Padding(
                     padding: const EdgeInsets.all(defaultPadding),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,13 +163,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Order ${order.orderNumber.isNotEmpty ? order.orderNumber : (order.id ?? 'N/A')}",
-                                    style: Theme.of(context).textTheme.titleSmall,
+                                    "Order #${order.orderNumber.isNotEmpty ? order.orderNumber : (order.id ?? 'N/A')}",
+                                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     _formatDate(order.createdAt),
-                                    style: Theme.of(context).textTheme.bodySmall,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.grey,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -169,7 +186,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               decoration: BoxDecoration(
                                 color: _getStatusColor(order.statusString)
                                     .withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: _getStatusColor(order.statusString),
+                                  width: 1,
+                                ),
                               ),
                               child: Text(
                                 _formatStatus(order.statusString),
@@ -182,16 +203,108 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: defaultPadding / 2),
-                        Text(
-                          order.items.isEmpty ? 'No items' : order.orderSummary,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        const Divider(height: defaultPadding * 1.5),
+                        
+                        // Product Items List
+                        ...order.items.take(3).map((item) => Padding(
+                          padding: const EdgeInsets.only(bottom: defaultPadding / 2),
+                          child: Row(
+                            children: [
+                              // Product Image
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: SizedBox(
+                                  width: 60,
+                                  height: 60,
+                                  child: item.product?.image.isNotEmpty == true
+                                      ? NetworkImageWithLoader(item.product!.image)
+                                      : Container(
+                                          color: Colors.grey.shade200,
+                                          child: Icon(
+                                            Icons.image,
+                                            color: Colors.grey.shade400,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(width: defaultPadding / 2),
+                              // Product Details
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.product?.title ?? 'Product',
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                              Divider(height: defaultPadding),
+                        
+                        // Order Total and Actions
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Total Amount',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  "₹${order.totalAmount.toStringAsFixed(2)}",
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: primaryColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                // Track button - show if order has Shiprocket order ID or tracking number
+                                if (order.shiprocketOrderId != null || order.trackingNumber != null)
+                                  OutlinedButton.icon(
+                                    onPressed: () {
+                                      // Navigate to tracking screen with Shiprocket order ID or order number
+                                      final trackingId = order.shiprocketOrderId ?? order.orderNumber;
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => OrderTrackingScreen(
+                                            orderId: trackingId,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.local_shipping_outlined, size: 18),
+                                    label: const Text('Track'),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    ),
+                                  ),
+                                if (order.shiprocketOrderId != null || order.trackingNumber != null)
+                                  const SizedBox(width: 8),
+                                Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: defaultPadding / 2),
-                        // Show tracking info if available
-                        if ((order.trackingNumber != null && order.trackingNumber!.isNotEmpty) || 
+                      ],
+                    ),
+                      if ((order.trackingNumber != null && order.trackingNumber!.isNotEmpty) || 
                             (order.courierName != null && order.courierName!.isNotEmpty))
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
