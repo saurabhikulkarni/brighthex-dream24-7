@@ -94,21 +94,22 @@ class OrderServiceGraphQL {
       
       // Return order without re-fetching to avoid rate limits
       // Construct the order object from data we already have
+      final orderItems = items.map((item) => OrderItemModel(
+        id: null, // Item IDs not needed for return value
+        productId: item.productId,
+        sizeId: item.sizeId,
+        size: item.size,
+        quantity: item.quantity,
+        pricePerUnit: item.pricePerUnit,
+        totalPrice: item.totalPrice,
+        product: item.product,
+      )).toList();
+      
       return OrderModel(
         id: orderId,
         orderNumber: orderNumber,
         userId: userId,
-        items: items.map((item) => OrderItemModel(
-          id: null, // Item IDs not needed for return value
-          orderId: orderId,
-          productId: item.productId,
-          sizeId: item.sizeId,
-          size: item.size,
-          quantity: item.quantity,
-          pricePerUnit: item.pricePerUnit,
-          totalPrice: item.totalPrice,
-          product: item.product,
-        )).toList(),
+        items: orderItems,
         totalAmount: totalAmount,
         orderStatus: status,
         addressId: addressId,

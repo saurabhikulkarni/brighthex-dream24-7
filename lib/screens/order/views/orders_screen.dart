@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/constants.dart';
 import 'package:shop/components/network_image_with_loader.dart';
 import 'package:shop/screens/order/views/order_tracking_screen.dart';
@@ -287,18 +288,28 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Total Amount',
+                                  'Shopping Tokens',
                                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Colors.grey.shade600,
                                   ),
                                 ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  "₹${order.totalAmount.toStringAsFixed(2)}",
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: primaryColor,
-                                  ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    SvgPicture.asset(
+                                      'assets/icons/coin.svg',
+                                      height: 20,
+                                      width: 20,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      order.totalAmount.toStringAsFixed(0),
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: primaryColor,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
