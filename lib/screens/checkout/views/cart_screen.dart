@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/components/gradient_button.dart';
@@ -276,7 +277,7 @@ class _CartScreenState extends State<CartScreen> {
           if (retryCount > 0) {
             // Wait before retry (exponential backoff)
             await Future.delayed(Duration(seconds: retryCount * 2));
-            print('🔄 Retry attempt $retryCount/$maxRetries...');
+            if (kDebugMode) print('🔄 Retry attempt $retryCount/$maxRetries...');
           }
           
           // Use optimized method - creates order with parallel operations
@@ -288,7 +289,7 @@ class _CartScreenState extends State<CartScreen> {
           );
         } catch (e) {
           retryCount++;
-          print('❌ Order creation failed (attempt $retryCount): $e');
+          if (kDebugMode) print('❌ Order creation failed (attempt $retryCount): $e');
           
           if (retryCount >= maxRetries) {
             // All retries failed - show user-friendly error
@@ -341,7 +342,7 @@ class _CartScreenState extends State<CartScreen> {
             if (shipmentResult != null) {
               shiprocketOrderId = shipmentResult['order_id']?.toString() ?? 
                                   shipmentResult['shipment_id']?.toString();
-              print('✅ Shiprocket shipment created: $shiprocketOrderId');
+              if (kDebugMode) print('✅ Shiprocket shipment created: $shiprocketOrderId');
               
               // Update order with Shiprocket tracking info if available
               if (shiprocketOrderId != null && order.id != null) {
@@ -356,11 +357,11 @@ class _CartScreenState extends State<CartScreen> {
                 );
               }
             } else {
-              print('⚠️ Failed to create Shiprocket shipment, order will use mock tracking');
+              if (kDebugMode) print('⚠️ Failed to create Shiprocket shipment, order will use mock tracking');
             }
           }
         } catch (shiprocketError) {
-          print('⚠️ Shiprocket integration error: $shiprocketError');
+          if (kDebugMode) print('⚠️ Shiprocket integration error: $shiprocketError');
           // Continue with order - Shiprocket is optional
         }
       }

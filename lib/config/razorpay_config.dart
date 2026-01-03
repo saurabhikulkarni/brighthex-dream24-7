@@ -2,8 +2,10 @@
 // Get your credentials from https://dashboard.razorpay.com/
 
 class RazorpayConfig {
+  // ⚠️ TEST MODE - Replace with production credentials before launch
   // Your Razorpay API Key (Public Key)
   // Available at: https://dashboard.razorpay.com/#/app/keys
+  // PRODUCTION: Change from rzp_test_* to rzp_live_* after approval
   static const String keyId = 'rzp_test_RqEBl9COpBTyyz';
 
   // Your Razorpay API Secret (Keep this ONLY on backend)
@@ -35,7 +37,7 @@ class RazorpayConfig {
   static const String themeColor = '#6441A5';
 
   // Logo URL (Optional - should be HTTPS)
-  // TODO: Update with your actual logo URL or set to empty string if not needed
+  // Set to empty string if no logo is needed in payment modal
   static const String logoUrl = '';
 
   // Website URL

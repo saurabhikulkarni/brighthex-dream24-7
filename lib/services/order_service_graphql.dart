@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:shop/models/order_models.dart';
 import 'package:shop/models/address_model.dart';
@@ -47,7 +48,9 @@ class OrderServiceGraphQL {
 
       final orderNumber = _generateOrderNumber();
       
-      print('🚀 [OPTIMIZED] Creating order with ${items.length} items...');
+      if (kDebugMode) {
+        print('🚀 [OPTIMIZED] Creating order with ${items.length} items...');
+      }
       
       // STEP 1: Create order (1 API call)
       final orderId = await _createOrderOnly(
@@ -61,13 +64,17 @@ class OrderServiceGraphQL {
       await Future.delayed(const Duration(milliseconds: 500));
       
       // STEP 2: Create ALL items in parallel (items.length API calls simultaneously)
-      print('📦 [OPTIMIZED] Creating ${items.length} items in parallel...');
+      if (kDebugMode) {
+        print('📦 [OPTIMIZED] Creating ${items.length} items in parallel...');
+      }
       final itemIds = await _createOrderItemsParallel(orderId: orderId, items: items);
       
       await Future.delayed(const Duration(milliseconds: 500));
       
       // STEP 3: Batch publish items + order (2 API calls total)
-      print('📤 [OPTIMIZED] Publishing items and order...');
+      if (kDebugMode) {
+        print('📤 [OPTIMIZED] Publishing items and order...');
+      }
       await Future.wait([
         _publishManyOrderItems(itemIds),
         _publishOrder(orderId),
@@ -76,10 +83,14 @@ class OrderServiceGraphQL {
       await Future.delayed(const Duration(milliseconds: 500));
       
       // STEP 4: Update stock in parallel (items.length API calls simultaneously)
-      print('📊 [OPTIMIZED] Updating stock for ${items.length} items...');
+      if (kDebugMode) {
+        print('📊 [OPTIMIZED] Updating stock for ${items.length} items...');
+      }
       await _updateStockParallel(items);
       
-      print('✅ [OPTIMIZED] Order created successfully!');
+      if (kDebugMode) {
+        print('✅ [OPTIMIZED] Order created successfully!');
+      }
       
       // Return full order
       final order = await getOrderById(orderId);
@@ -159,7 +170,9 @@ class OrderServiceGraphQL {
       
       await _client.mutate(options);
     } catch (e) {
-      print('⚠️ Batch publish failed, falling back to individual publishes');
+      if (kDebugMode) {
+        print('⚠️ Batch publish failed, falling back to individual publishes');
+      }
       // Fallback: publish individually
       for (final id in itemIds) {
         await _publishOrderItem(id);
@@ -266,7 +279,9 @@ class OrderServiceGraphQL {
           final order = await _orderFromGraphQL(json as Map<String, dynamic>, userId);
           orders.add(order);
         } catch (e) {
-          print('Error fetching order ${json['id']}: $e');
+          if (kDebugMode) {
+            print('Error fetching order ${json['id']}: $e');
+          }
           // Continue with other orders even if one fails
           // Create a minimal order model to keep the list consistent
           try {
@@ -286,7 +301,9 @@ class OrderServiceGraphQL {
             );
             orders.add(minimalOrder);
           } catch (parseError) {
-            print('Error creating minimal order: $parseError');
+            if (kDebugMode) {
+              print('Error creating minimal order: $parseError');
+            }
             // Skip this order if we can't even create a minimal version
           }
         }
@@ -341,7 +358,9 @@ class OrderServiceGraphQL {
         final timeSinceLastRequest = DateTime.now().difference(_lastRequestTime!);
         if (timeSinceLastRequest < _minRequestInterval) {
           final waitTime = _minRequestInterval - timeSinceLastRequest;
-          print('[ORDER_SERVICE] Rate limit protection: waiting ${waitTime.inMilliseconds}ms');
+          if (kDebugMode) {
+            print('[ORDER_SERVICE] Rate limit protection: waiting ${waitTime.inMilliseconds}ms');
+          }
           await Future.delayed(waitTime);
         }
       }
@@ -398,7 +417,9 @@ class OrderServiceGraphQL {
         throw Exception('Order must have at least one item');
       }
       
-      print('[ORDER_SERVICE] Creating ${items.length} order items with rate limiting...');
+      if (kDebugMode) {
+        print('[ORDER_SERVICE] Creating ${items.length} order items with rate limiting...');
+      }
       
       // Create each order item - if any fails, rollback the order
       final List<String> createdItemIds = [];
@@ -408,7 +429,9 @@ class OrderServiceGraphQL {
           
           // Add delay BEFORE each request (including first one) to ensure spacing
           // This prevents burst requests at the start
-          print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before creating item ${i + 1}/${items.length}');
+          if (kDebugMode) {
+            print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before creating item ${i + 1}/${items.length}');
+          }
           await Future.delayed(_minRequestInterval);
           
           // Validate required fields and use defaults if needed
@@ -431,7 +454,9 @@ class OrderServiceGraphQL {
           // sizeId can be null (optional field)
           final sizeId = item.sizeId;
           
-          print('[ORDER_SERVICE] Creating order item ${i + 1}/${items.length}');
+          if (kDebugMode) {
+            print('[ORDER_SERVICE] Creating order item ${i + 1}/${items.length}');
+          }
           final itemId = await _createOrderItem(
             orderId: orderId,
             productId: productId,
@@ -445,17 +470,25 @@ class OrderServiceGraphQL {
             throw Exception('Failed to create order item - no ID returned');
           }
           
-          print('[ORDER_SERVICE] Item ${i + 1} created with ID: $itemId');
+          if (kDebugMode) {
+            print('[ORDER_SERVICE] Item ${i + 1} created with ID: $itemId');
+          }
           
           // Delay before publishing to avoid rate limit
-          print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before publishing item ${i + 1}');
+          if (kDebugMode) {
+            print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before publishing item ${i + 1}');
+          }
           await Future.delayed(_minRequestInterval);
           
           // Publish order item
-          print('[ORDER_SERVICE] Publishing order item ${i + 1}/${items.length}');
+          if (kDebugMode) {
+            print('[ORDER_SERVICE] Publishing order item ${i + 1}/${items.length}');
+          }
           await _publishOrderItem(itemId);
           createdItemIds.add(itemId);
-          print('[ORDER_SERVICE] Item ${i + 1} published successfully');
+          if (kDebugMode) {
+            print('[ORDER_SERVICE] Item ${i + 1} published successfully');
+          }
         }
       } catch (e) {
         // If any item creation fails, we should ideally rollback
@@ -464,22 +497,34 @@ class OrderServiceGraphQL {
       }
 
       // Delay before publishing order
-      print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before publishing order');
+      if (kDebugMode) {
+        print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before publishing order');
+      }
       await Future.delayed(_minRequestInterval);
       
       // Publish order
-      print('[ORDER_SERVICE] Publishing order...');
+      if (kDebugMode) {
+        print('[ORDER_SERVICE] Publishing order...');
+      }
       await _publishOrder(orderId);
-      print('[ORDER_SERVICE] Order published successfully');
+      if (kDebugMode) {
+        print('[ORDER_SERVICE] Order published successfully');
+      }
 
       // Delay before updating stock
-      print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before updating stock');
+      if (kDebugMode) {
+        print('[ORDER_SERVICE] Waiting ${_minRequestInterval.inMilliseconds}ms before updating stock');
+      }
       await Future.delayed(_minRequestInterval);
       
       // Update stock for all items with sizes
-      print('[ORDER_SERVICE] Updating stock...');
+      if (kDebugMode) {
+        print('[ORDER_SERVICE] Updating stock...');
+      }
       await _updateStockForOrder(items);
-      print('[ORDER_SERVICE] Stock updated successfully');
+      if (kDebugMode) {
+        print('[ORDER_SERVICE] Stock updated successfully');
+      }
 
       // Return full order by fetching it
       final order = await getOrderById(orderId);
@@ -601,7 +646,9 @@ class OrderServiceGraphQL {
       if (cachedItems != null && cacheTime != null) {
         final age = DateTime.now().difference(cacheTime);
         if (age < _cacheExpiry) {
-          print('Using cached order items for order: $orderId');
+          if (kDebugMode) {
+            print('Using cached order items for order: $orderId');
+          }
           return cachedItems;
         } else {
           // Cache expired, remove it
@@ -615,12 +662,16 @@ class OrderServiceGraphQL {
         final timeSinceLastRequest = DateTime.now().difference(_lastRequestTime!);
         if (timeSinceLastRequest < _minRequestInterval) {
           final waitTime = _minRequestInterval - timeSinceLastRequest;
-          print('Rate limiting: waiting ${waitTime.inMilliseconds}ms before next request');
+          if (kDebugMode) {
+            print('Rate limiting: waiting ${waitTime.inMilliseconds}ms before next request');
+          }
           await Future.delayed(waitTime);
         }
       }
       
-      print('Fetching order items for order: $orderId');
+      if (kDebugMode) {
+        print('Fetching order items for order: $orderId');
+      }
       _lastRequestTime = DateTime.now();
       
       final QueryResult result = await _client.query(
@@ -632,15 +683,21 @@ class OrderServiceGraphQL {
       );
 
       if (result.hasException) {
-        print('Error fetching order items: ${result.exception}');
+        if (kDebugMode) {
+          print('Error fetching order items: ${result.exception}');
+        }
         
         // Check if it's a rate limit error
         final errorMessage = result.exception.toString().toLowerCase();
         if (errorMessage.contains('too many requests') || errorMessage.contains('rate limit')) {
-          print('⚠️ Rate limit hit! Returning cached data or empty list');
+          if (kDebugMode) {
+            print('⚠️ Rate limit hit! Returning cached data or empty list');
+          }
           // Return cached data if available even if expired
           if (cachedItems != null) {
-            print('Returning expired cache due to rate limit');
+            if (kDebugMode) {
+              print('Returning expired cache due to rate limit');
+            }
             return cachedItems;
           }
           // Return empty list to prevent further errors
@@ -649,7 +706,9 @@ class OrderServiceGraphQL {
         
         // Return cached data if available even if expired
         if (cachedItems != null) {
-          print('Returning expired cache due to error');
+          if (kDebugMode) {
+            print('Returning expired cache due to error');
+          }
           return cachedItems;
         }
         return [];
@@ -658,7 +717,9 @@ class OrderServiceGraphQL {
       if (result.data == null || result.data!['orderItems'] == null) {
         // Return cached data if available
         if (cachedItems != null) {
-          print('No data returned, using cached items');
+          if (kDebugMode) {
+            print('No data returned, using cached items');
+          }
           return cachedItems;
         }
         return [];
@@ -672,15 +733,21 @@ class OrderServiceGraphQL {
       // Cache the results
       _orderItemsCache[cacheKey] = items;
       _cacheTimestamps[cacheKey] = DateTime.now();
-      print('Cached ${items.length} order items for order: $orderId');
+      if (kDebugMode) {
+        print('Cached ${items.length} order items for order: $orderId');
+      }
       
       return items;
     } catch (e) {
-      print('Error fetching order items: $e');
+      if (kDebugMode) {
+        print('Error fetching order items: $e');
+      }
       // Return cached data if available
       final cachedItems = _orderItemsCache[orderId];
       if (cachedItems != null) {
-        print('Exception occurred, returning cached items');
+        if (kDebugMode) {
+          print('Exception occurred, returning cached items');
+        }
         return cachedItems;
       }
       return [];

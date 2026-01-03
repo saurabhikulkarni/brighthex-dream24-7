@@ -162,8 +162,8 @@ class _WalletScreenState extends State<WalletScreen> {
       final authService = AuthService();
       final userPhone = await authService.getUserPhone() ?? '+91 0000000000';
       final userName = await authService.getUserName() ?? 'Customer';
-      // TODO: Get user email from user profile/backend when available
-      const userEmail = 'customer@dream247.com'; // Placeholder - update when email is available in user profile
+      // Using placeholder email until user profile is extended with email field
+      const userEmail = 'customer@dream247.com';
 
       final razorpayService = RazorpayService();
       
@@ -516,7 +516,8 @@ class _WalletScreenState extends State<WalletScreen> {
                           ),
                         ),
                       ),
-                      // TODO: Transaction history will be integrated with backend payment history
+                      // Transaction history feature - reserved for future integration
+                      // with backend payment history when available
                       // SliverPadding(
                       //   padding: const EdgeInsets.only(top: defaultPadding / 2),
                       //   sliver: SliverToBoxAdapter(

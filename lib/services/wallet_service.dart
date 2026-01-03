@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'graphql_client.dart';
@@ -35,7 +36,9 @@ class WalletService {
       
       return cachedBalance;
     } catch (e) {
-      print('Error getting wallet balance: $e');
+      if (kDebugMode) {
+        print('Error getting wallet balance: $e');
+      }
       return 0.0;
     }
   }
@@ -46,7 +49,9 @@ class WalletService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setDouble(_walletBalanceKey, amount);
     } catch (e) {
-      print('Error setting wallet balance: $e');
+      if (kDebugMode) {
+        print('Error setting wallet balance: $e');
+      }
     }
   }
 
@@ -57,7 +62,9 @@ class WalletService {
       final userId = prefs.getString(_userIdKey);
       
       if (userId == null) {
-        print('Error: User ID not found');
+        if (kDebugMode) {
+          print('Error: User ID not found');
+        }
         return false;
       }
 
@@ -76,7 +83,9 @@ class WalletService {
       final QueryResult result = await _graphQLClient.mutate(options);
 
       if (result.hasException) {
-        print('Error adding balance: ${result.exception}');
+        if (kDebugMode) {
+          print('Error adding balance: ${result.exception}');
+        }
         return false;
       }
 
@@ -84,7 +93,9 @@ class WalletService {
       await setBalance(newBalance);
       return true;
     } catch (e) {
-      print('Error adding balance: $e');
+      if (kDebugMode) {
+        print('Error adding balance: $e');
+      }
       return false;
     }
   }
@@ -96,7 +107,9 @@ class WalletService {
       final userId = prefs.getString(_userIdKey);
       
       if (userId == null) {
-        print('Error: User ID not found');
+        if (kDebugMode) {
+          print('Error: User ID not found');
+        }
         return false;
       }
 
@@ -110,7 +123,9 @@ class WalletService {
       final newBalance = await userService.deductWalletBalance(userId, amount);
 
       if (newBalance == null) {
-        print('Error: Failed to deduct balance from backend');
+        if (kDebugMode) {
+          print('Error: Failed to deduct balance from backend');
+        }
         return false;
       }
 
@@ -118,7 +133,9 @@ class WalletService {
       await setBalance(newBalance);
       return true;
     } catch (e) {
-      print('Error deducting balance: $e');
+      if (kDebugMode) {
+        print('Error deducting balance: $e');
+      }
       return false;
     }
   }
@@ -129,7 +146,9 @@ class WalletService {
       final currentBalance = await getBalance();
       return currentBalance >= requiredAmount;
     } catch (e) {
-      print('Error checking balance: $e');
+      if (kDebugMode) {
+        print('Error checking balance: $e');
+      }
       return false;
     }
   }
@@ -141,7 +160,9 @@ class WalletService {
       final userId = prefs.getString(_userIdKey);
       
       if (userId == null) {
-        print('Error: User ID not found');
+        if (kDebugMode) {
+          print('Error: User ID not found');
+        }
         return false;
       }
 
@@ -154,7 +175,9 @@ class WalletService {
       final QueryResult result = await _graphQLClient.query(options);
 
       if (result.hasException) {
-        print('Error syncing wallet: ${result.exception}');
+        if (kDebugMode) {
+          print('Error syncing wallet: ${result.exception}');
+        }
         return false;
       }
 
@@ -167,7 +190,9 @@ class WalletService {
 
       return false;
     } catch (e) {
-      print('Exception in syncWithBackend: $e');
+      if (kDebugMode) {
+        print('Exception in syncWithBackend: $e');
+      }
       return false;
     }
   }
@@ -182,7 +207,9 @@ class WalletService {
       final userId = prefs.getString(_userIdKey);
       
       if (userId == null) {
-        print('Error: User ID not found');
+        if (kDebugMode) {
+          print('Error: User ID not found');
+        }
         return false;
       }
 
@@ -201,7 +228,9 @@ class WalletService {
       final QueryResult result = await _graphQLClient.mutate(options);
 
       if (result.hasException) {
-        print('Error adding money via payment: ${result.exception}');
+        if (kDebugMode) {
+          print('Error adding money via payment: ${result.exception}');
+        }
         return false;
       }
 
@@ -209,7 +238,9 @@ class WalletService {
       await setBalance(newBalance);
       return true;
     } catch (e) {
-      print('Error adding money via payment: $e');
+      if (kDebugMode) {
+        print('Error adding money via payment: $e');
+      }
       return false;
     }
   }
@@ -224,14 +255,18 @@ class WalletService {
       final userId = prefs.getString(_userIdKey);
       
       if (userId == null) {
-        print('Error: User ID not found');
+        if (kDebugMode) {
+          print('Error: User ID not found');
+        }
         return false;
       }
 
       // Check if sufficient balance
       final hasBalance = await hasSufficientBalance(amount);
       if (!hasBalance) {
-        print('Insufficient balance for purchase');
+        if (kDebugMode) {
+          print('Insufficient balance for purchase');
+        }
         return false;
       }
 
@@ -250,7 +285,9 @@ class WalletService {
       final QueryResult result = await _graphQLClient.mutate(options);
 
       if (result.hasException) {
-        print('Error deducting for purchase: ${result.exception}');
+        if (kDebugMode) {
+          print('Error deducting for purchase: ${result.exception}');
+        }
         return false;
       }
 
@@ -258,7 +295,9 @@ class WalletService {
       await setBalance(newBalance);
       return true;
     } catch (e) {
-      print('Error deducting for purchase: $e');
+      if (kDebugMode) {
+        print('Error deducting for purchase: $e');
+      }
       return false;
     }
   }
@@ -269,7 +308,9 @@ class WalletService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_userIdKey, userId);
     } catch (e) {
-      print('Error setting user ID: $e');
+      if (kDebugMode) {
+        print('Error setting user ID: $e');
+      }
     }
   }
 
@@ -281,7 +322,9 @@ class WalletService {
       await prefs.remove(_walletTransactionsKey);
       await prefs.remove(_userIdKey);
     } catch (e) {
-      print('Error clearing wallet: $e');
+      if (kDebugMode) {
+        print('Error clearing wallet: $e');
+      }
     }
   }
 }

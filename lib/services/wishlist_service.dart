@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
@@ -30,7 +31,9 @@ class WishlistService {
     UserService.setCurrentUserId(userId); // Fire and forget - no need to await
     SharedPreferences.getInstance().then((prefs) {
       prefs.setString(_userIdKey, userId);
-      print('✓ Wishlist service: User ID set to $userId');
+      if (kDebugMode) {
+        print('✓ Wishlist service: User ID set to $userId');
+      }
     });
   }
 
@@ -45,9 +48,13 @@ class WishlistService {
       // Load user ID from UserService (central source) or fallback to local storage
       _currentUserId = UserService.getCurrentUserId() ?? prefs.getString(_userIdKey);
       if (_currentUserId != null) {
-        print('✓ Wishlist initialized with user ID: $_currentUserId');
+        if (kDebugMode) {
+          print('✓ Wishlist initialized with user ID: $_currentUserId');
+        }
       } else {
-        print('⚠️ Wishlist initialized but no user ID found');
+        if (kDebugMode) {
+          print('⚠️ Wishlist initialized but no user ID found');
+        }
       }
       
       _wishlist.clear();
@@ -56,13 +63,19 @@ class WishlistService {
           final wishlistMap = jsonDecode(json) as Map<String, dynamic>;
           _wishlist.add(wishlistMap);
         } catch (e) {
-          print('Error parsing wishlist item: $e');
+          if (kDebugMode) {
+            print('Error parsing wishlist item: $e');
+          }
         }
       }
-      print('✓ Loaded ${_wishlist.length} wishlist items from local storage');
+      if (kDebugMode) {
+        print('✓ Loaded ${_wishlist.length} wishlist items from local storage');
+      }
       _isInitialized = true;
     } catch (e) {
-      print('Error initializing wishlist: $e');
+      if (kDebugMode) {
+        print('Error initializing wishlist: $e');
+      }
       _isInitialized = true;
     }
   }
@@ -76,7 +89,9 @@ class WishlistService {
           .toList();
       await prefs.setStringList(_wishlistKey, wishlistJson);
     } catch (e) {
-      print('Error saving wishlist: $e');
+      if (kDebugMode) {
+        print('Error saving wishlist: $e');
+      }
     }
   }
 
@@ -91,9 +106,13 @@ class WishlistService {
         'wishlistId': null, // Will be set when synced with backend
       });
       await _saveToPreferences();
-      print('✓ Product ${product.title} added to wishlist. Total items: ${_wishlist.length}');
+      if (kDebugMode) {
+        print('✓ Product ${product.title} added to wishlist. Total items: ${_wishlist.length}');
+      }
     } else {
-      print('Product ${product.title} already in wishlist');
+      if (kDebugMode) {
+        print('Product ${product.title} already in wishlist');
+      }
     }
   }
 
@@ -108,7 +127,9 @@ class WishlistService {
     _wishlist.removeWhere((item) => item['product']?['id'] == productId);
     final countAfter = _wishlist.length;
     await _saveToPreferences();
-    print('✓ Product removed from wishlist. Items: $countBefore → $countAfter');
+    if (kDebugMode) {
+      print('✓ Product removed from wishlist. Items: $countBefore → $countAfter');
+    }
   }
 
   // Check if product is in wishlist
@@ -118,13 +139,17 @@ class WishlistService {
     
   // Get all wishlist items as ProductModel list
   List<ProductModel> getWishlist() {
-    print('Getting wishlist: ${_wishlist.length} items');
+    if (kDebugMode) {
+      print('Getting wishlist: ${_wishlist.length} items');
+    }
     return _wishlist
         .map((item) {
           try {
             return ProductModel.fromJson(item['product'] as Map<String, dynamic>);
           } catch (e) {
-            print('Error converting wishlist item: $e');
+            if (kDebugMode) {
+              print('Error converting wishlist item: $e');
+            }
             return null;
           }
         })
@@ -151,7 +176,9 @@ class WishlistService {
     // Then clear locally
     _wishlist.clear();
     await _saveToPreferences();
-    print('✓ Wishlist cleared from local and backend');
+    if (kDebugMode) {
+      print('✓ Wishlist cleared from local and backend');
+    }
   }
 
   // Toggle wishlist (add if not exists, remove if exists)
@@ -177,13 +204,17 @@ class WishlistService {
       final userId = UserService.getCurrentUserId();
       
       if (userId == null || userId.isEmpty) {
-        print('⚠️ Cannot sync wishlist: User ID not found');
+        if (kDebugMode) {
+          print('⚠️ Cannot sync wishlist: User ID not found');
+        }
         return false;
       }
       
       _currentUserId = userId;
 
-      print('📡 Syncing wishlist for user: $userId');
+      if (kDebugMode) {
+        print('📡 Syncing wishlist for user: $userId');
+      }
 
       // Fetch wishlist from GraphQL (from separate Wishlist collection)
       final QueryOptions options = QueryOptions(
@@ -195,7 +226,9 @@ class WishlistService {
       final QueryResult result = await _graphQLClient.query(options);
 
       if (result.hasException) {
-        print('❌ Error syncing wishlist with backend: ${result.exception}');
+        if (kDebugMode) {
+          print('❌ Error syncing wishlist with backend: ${result.exception}');
+        }
         return false;
       }
 
@@ -203,7 +236,9 @@ class WishlistService {
       
       if (data != null && data['wishlists'] != null) {
         final wishlistData = data['wishlists'] as List?;
-        print('📋 Found ${wishlistData?.length ?? 0} wishlist items from backend');
+        if (kDebugMode) {
+          print('📋 Found ${wishlistData?.length ?? 0} wishlist items from backend');
+        }
         
         if (wishlistData != null && wishlistData.isNotEmpty) {
           // Merge backend items with local - ADD ONLY, never remove during sync
@@ -235,22 +270,32 @@ class WishlistService {
                 }
               }
             } catch (e) {
-              print('❌ Error parsing wishlist item from backend: $e');
+              if (kDebugMode) {
+                print('❌ Error parsing wishlist item from backend: $e');
+              }
             }
           }
           
           await _saveToPreferences();
-          print('✅ Wishlist synced successfully. Total items: ${_wishlist.length}');
+          if (kDebugMode) {
+            print('✅ Wishlist synced successfully. Total items: ${_wishlist.length}');
+          }
         } else {
           // Backend returned empty but we have local items - keep local items
-          print('⚠️ Backend empty - keeping ${_wishlist.length} local items');
+          if (kDebugMode) {
+            print('⚠️ Backend empty - keeping ${_wishlist.length} local items');
+          }
         }
         return true;
       }
-      print('⚠️ No wishlist data found in backend response');
+      if (kDebugMode) {
+        print('⚠️ No wishlist data found in backend response');
+      }
       return false;
     } catch (e) {
-      print('❌ Error syncing wishlist with backend: $e');
+      if (kDebugMode) {
+        print('❌ Error syncing wishlist with backend: $e');
+      }
       return false;
     }
   }
@@ -262,12 +307,16 @@ class WishlistService {
       final userId = UserService.getCurrentUserId();
       
       if (userId == null || userId.isEmpty) {
-        print('❌ Cannot add to wishlist backend: User ID not found');
-        print('   Item saved locally - will sync when user logs in');
+        if (kDebugMode) {
+          print('❌ Cannot add to wishlist backend: User ID not found');
+          print('   Item saved locally - will sync when user logs in');
+        }
         return false;
       }
 
-      print('📤 Adding product $productId to backend wishlist for user $userId');
+      if (kDebugMode) {
+        print('📤 Adding product $productId to backend wishlist for user $userId');
+      }
 
       final MutationOptions options = MutationOptions(
         document: gql(GraphQLQueries.addToWishlist),
@@ -280,12 +329,16 @@ class WishlistService {
       final QueryResult result = await _graphQLClient.mutate(options);
 
       if (result.hasException) {
-        print('❌ Error adding to wishlist on backend: ${result.exception}');
-        print('   Item remains in local storage only');
+        if (kDebugMode) {
+          print('❌ Error adding to wishlist on backend: ${result.exception}');
+          print('   Item remains in local storage only');
+        }
         return false;
       }
 
-      print('✅ Product added to backend wishlist successfully');
+      if (kDebugMode) {
+        print('✅ Product added to backend wishlist successfully');
+      }
       
       // Update local item with backend wishlistId
       if (result.data?['createWishlist']?['id'] != null) {
@@ -299,8 +352,10 @@ class WishlistService {
       
       return !result.hasException;
     } catch (e) {
-      print('❌ Error adding to wishlist on backend: $e');
-      print('   Item remains in local storage only');
+      if (kDebugMode) {
+        print('❌ Error adding to wishlist on backend: $e');
+        print('   Item remains in local storage only');
+      }
       return false;
     }
   }
@@ -316,7 +371,9 @@ class WishlistService {
 
       final wishlistId = wishlistItem['wishlistId'];
       if (wishlistId == null) {
-        print('Error: Wishlist ID not found for product $productId');
+        if (kDebugMode) {
+          print('Error: Wishlist ID not found for product $productId');
+        }
         return false;
       }
 
@@ -330,13 +387,17 @@ class WishlistService {
       final QueryResult result = await _graphQLClient.mutate(options);
 
       if (result.hasException) {
-        print('Error removing from wishlist on backend: ${result.exception}');
+        if (kDebugMode) {
+          print('Error removing from wishlist on backend: ${result.exception}');
+        }
         return false;
       }
 
       return !result.hasException;
     } catch (e) {
-      print('Error removing from wishlist on backend: $e');
+      if (kDebugMode) {
+        print('Error removing from wishlist on backend: $e');
+      }
       return false;
     }
   }
@@ -348,9 +409,13 @@ class WishlistService {
       // Data will be synced from backend on next login
       _wishlist.clear();
       _currentUserId = null;
-      print('✓ Wishlist memory cleared (local storage preserved for sync)');
+      if (kDebugMode) {
+        print('✓ Wishlist memory cleared (local storage preserved for sync)');
+      }
     } catch (e) {
-      print('Error clearing wishlist: $e');
+      if (kDebugMode) {
+        print('Error clearing wishlist: $e');
+      }
     }
   }
 }

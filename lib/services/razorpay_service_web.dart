@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:js' as js;
 import 'dart:js_util' as js_util;
 
@@ -19,10 +20,14 @@ class RazorpayPlatform {
 
   void open(Map<String, dynamic> options) {
     try {
-      print('[RAZORPAY_WEB] Opening payment with options...');
+      if (kDebugMode) {
+        print('[RAZORPAY_WEB] Opening payment with options...');
+      }
       // Check if Razorpay is loaded
       if (!js.context.hasProperty('Razorpay')) {
-        print('[RAZORPAY_WEB] ERROR: Razorpay library not loaded');
+        if (kDebugMode) {
+          print('[RAZORPAY_WEB] ERROR: Razorpay library not loaded');
+        }
         _onError?.call('Razorpay library not loaded. Please refresh the page.');
         return;
       }
@@ -39,9 +44,11 @@ class RazorpayPlatform {
 
       // Create handler callback - Razorpay expects: handler: function(response) {...}
       jsOptions['handler'] = js.allowInterop((response) {
-        print('[RAZORPAY_WEB] ✅ Payment SUCCESS - handler called');
-        print('[RAZORPAY_WEB] Response type: ${response.runtimeType}');
-        try {
+        if (kDebugMode) {
+          print('[RAZORPAY_WEB] ✅ Payment SUCCESS - handler called');
+          print('[RAZORPAY_WEB] Response type: ${response.runtimeType}');
+        }
+        try{
           // Try to extract payment details - response can be JsObject or Map
           String paymentId = '';
           String orderId = '';
@@ -58,19 +65,25 @@ class RazorpayPlatform {
               orderId = js_util.getProperty(response, 'razorpay_order_id')?.toString() ?? '';
               signature = js_util.getProperty(response, 'razorpay_signature')?.toString() ?? '';
             } catch (e) {
-              print('[RAZORPAY_WEB] js_util failed, trying direct access: $e');
-              // Last resort - try to convert to string and parse
-              final responseStr = response.toString();
-              print('[RAZORPAY_WEB] Response as string: $responseStr');
+              if (kDebugMode) {
+                print('[RAZORPAY_WEB] js_util failed, trying direct access: $e');
+                // Last resort - try to convert to string and parse
+                final responseStr = response.toString();
+                print('[RAZORPAY_WEB] Response as string: $responseStr');
+              }
             }
           }
           
-          print('[RAZORPAY_WEB] Payment ID: $paymentId');
-          print('[RAZORPAY_WEB] Order ID: $orderId');
-          print('[RAZORPAY_WEB] Signature: ${signature.isNotEmpty ? "present" : "missing"}');
+          if (kDebugMode) {
+            print('[RAZORPAY_WEB] Payment ID: $paymentId');
+            print('[RAZORPAY_WEB] Order ID: $orderId');
+            print('[RAZORPAY_WEB] Signature: ${signature.isNotEmpty ? "present" : "missing"}');
+          }
           
           if (paymentId.isEmpty || orderId.isEmpty || signature.isEmpty) {
-            print('[RAZORPAY_WEB] WARNING: Missing payment details!');
+            if (kDebugMode) {
+              print('[RAZORPAY_WEB] WARNING: Missing payment details!');
+            }
             _onError?.call('Payment completed but details not received. Please contact support.');
             return;
           }
@@ -81,7 +94,9 @@ class RazorpayPlatform {
             'razorpay_signature': signature,
           });
         } catch (e) {
-          print('[RAZORPAY_WEB] ERROR parsing success response: $e');
+          if (kDebugMode) {
+            print('[RAZORPAY_WEB] ERROR parsing success response: $e');
+          }
           _onError?.call('Error processing payment response: $e');
         }
       });
@@ -89,20 +104,28 @@ class RazorpayPlatform {
       // Create modal options for dismiss/error handling
       final modalOptions = js.JsObject.jsify({});
       modalOptions['ondismiss'] = js.allowInterop(() {
-        print('[RAZORPAY_WEB] ⚠️ Payment modal DISMISSED');
+        if (kDebugMode) {
+          print('[RAZORPAY_WEB] ⚠️ Payment modal DISMISSED');
+        }
         _onDismiss?.call();
       });
       jsOptions['modal'] = modalOptions;
 
-      print('[RAZORPAY_WEB] Creating Razorpay instance...');
+      if (kDebugMode) {
+        print('[RAZORPAY_WEB] Creating Razorpay instance...');
+      }
       // Create Razorpay instance
       final razorpayConstructor = js.context['Razorpay'] as js.JsFunction;
       final razorpay = js.JsObject(razorpayConstructor, [jsOptions]);
       
-      print('[RAZORPAY_WEB] Opening Razorpay checkout...');
+      if (kDebugMode) {
+        print('[RAZORPAY_WEB] Opening Razorpay checkout...');
+      }
       razorpay.callMethod('open');
     } catch (e) {
-      print('[RAZORPAY_WEB] ERROR: $e');
+      if (kDebugMode) {
+        print('[RAZORPAY_WEB] ERROR: $e');
+      }
       _onError?.call('Failed to open Razorpay checkout. Error: $e');
     }
   }
