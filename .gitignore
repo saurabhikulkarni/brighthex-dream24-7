@@ -48,9 +48,6 @@ android/upload-keystore.jks
 android/**/*.keystore
 android/**/*.jks
 ios/Runner/GoogleService-Info.plist
-.env
-.env.local
-.env.production
 **/*.pem
 **/*.p12
 **/*.mobileprovision
@@ -58,3 +55,5 @@ ios/Runner/GoogleService-Info.plist
 # API Keys and Secrets
 lib/config/*_keys.dart
 lib/config/secrets.dart
+config.bat
+node_modules
