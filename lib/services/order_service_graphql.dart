@@ -92,12 +92,29 @@ class OrderServiceGraphQL {
         print('✅ [OPTIMIZED] Order created successfully!');
       }
       
-      // Return full order
-      final order = await getOrderById(orderId);
-      if (order == null) {
-        throw Exception('Failed to retrieve created order');
-      }
-      return order;
+      // Return order without re-fetching to avoid rate limits
+      // Construct the order object from data we already have
+      return OrderModel(
+        id: orderId,
+        orderNumber: orderNumber,
+        userId: userId,
+        items: items.map((item) => OrderItemModel(
+          id: null, // Item IDs not needed for return value
+          orderId: orderId,
+          productId: item.productId,
+          sizeId: item.sizeId,
+          size: item.size,
+          quantity: item.quantity,
+          pricePerUnit: item.pricePerUnit,
+          totalPrice: item.totalPrice,
+          product: item.product,
+        )).toList(),
+        totalAmount: totalAmount,
+        orderStatus: status,
+        addressId: addressId,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
     } catch (e) {
       throw Exception('Error creating order: $e');
     }
