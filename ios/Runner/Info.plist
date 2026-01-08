@@ -51,5 +51,21 @@
 	<string>https</string>
 	</array>
 
+	<!-- Privacy - Photo Library Usage Description -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library to let you select product images and update your profile picture.</string>
+	
+	<!-- Privacy - Camera Usage Description -->
+	<key>NSCameraUsageDescription</key>
+	<string>We need access to your camera to let you take photos for your profile and product reviews.</string>
+	
+	<!-- Privacy - Location When In Use Usage Description -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location to show nearby stores and provide accurate delivery estimates.</string>
+	
+	<!-- Privacy - User Tracking Usage Description (required for iOS 14+) -->
+	<key>NSUserTrackingUsageDescription</key>
+	<string>We use tracking to provide personalized shopping recommendations and improve your experience.</string>
+
 </dict>
 </plist>

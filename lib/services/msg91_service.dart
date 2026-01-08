@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shop/config/msg91_config.dart';
 
@@ -39,7 +40,9 @@ class Msg91Service {
         };
       }
 
-      print('📱 [MSG91] Sending OTP to: $cleanMobile');
+      if (kDebugMode) {
+        print('📱 [MSG91] Sending OTP to: $cleanMobile');
+      }
       
       final response = await http.post(
         Uri.parse(Msg91Config.sendOtpEndpoint),
@@ -51,27 +54,35 @@ class Msg91Service {
         }),
       ).timeout(const Duration(seconds: Msg91Config.requestTimeoutSeconds));
 
-      print('📱 [MSG91] Response status: ${response.statusCode}');
-      print('📱 [MSG91] Response body: ${response.body}');
+      if (kDebugMode) {
+        print('📱 [MSG91] Response status: ${response.statusCode}');
+        print('📱 [MSG91] Response body: ${response.body}');
+      }
       
       final responseData = jsonDecode(response.body) as Map<String, dynamic>;
 
       if (response.statusCode == 200 && responseData['success'] == true) {
-        print('✅ [MSG91] OTP sent successfully - SessionId: ${responseData['sessionId']}');
+        if (kDebugMode) {
+          print('✅ [MSG91] OTP sent successfully - SessionId: ${responseData['sessionId']}');
+        }
         return {
           'success': true,
           'message': responseData['message'] ?? 'OTP sent successfully. Check your SMS inbox.',
           'sessionId': responseData['sessionId'],
         };
       } else {
-        print('❌ [MSG91] Failed to send OTP: ${responseData['message']}');
+        if (kDebugMode) {
+          print('❌ [MSG91] Failed to send OTP: ${responseData['message']}');
+        }
         return {
           'success': false,
           'message': responseData['message'] ?? 'Failed to send OTP. Please try again.',
         };
       }
     } catch (e) {
-      print('❌ [MSG91] Error sending OTP: $e');
+      if (kDebugMode) {
+        print('❌ [MSG91] Error sending OTP: $e');
+      }
       return {
         'success': false,
         'message': 'Network error. Please check your internet connection and try again.',
@@ -150,7 +161,9 @@ class Msg91Service {
         };
       }
     } catch (e) {
-      print('Error verifying OTP: $e');
+      if (kDebugMode) {
+        print('Error verifying OTP: $e');
+      }
       return {
         'success': false,
         'message': 'Network error. Please check your internet connection and try again.',

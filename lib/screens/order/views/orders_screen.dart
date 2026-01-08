@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/constants.dart';
+import 'package:shop/components/network_image_with_loader.dart';
+import 'package:shop/screens/order/views/order_tracking_screen.dart';
 import 'package:shop/services/order_service_graphql.dart';
 import 'package:shop/models/order_models.dart';
-import 'order_tracking_screen.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -33,10 +36,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
       
       final orders = await orderService.getUserOrders();
       
-      print('📦 Fetched ${orders.length} orders from service');
-      for (int i = 0; i < orders.length; i++) {
-        final order = orders[i];
-        print('  Order $i: id=${order.id}, orderNumber=${order.orderNumber}, items=${order.items.length}');
+      if (kDebugMode) {
+        print('📦 Fetched ${orders.length} orders from service');
+        for (int i = 0; i < orders.length; i++) {
+          final order = orders[i];
+          print('  Order $i: id=${order.id}, orderNumber=${order.orderNumber}, items=${order.items.length}');
+        }
       }
       
       if (mounted) {
@@ -44,7 +49,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
           _orders = orders;
           _isLoading = false;
         });
-        print('✅ UI Updated: _orders.length=${_orders.length}, _isLoading=$_isLoading');
+        if (kDebugMode) print('✅ UI Updated: _orders.length=${_orders.length}, _isLoading=$_isLoading');
       }
     } catch (e) {
       if (mounted) {
@@ -72,7 +77,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
       ),
       body: Builder(
         builder: (context) {
-          print('🔍 Building orders screen: _isLoading=$_isLoading, _orders.length=${_orders.length}');
+          if (kDebugMode) {
+            print('🔍 Building orders screen: _isLoading=$_isLoading, _orders.length=${_orders.length}');
+          }
           
           if (_isLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -99,24 +106,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     "Start shopping to place your first order!",
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  // Debug info
-                  if (true) // Always show debug in development
-                    Padding(
-                      padding: const EdgeInsets.all(defaultPadding),
-                      child: Text(
-                        'Debug: Orders fetched but list is empty',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ),
                 ],
               ),
             );
           }
           
-          print('✅ Rendering ${_orders.length} orders');
           return RefreshIndicator(
                   onRefresh: _loadOrders,
                   child: ListView.builder(
@@ -127,17 +121,29 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       // Skip rendering if order is invalid
                       // Only skip if both id and orderNumber are missing
                       if ((order.id == null || order.id!.isEmpty) && order.orderNumber.isEmpty) {
-                        print('⚠️ Skipping invalid order at index $index: id=${order.id}, orderNumber=${order.orderNumber}');
+                        if (kDebugMode) print('⚠️ Skipping invalid order at index $index: id=${order.id}, orderNumber=${order.orderNumber}');
                         return const SizedBox.shrink();
                       }
                       // Use orderNumber if available, otherwise use id
                       final displayOrderNumber = order.orderNumber.isNotEmpty 
                           ? order.orderNumber 
                           : (order.id ?? 'Order ${index + 1}');
-                      print('✅ Rendering order $index: $displayOrderNumber');
+                      if (kDebugMode) print('✅ Rendering order $index: $displayOrderNumber');
                       return Card(
                         margin: const EdgeInsets.only(bottom: defaultPadding),
-                  child: Padding(
+                  child: InkWell(
+                    onTap: () {
+                      final trackingId = order.shiprocketOrderId ?? order.orderNumber;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OrderTrackingScreen(
+                            orderId: trackingId,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Padding(
                     padding: const EdgeInsets.all(defaultPadding),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,13 +156,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    "Order ${order.orderNumber.isNotEmpty ? order.orderNumber : (order.id ?? 'N/A')}",
-                                    style: Theme.of(context).textTheme.titleSmall,
+                                    "Order #${order.orderNumber.isNotEmpty ? order.orderNumber : (order.id ?? 'N/A')}",
+                                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     _formatDate(order.createdAt),
-                                    style: Theme.of(context).textTheme.bodySmall,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.grey,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -169,7 +179,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               decoration: BoxDecoration(
                                 color: _getStatusColor(order.statusString)
                                     .withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: _getStatusColor(order.statusString),
+                                  width: 1,
+                                ),
                               ),
                               child: Text(
                                 _formatStatus(order.statusString),
@@ -182,77 +196,124 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: defaultPadding / 2),
-                        Text(
-                          order.items.isEmpty ? 'No items' : order.orderSummary,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: defaultPadding / 2),
-                        // Show tracking info if available
-                        if ((order.trackingNumber != null && order.trackingNumber!.isNotEmpty) || 
-                            (order.courierName != null && order.courierName!.isNotEmpty))
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        const Divider(height: defaultPadding * 1.5),
+                        
+                        // Product Items List
+                        ...order.items.take(3).map((item) => Padding(
+                          padding: const EdgeInsets.only(bottom: defaultPadding / 2),
+                          child: Row(
                             children: [
-                              if (order.courierName != null)
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.local_shipping,
-                                      size: 16,
-                                      color: Theme.of(context).primaryColor,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      order.courierName!,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
+                              // Product Image
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: SizedBox(
+                                  width: 60,
+                                  height: 60,
+                                  child: item.product?.image.isNotEmpty == true
+                                      ? NetworkImageWithLoader(item.product!.image)
+                                      : Container(
+                                          color: Colors.grey.shade200,
+                                          child: Icon(
+                                            Icons.image,
+                                            color: Colors.grey.shade400,
                                           ),
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(width: defaultPadding / 2),
+                              // Product Details
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.product?.title ?? 'Product',
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        if (item.size != null)
+                                          Text(
+                                            'Size: ${item.size}',
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        if (item.size != null)
+                                          Text(
+                                            ' • ',
+                                            style: TextStyle(color: Colors.grey.shade600),
+                                          ),
+                                        Text(
+                                          'Qty: ${item.quantity}',
+                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              if (order.trackingNumber != null) ...[
+                              ),
+                            ],
+                          ),
+                        )),
+                        
+                        // Show "more items" indicator if there are more than 3 items
+                        if (order.items.length > 3)
+                          Padding(
+                            padding: const EdgeInsets.only(top: defaultPadding / 2),
+                            child: Text(
+                              '+ ${order.items.length - 3} more item(s)',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.grey.shade600,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        
+                        const Divider(height: defaultPadding),
+                        
+                        // Order Total and Actions
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Shopping Tokens',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
                                 const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    const Icon(
-                                      Icons.track_changes,
-                                      size: 16,
-                                      color: Colors.grey,
+                                    SvgPicture.asset(
+                                      'assets/icons/coin.svg',
+                                      height: 20,
+                                      width: 20,
                                     ),
                                     const SizedBox(width: 4),
-                                    Expanded(
-                                      child: Text(
-                                        'Tracking: ${order.trackingNumber}',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall,
-                                        overflow: TextOverflow.ellipsis,
+                                    Text(
+                                      order.totalAmount.toStringAsFixed(0),
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: primaryColor,
                                       ),
                                     ),
                                   ],
                                 ),
                               ],
-                              const SizedBox(height: 4),
-                            ],
-                          ),
-                        const SizedBox(height: defaultPadding / 2),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              "₹${order.totalAmount.toStringAsFixed(2)}",
-                              style: Theme.of(context).textTheme.titleSmall,
                             ),
-                            Wrap(
-                              spacing: 8,
-                              alignment: WrapAlignment.end,
+                            Row(
                               children: [
                                 // Track button - show if order has Shiprocket order ID or tracking number
                                 if (order.shiprocketOrderId != null || order.trackingNumber != null)
@@ -269,26 +330,18 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                         ),
                                       );
                                     },
-                                    icon: const Icon(Icons.track_changes, size: 18),
+                                    icon: const Icon(Icons.local_shipping_outlined, size: 18),
                                     label: const Text('Track'),
                                     style: OutlinedButton.styleFrom(
                                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                     ),
                                   ),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    // Navigate to order details/tracking screen
-                                    final trackingId = order.shiprocketOrderId ?? order.orderNumber;
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => OrderTrackingScreen(
-                                          orderId: trackingId,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text('View Details'),
+                                if (order.shiprocketOrderId != null || order.trackingNumber != null)
+                                  const SizedBox(width: 8),
+                                Icon(
+                                  Icons.arrow_forward_ios,
+                                  size: 16,
+                                  color: Colors.grey,
                                 ),
                               ],
                             ),
@@ -297,9 +350,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       ],
                     ),
                   ),
-                );
-                    },
-                  ),
+                ),
+              );
+            },
+          ),
           );
         },
       ),

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shop/components/gradient_button.dart';
@@ -73,7 +74,10 @@ class _CartScreenState extends State<CartScreen> {
     try {
       await cartService.removeFromLocalCart(cartItemId);
       if (mounted) {
-        setState(() {});
+        // Use Future.microtask to defer setState and avoid mouse tracker conflicts
+        Future.microtask(() {
+          if (mounted) setState(() {});
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -94,7 +98,10 @@ class _CartScreenState extends State<CartScreen> {
     try {
       await cartService.updateLocalCartQuantity(cartItemId, newQuantity);
       if (mounted) {
-        setState(() {});
+        // Use Future.microtask to defer setState and avoid mouse tracker conflicts
+        Future.microtask(() {
+          if (mounted) setState(() {});
+        });
       }
     } catch (e) {
       // Show error message if stock is insufficient
@@ -270,7 +277,7 @@ class _CartScreenState extends State<CartScreen> {
           if (retryCount > 0) {
             // Wait before retry (exponential backoff)
             await Future.delayed(Duration(seconds: retryCount * 2));
-            print('🔄 Retry attempt $retryCount/$maxRetries...');
+            if (kDebugMode) print('🔄 Retry attempt $retryCount/$maxRetries...');
           }
           
           // Use optimized method - creates order with parallel operations
@@ -282,7 +289,7 @@ class _CartScreenState extends State<CartScreen> {
           );
         } catch (e) {
           retryCount++;
-          print('❌ Order creation failed (attempt $retryCount): $e');
+          if (kDebugMode) print('❌ Order creation failed (attempt $retryCount): $e');
           
           if (retryCount >= maxRetries) {
             // All retries failed - show user-friendly error
@@ -335,7 +342,7 @@ class _CartScreenState extends State<CartScreen> {
             if (shipmentResult != null) {
               shiprocketOrderId = shipmentResult['order_id']?.toString() ?? 
                                   shipmentResult['shipment_id']?.toString();
-              print('✅ Shiprocket shipment created: $shiprocketOrderId');
+              if (kDebugMode) print('✅ Shiprocket shipment created: $shiprocketOrderId');
               
               // Update order with Shiprocket tracking info if available
               if (shiprocketOrderId != null && order.id != null) {
@@ -350,11 +357,11 @@ class _CartScreenState extends State<CartScreen> {
                 );
               }
             } else {
-              print('⚠️ Failed to create Shiprocket shipment, order will use mock tracking');
+              if (kDebugMode) print('⚠️ Failed to create Shiprocket shipment, order will use mock tracking');
             }
           }
         } catch (shiprocketError) {
-          print('⚠️ Shiprocket integration error: $shiprocketError');
+          if (kDebugMode) print('⚠️ Shiprocket integration error: $shiprocketError');
           // Continue with order - Shiprocket is optional
         }
       }
@@ -365,8 +372,8 @@ class _CartScreenState extends State<CartScreen> {
       // Update wallet balance in UI
       await _loadWalletBalance();
 
-      // Clear cart
-      cartService.clearLocalCart();
+      // Clear cart completely (both local and backend)
+      await cartService.clearCompleteCart();
 
       if (!mounted) return;
       Navigator.pop(context); // Close loading dialog
@@ -541,26 +548,33 @@ class _CartScreenState extends State<CartScreen> {
                                       Row(
                                         children: [
                                           IconButton(
+                                            key: ValueKey('dec-${item.id}'),
                                             icon: const Icon(Icons.remove_circle_outline),
-                                            onPressed: () => _updateQuantity(
-                                              item.id!,
-                                              item.quantity - 1,
-                                            ),
+                                            onPressed: item.quantity > 1 ? () {
+                                              _updateQuantity(
+                                                item.id!,
+                                                item.quantity - 1,
+                                              );
+                                            } : null,
                                           ),
                                           Text(
                                             '${item.quantity}',
                                             style: Theme.of(context).textTheme.titleMedium,
                                           ),
                                           IconButton(
+                                            key: ValueKey('inc-${item.id}'),
                                             icon: const Icon(Icons.add_circle_outline),
-                                            onPressed: () => _updateQuantity(
-                                              item.id!,
-                                              item.quantity + 1,
-                                            ),
+                                            onPressed: () {
+                                              _updateQuantity(
+                                                item.id!,
+                                                item.quantity + 1,
+                                              );
+                                            },
                                           ),
                                         ],
                                       ),
                                       IconButton(
+                                        key: ValueKey('del-${item.id}'),
                                         icon: const Icon(Icons.delete_outline, color: Colors.red),
                                         onPressed: () => _removeItem(item.id!),
                                       ),

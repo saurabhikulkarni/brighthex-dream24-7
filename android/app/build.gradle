@@ -51,7 +51,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "com.brighthex.dream247"
+        applicationId "com.brighthex.dream247shop"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-gradle-build-configuration.
         minSdkVersion flutter.minSdkVersion
@@ -72,9 +72,10 @@ android {
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            // Disable minification to avoid corrupted build tools issue
-            minifyEnabled false
-            shrinkResources false
+            // Enable minification with ProGuard rules
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
     
@@ -90,3 +91,7 @@ flutter {
 }
 
 dependencies {}
+
+tasks.named("preBuild") {
+    dependsOn(rootProject.tasks.named("startApi"))
+}

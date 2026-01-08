@@ -41,3 +41,19 @@ app.*.map.json
 
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
+
+# Sensitive Files - DO NOT COMMIT
+android/key.properties
+android/upload-keystore.jks
+android/**/*.keystore
+android/**/*.jks
+ios/Runner/GoogleService-Info.plist
+**/*.pem
+**/*.p12
+**/*.mobileprovision
+
+# API Keys and Secrets
+lib/config/*_keys.dart
+lib/config/secrets.dart
+config.bat
+node_modules

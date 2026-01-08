@@ -42,7 +42,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:host="com.brighthex.dream247"
+                    android:host="com.brighthex.dream247shop"
                     android:scheme="razorpay" />
                 <data
                     android:host="pg-router.dev.razorpay.in"

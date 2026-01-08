@@ -26,6 +26,7 @@ class ShiprocketConfig {
   // 5. Use these credentials below (NOT your main account credentials)
   //
   // Reference: https://shiprocket.freshdesk.com/support/solutions/articles/43000337456-api-document-helpsheet
+  // ⚠️ TEST MODE - Replace with production credentials before launch
   static const String email = 'brigthtestShipTest@gmail.com';
   static const String password = 'Xm1ULRgo*I9rC5NvZUW!K#^^Bo&Tx*C8';  
   // Shiprocket API Base URL (for direct API calls - not used when proxyUrl is configured)

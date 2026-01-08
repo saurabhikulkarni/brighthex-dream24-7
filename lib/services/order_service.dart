@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shop/models/product_model.dart';
 import 'package:shop/services/shiprocket_service.dart';
 import 'package:shop/services/wallet_service.dart';
@@ -152,7 +153,9 @@ class OrderService {
         updateOrderWithShiprocketData(orderId, shiprocketData);
       }
     } catch (e) {
-      print('Error syncing order with Shiprocket: $e');
+      if (kDebugMode) {
+        print('Error syncing order with Shiprocket: $e');
+      }
     }
   }
 
@@ -234,7 +237,9 @@ class OrderService {
 
       return order;
     } catch (e) {
-      print('Error creating order with payment: $e');
+      if (kDebugMode) {
+        print('Error creating order with payment: $e');
+      }
       return null;
     }
   }
